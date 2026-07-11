@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-lg-center py-3 px-4 my-4 flex-column flex-lg-row pro-card border-0 mx-2">
+    <h2 class="h5 mb-0 fw-bold"><i class="bi bi-arrow-left-square me-2"></i> Admission Dashboard</h2>
+</div>
+
+<div class="container-fluid px-4">
+    <div class="row my-4">
+        <div class="col-xl-6 mb-4">
+            <div class="pro-card chart-widget d-flex justify-content-center align-items-center w-100 p-3" id="column_chart_div" style="height: 350px;"></div>
+        </div>
+        <div class="col-xl-6 mb-4">
+            <div class="pro-card chart-widget d-flex justify-content-center align-items-center w-100 p-3" id="line_chart_div" style="height: 350px;"></div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+  google.charts.load('current', {'packages':['corechart']});
+  google.charts.setOnLoadCallback(drawCharts);
+
+  function drawCharts() {
+      // Data from Django view
+      var data = google.visualization.arrayToDataTable({{ chart_data|safe }});
+
+      var chartBg = '#ffffff';
+      var textStyle = { color: '#64748b', fontName: 'Inter' };
+
+      // Options for the column chart
+      var columnOptions = {
+          title: 'Student Admissions by Gender',
+          titleTextStyle: { color: '#0f172a', fontSize: 18, fontName: 'Inter', bold: true },
+          legend: { position: 'top', textStyle: textStyle },
+          colors: ['#2563eb', '#10b981'],
+          backgroundColor: chartBg,
+          chartArea: { width: '85%', height: '70%' },
+          hAxis: { title: 'Year', titleTextStyle: textStyle, textStyle: textStyle },
+          vAxis: { title: 'Number of Students', titleTextStyle: textStyle, textStyle: textStyle },
+          isStacked: true,
+          animation: { startup: true, duration: 1000, easing: 'out' }
+      };
+
+      // Create the column chart
+      var columnChart = new google.visualization.ColumnChart(document.getElementById('column_chart_div'));
+      columnChart.draw(data, columnOptions);
+
+      // Options for the line chart
+      var lineOptions = {
+          title: 'Admission Trends Over Time',
+          titleTextStyle: { color: '#0f172a', fontSize: 18, fontName: 'Inter', bold: true },
+          legend: { position: 'bottom', textStyle: textStyle },
+          colors: ['#2563eb', '#10b981'],
+          backgroundColor: chartBg,
+          chartArea: { width: '85%', height: '70%' },
+          hAxis: { title: 'Year', titleTextStyle: textStyle, textStyle: textStyle },
+          vAxis: { title: 'Number of Students', titleTextStyle: textStyle, textStyle: textStyle },
+          lineWidth: 3,
+          curveType: 'function',
+          pointSize: 6,
+          animation: { startup: true, duration: 1000, easing: 'inAndOut' }
+      };
+
+      // Create the line chart
+      var lineChart = new google.visualization.LineChart(document.getElementById('line_chart_div'));
+      lineChart.draw(data, lineOptions);
+      
+      // Make charts responsive
+      window.addEventListener('resize', drawCharts);
+  }
+</script>
+
+{% include "hms/labels.html" %}
+{% endblock %}

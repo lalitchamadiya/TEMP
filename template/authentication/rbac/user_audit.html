@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Audit Log: {{ target.username }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    {# ── Page Header ─────────────────────────────────────────────────── #}
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'user_detail' target.id %}" class="btn btn-outline-secondary btn-sm rounded-circle me-3 p-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Back to User Profile">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fw-bold mb-0">System Audit Trail</h2>
+            <p class="text-muted small mb-0">Full event history for account <strong>@{{ target.username }}</strong>.</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold fs-6 text-primary"><i class="bi bi-shield-check me-2"></i>Activity Log</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm rounded-3" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i>Print Log
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4 py-3">Event Date</th>
+                        <th>Performed By</th>
+                        <th>Action</th>
+                        <th>IP Address</th>
+                        <th class="pe-4">Details / Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="ps-4 small fw-semibold text-secondary">
+                            {{ log.timestamp|date:"d M Y, H:i:s" }}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px; font-size: .7rem;">
+                                    {{ log.actor.username|first|upper }}
+                                </div>
+                                <span class="small fw-bold">@{{ log.actor.username|default:"System" }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if log.action == 'login' %}
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 font-monospace" style="font-size: .7rem;">LOGIN</span>
+                            {% elif log.action == 'logout' %}
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1 font-monospace" style="font-size: .7rem;">LOGOUT</span>
+                            {% elif log.action == 'edit' %}
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 font-monospace" style="font-size: .7rem;">EDIT</span>
+                            {% elif log.action == 'role_change' %}
+                            <span class="badge bg-info-subtle text-info rounded-pill px-3 py-1 font-monospace" style="font-size: .7rem;">ROLE_CHG</span>
+                            {% elif log.action == 'password_reset' %}
+                            <span class="badge bg-warning-subtle text-warning rounded-pill px-3 py-1 font-monospace" style="font-size: .7rem;">PWD_RESET</span>
+                            {% elif log.action == 'lock' %}
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 font-monospace" style="font-size: .7rem;">LOCKED</span>
+                            {% else %}
+                            <span class="badge bg-dark-subtle text-dark rounded-pill px-3 py-1 font-monospace text-uppercase" style="font-size: .7rem;">{{ log.action }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small font-monospace text-muted">
+                            {{ log.ip_address|default:"Unknown IP" }}
+                        </td>
+                        <td class="pe-4 small text-secondary">
+                            {{ log.details }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-5 text-center text-muted">
+                            <i class="bi bi-clock-history display-4 opacity-25 d-block mb-3"></i>
+                            No activity logs recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if logs.has_other_pages %}
+        <div class="card-footer bg-white border-top py-2 px-4">
+            {# Simplified pagination #}
+            <nav class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Showing all activity events chronologically.</span>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

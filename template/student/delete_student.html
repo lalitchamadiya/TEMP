@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Delete Student: {{ student.name }}{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden" style="max-width: 500px; width: 100%;">
+        <div class="card-header bg-danger py-4 text-center border-0">
+            <i class="bi bi-exclamation-triangle-fill text-white display-4 mb-0"></i>
+        </div>
+        <div class="card-body p-5 text-center">
+            <h3 class="fw-bold mb-3">Confirm Deletion</h3>
+            <p class="text-muted mb-4 lh-base">
+                Are you sure you want to delete the student profile for <span class="text-dark fw-bold">{{ student.name }}</span>? 
+                <br><br>
+                <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill small">
+                    <i class="bi bi-info-circle me-1"></i> This action cannot be undone.
+                </span>
+            </p>
+            
+            <form method="post" class="d-grid gap-2">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg rounded-3 fw-bold shadow-sm">
+                    <i class="bi bi-trash3 me-2"></i> Yes, Delete Permanently
+                </button>
+                <a href="{% url 'student_list' %}" class="btn btn-light btn-lg rounded-3 fw-semibold border-0">
+                    Cancel and Go Back
+                </a>
+            </form>
+        </div>
+        <div class="card-footer bg-light border-0 py-3 text-center">
+            <small class="text-muted">Student ID: {{ student.roll }}</small>
+        </div>
+    </div>
+</div>
+{% endblock %}

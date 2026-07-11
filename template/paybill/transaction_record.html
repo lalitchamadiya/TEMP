@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transaction Records - HMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 h-100">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Transaction Records</h2>
+            <p class="text-muted mb-0 small">Audit and manage all financial transactions across the hostel.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="input-group input-group-sm shadow-sm" style="width: 250px;">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="material-symbols-outlined fs-6">search</i>
+                </span>
+                <input type="text" id="txnSearch" class="form-control border-start-0" placeholder="Search ID, Roll or Name...">
+            </div>
+            <button class="btn btn-white border shadow-sm btn-sm d-flex align-items-center gap-1">
+                <i class="material-symbols-outlined fs-5">filter_alt</i> Filter
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-primary shadow-sm btn-sm d-flex align-items-center gap-1 dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="material-symbols-outlined fs-5">download</i> Export
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                    <li><a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'export_transactions_csv' %}">
+                        <i class="material-symbols-outlined fs-6 text-muted">table_view</i> Download CSV
+                    </a></li>
+                    <li><a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'export_transactions_excel' %}">
+                        <i class="material-symbols-outlined fs-6 text-success">grid_on</i> Download Excel (.xlsx)
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Summary Row -->
+    <div class="row g-3 mb-4 px-2">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm glass-card p-3">
+                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">Total Volume</small>
+                <h4 class="fw-bold mb-0 mt-1">₹{{ total_revenue|default:"0.00" }}</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm glass-card p-3">
+                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">Successful</small>
+                <h4 class="fw-bold mb-0 mt-1 text-success">{{ success_count|default:"0" }}</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm glass-card p-3">
+                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">Pending/Processing</small>
+                <h4 class="fw-bold mb-0 mt-1 text-warning">{{ pending_count|default:"0" }}</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm glass-card p-3">
+                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">Failure Rate</small>
+                <h4 class="fw-bold mb-0 mt-1 text-danger">{{ failure_rate|default:"0" }}%</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="card border-0 shadow-sm glass-card overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: calc(100vh - 350px); overflow-y: auto;">
+                <table class="table align-middle table-hover mb-0" id="txnTable">
+                    <thead class="bg-light sticky-top z-1">
+                        <tr class="text-muted small text-uppercase fw-bold">
+                            <th class="ps-4">Transaction Details</th>
+                            <th>Date & Time</th>
+                            <th>Student Info</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                        <tr class="txn-row">
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">{{ tx.transaction_id }}</div>
+                                <small class="text-muted font-monospace" style="font-size: 0.75rem;">{{ tx.gateway_order_id|default:"INTERNAL" }}</small>
+                            </td>
+                            <td>
+                                <div class="small fw-semibold">{{ tx.created_at|date:"d M Y" }}</div>
+                                <div class="text-muted small">{{ tx.created_at|date:"h:i A" }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ tx.user_name }}</div>
+                                <small class="text-muted">{{ tx.enrollment_number }} • {{ tx.contact_no }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-primary">₹{{ tx.amount }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if tx.payment_type|lower == 'upi' %}
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">UPI</span>
+                                    {% elif tx.payment_type|lower == 'card' %}
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">CARD</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark border px-2 py-1">{{ tx.payment_type }}</span>
+                                    {% endif %}
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">{{ tx.bank_name|default:"" }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if tx.transaction_status == 'SUCCESSFUL' or tx.transaction_status|lower == 'completed' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                                        <i class="material-symbols-outlined fs-6 align-middle me-1">check_circle</i>Successful
+                                    </span>
+                                {% elif tx.transaction_status == 'PENDING' %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1 rounded-pill">
+                                        <i class="material-symbols-outlined fs-6 align-middle me-1">history</i>Pending
+                                    </span>
+                                {% elif tx.transaction_status == 'FAILED' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill">
+                                        <i class="material-symbols-outlined fs-6 align-middle me-1">cancel</i>Failed
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border px-3 py-1 rounded-pill">{{ tx.transaction_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-1">
+                                    {% if tx.transaction_status == 'SUCCESSFUL' or tx.transaction_status|lower == 'completed' %}
+                                    <a href="{% url 'student_app:fee_receipt' tx.transaction_id %}" target="_blank" class="btn btn-sm btn-light border p-1 d-flex" title="View Receipt">
+                                        <i class="material-symbols-outlined fs-5">visibility</i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <form method="post" action="{% url 'delete_transaction' tx.transaction_id %}" onsubmit="return confirm('Delete this record irreversibly?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-light border p-1 d-flex text-danger" title="Delete record">
+                                            <i class="material-symbols-outlined fs-5">delete</i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="material-symbols-outlined fs-1 text-muted opacity-25">receipt_long</i>
+                                <p class="text-muted mt-2">No transactions found matching the criteria.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Live Search Logic
+    document.getElementById('txnSearch').addEventListener('keyup', function() {
+        let value = this.value.toLowerCase();
+        let rows = document.querySelectorAll('.txn-row');
+        
+        rows.forEach(row => {
+            let text = row.textContent.toLowerCase();
+            row.style.display = text.includes(value) ? '' : 'none';
+        });
+    });
+
+    function exportTransactions() {
+        alert("Preparing Excel export for {{ transactions|length }} records...");
+        // In a real scenario, this would redirect to a CSV/Excel export view
+    }
+</script>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .bg-success-subtle { background-color: #dcfce7 !important; }
+    .bg-warning-subtle { background-color: #fef9c3 !important; }
+    .bg-danger-subtle { background-color: #fee2e2 !important; }
+    .bg-info-subtle { background-color: #e0f2fe !important; }
+    .bg-primary-subtle { background-color: #e0f2fe !important; }
+    
+    .table thead th {
+        font-weight: 700;
+        font-size: 0.65rem;
+        letter-spacing: 0.1em;
+        padding: 1rem 0.75rem;
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .table tbody td {
+        padding: 1.25rem 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        color: #334155;
+    }
+
+    .txn-row {
+        transition: background 0.2s ease;
+    }
+    
+    .txn-row:hover {
+        background: #f8fafc !important;
+    }
+
+    .fs-big { font-size: 80px; }
+</style>
+{% endblock %}

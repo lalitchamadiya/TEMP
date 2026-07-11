@@ -1,0 +1,119 @@
+{% load static %}
+
+<style>
+    .room-nav-pills .nav-link {
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.5rem 1.1rem;
+        border-radius: 50rem;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .room-nav-pills .nav-link:hover {
+        background: rgba(99, 102, 241, 0.05);
+        color: #6366f1;
+    }
+    .room-nav-pills .nav-link.active {
+        background: #6366f1 !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+    .search-group-premium {
+        position: relative;
+        min-width: 200px;
+    }
+    .search-group-premium .form-control {
+        padding-left: 2.5rem;
+        border-radius: 50rem;
+        background: rgba(255,255,255,0.8);
+        border: 1px solid #e2e8f0;
+        font-size: 0.85rem;
+    }
+    .search-group-premium .bi-search {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        pointer-events: none;
+    }
+    .building-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+        padding: 0.6rem 1rem;
+        background: rgba(248,250,252,0.9);
+        border-top: 1px solid rgba(226,232,240,0.6);
+        border-radius: 0 0 1rem 1rem;
+    }
+    .building-pill {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        font-size: 0.78rem; font-weight: 700; padding: 0.28rem 0.85rem;
+        border-radius: 50rem; text-decoration: none; transition: all .15s;
+        border: 1px solid rgba(226,232,240,0.9);
+        background: white; color: #64748b;
+    }
+    .building-pill:hover { background: rgba(99,102,241,0.06); color: #6366f1; border-color: rgba(99,102,241,0.25); }
+    .building-pill.active {
+        background: #6366f1; color: white; border-color: #6366f1;
+        box-shadow: 0 3px 8px rgba(99,102,241,0.25);
+    }
+    .building-pill-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+</style>
+
+<div class="mb-4">
+    <!-- Primary Nav Row -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-2 glass-card" style="border-radius: 1rem 1rem {% if buildings %}0 0{% else %}1rem 1rem{% endif %};">
+        <div class="room-nav-pills d-flex gap-1 flex-wrap">
+            <a href="{% url 'room_manage' %}" class="nav-link {% if request.resolver_match.url_name == 'room_manage' %}active{% endif %}">
+                <i class="bi bi-grid-3x3-gap me-1"></i>Overview
+            </a>
+            <a href="{% url 'room_allocate' %}" class="nav-link {% if request.resolver_match.url_name == 'room_allocate' %}active{% endif %}">
+                <i class="bi bi-person-plus me-1"></i>Allocate
+            </a>
+            <a href="{% url 'create_room' %}" class="nav-link {% if request.resolver_match.url_name == 'create_room' %}active{% endif %}">
+                <i class="bi bi-plus-circle me-1"></i>New Room
+            </a>
+            <a href="{% url 'building_list' %}" class="nav-link {% if request.resolver_match.url_name == 'building_list' or request.resolver_match.url_name == 'building_create' or request.resolver_match.url_name == 'building_edit' %}active{% endif %}">
+                <i class="bi bi-buildings me-1"></i>Buildings
+            </a>
+            <a href="{% url 'student_details_list' %}" class="nav-link {% if request.resolver_match.url_name == 'student_details_list' %}active{% endif %}">
+                <i class="bi bi-people me-1"></i>Residents
+            </a>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+            {% if request.resolver_match.url_name == 'room_manage' %}
+            <div class="search-group-premium">
+                <i class="bi bi-search"></i>
+                <form method="get" action="{% url 'room_manage' %}" id="searchForm">
+                    {% if selected_building_id %}<input type="hidden" name="building" value="{{ selected_building_id }}">{% endif %}
+                    <input type="search" name="q" value="{{ search_query|default:'' }}"
+                           class="form-control form-control-sm" placeholder="Search rooms…"
+                           oninput="this.form.submit()">
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Building Filter Pills (only on manage page) -->
+    {% if request.resolver_match.url_name == 'room_manage' and buildings %}
+    <div class="building-filter-bar glass-card" style="border-radius: 0 0 1rem 1rem;">
+        <span class="building-pill-label me-1">Filter:</span>
+        <a href="{% url 'room_manage' %}{% if search_query %}?q={{ search_query }}{% endif %}"
+           class="building-pill {% if not selected_building_id %}active{% endif %}">
+            <i class="bi bi-grid"></i> All Buildings
+        </a>
+        {% for b in buildings %}
+        <a href="{% url 'room_manage' %}?building={{ b.pk }}{% if search_query %}&q={{ search_query }}{% endif %}"
+           class="building-pill {% if selected_building_id == b.pk|stringformat:'s' %}active{% endif %}">
+            <i class="bi bi-building"></i> {{ b.name }}
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

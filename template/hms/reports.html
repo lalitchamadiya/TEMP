@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}| Reports & Analytics{% endblock %}
+{% block content %}
+<style>
+:root{--card-bg:#161b22;--glass-border:rgba(255,255,255,0.1);}
+.mod-header{background:linear-gradient(135deg,#1a1535,#12102a);border:1px solid var(--glass-border);border-radius:14px;padding:1.5rem 2rem;margin-bottom:1.5rem;}
+.report-card{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1.5rem;transition:all 0.2s;display:flex;flex-direction:column;gap:12px;}
+.report-card:hover{border-color:rgba(168,85,247,0.4);transform:translateY(-2px);}
+.report-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.stat-row:last-child{border-bottom:none;}
+</style>
+
+<div class="mod-header">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <h2 class="text-white fw-bold mb-1"><i class="bi bi-bar-chart-fill me-2" style="color:#a855f7;"></i>Reports & Analytics</h2>
+      <p class="text-white opacity-50 mb-0">Export data and view aggregated statistics across all modules</p>
+    </div>
+    <a href="{% url 'superadmin_dashboard' %}" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
+  </div>
+</div>
+
+<!-- Overview Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="report-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="report-icon" style="background:rgba(79,156,249,0.15);color:#4f9cf9;"><i class="bi bi-mortarboard-fill"></i></div>
+        <div>
+          <div style="font-size:1.8rem;font-weight:700;color:#fff;">{{ total_students }}</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Total Students</div>
+        </div>
+      </div>
+      <a href="{% url 'export_report' 'students' %}" class="btn btn-sm btn-outline-primary w-100"><i class="bi bi-download me-1"></i>Export Students CSV</a>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="report-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="report-icon" style="background:rgba(34,197,94,0.15);color:#22c55e;"><i class="bi bi-cash-coin"></i></div>
+        <div>
+          <div style="font-size:1.8rem;font-weight:700;color:#fff;">{{ total_payments }}</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Total Payments</div>
+        </div>
+      </div>
+      <a href="{% url 'export_report' 'payments' %}" class="btn btn-sm btn-outline-success w-100"><i class="bi bi-download me-1"></i>Export Payments CSV</a>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="report-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="report-icon" style="background:rgba(234,179,8,0.15);color:#eab308;"><i class="bi bi-person-vcard-fill"></i></div>
+        <div>
+          <div style="font-size:1.8rem;font-weight:700;color:#fff;">{{ staff_count }}</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Total Staff</div>
+        </div>
+      </div>
+      <a href="{% url 'export_report' 'staff' %}" class="btn btn-sm btn-outline-warning w-100 text-dark fw-bold"><i class="bi bi-download me-1"></i>Export Staff CSV</a>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="report-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="report-icon" style="background:rgba(249,115,22,0.15);color:#f97316;"><i class="bi bi-ticket-perforated-fill"></i></div>
+        <div>
+          <div style="font-size:1.8rem;font-weight:700;color:#fff;">{{ total_complaints }}</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Total Complaints</div>
+        </div>
+      </div>
+      <a href="{% url 'export_report' 'complaints' %}" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-download me-1"></i>Export Complaints CSV</a>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="report-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="report-icon" style="background:rgba(6,182,212,0.15);color:#06b6d4;"><i class="bi bi-person-badge-fill"></i></div>
+        <div>
+          <div style="font-size:1.8rem;font-weight:700;color:#fff;">Visitors</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);">All Visitor Records</div>
+        </div>
+      </div>
+      <a href="{% url 'export_report' 'visitors' %}" class="btn btn-sm btn-outline-info w-100"><i class="bi bi-download me-1"></i>Export Visitors CSV</a>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="report-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="report-icon" style="background:rgba(168,85,247,0.15);color:#a855f7;"><i class="bi bi-currency-rupee"></i></div>
+        <div>
+          <div style="font-size:1.8rem;font-weight:700;color:#22c55e;">₹{{ total_revenue|floatformat:0 }}</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Total Revenue</div>
+        </div>
+      </div>
+      <a href="{% url 'fee_manager' %}" class="btn btn-sm btn-outline-light w-100"><i class="bi bi-arrow-right me-1"></i>View Fee Manager</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

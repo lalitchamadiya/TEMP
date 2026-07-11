@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}| {{ page_title }}{% endblock %}
+{% block content %}
+<style>
+:root{--card-bg:#161b22;--glass-border:rgba(255,255,255,0.1);}
+.panel-card{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:14px;padding:2rem;}
+.form-control,.form-select{background:#0d1117;border:1px solid var(--glass-border);color:#fff;}
+.form-control:focus,.form-select:focus{background:#0d1117;border-color:#a855f7;color:#fff;box-shadow:0 0 0 3px rgba(168,85,247,0.15);}
+label{color:rgba(255,255,255,0.6);font-size:0.82rem;}
+</style>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h2 class="text-white fw-bold mb-0"><i class="bi bi-boxes me-2" style="color:#a855f7;"></i>{{ page_title }}</h2>
+  <a href="{% url 'inventory_list' %}" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+<div class="panel-card">
+  <form method="post" action="{% if item %}{% url 'inventory_edit' item.pk %}{% else %}{% url 'inventory_create' %}{% endif %}">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label">Item Name *</label><input type="text" name="name" class="form-control" value="{{ item.name|default:'' }}" required></div>
+      <div class="col-md-6"><label class="form-label">Category *</label>
+        <select name="category" class="form-select" required>{% for v,l in categories %}<option value="{{ v }}" {% if item.category == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      </div>
+      <div class="col-md-4"><label class="form-label">Total Quantity</label><input type="number" name="quantity" class="form-control" value="{{ item.quantity|default:1 }}" min="0"></div>
+      <div class="col-md-4"><label class="form-label">Available Quantity</label><input type="number" name="available_quantity" class="form-control" value="{{ item.available_quantity|default:1 }}" min="0"></div>
+      <div class="col-md-4"><label class="form-label">Status</label>
+        <select name="status" class="form-select">{% for v,l in statuses %}<option value="{{ v }}" {% if item.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      </div>
+      <div class="col-md-6"><label class="form-label">Vendor Name</label><input type="text" name="vendor_name" class="form-control" value="{{ item.vendor_name|default:'' }}"></div>
+      <div class="col-md-6"><label class="form-label">Vendor Contact</label><input type="text" name="vendor_contact" class="form-control" value="{{ item.vendor_contact|default:'' }}"></div>
+      <div class="col-md-6"><label class="form-label">Purchase Order No.</label><input type="text" name="purchase_order_no" class="form-control" value="{{ item.purchase_order_no|default:'' }}"></div>
+      <div class="col-12 d-flex gap-2 justify-content-end mt-2">
+        <a href="{% url 'inventory_list' %}" class="btn btn-outline-light">Cancel</a>
+        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check2-circle me-1"></i>Save</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

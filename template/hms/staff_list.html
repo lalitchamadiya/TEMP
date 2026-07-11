@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% block title %}| Staff Management{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+
+  {# ── Page Header ──────────────────────────────────────────────────── #}
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-person-vcard-fill me-2 text-warning"></i>Staff Management</h2>
+      <p class="text-muted small mb-0">Manage hostel staff accounts, roles, shifts, and performance.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="?export=csv" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-download me-1"></i>Export CSV
+      </a>
+      <a href="{% url 'staff_create' %}" class="btn btn-primary btn-sm rounded-3">
+        <i class="bi bi-person-plus-fill me-1"></i>Add Staff
+      </a>
+    </div>
+  </div>
+
+  {% include '_messages.html' %}
+
+  {# ── Stats Cards ──────────────────────────────────────────────────── #}
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-2">
+      <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4 border-primary">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-people-fill fs-4 text-primary opacity-75 me-2"></i>
+            <span class="small text-muted fw-semibold">Total</span>
+          </div>
+          <div class="fs-2 fw-bold">{{ stats.total }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
+      <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4 border-success">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-person-check-fill fs-4 text-success opacity-75 me-2"></i>
+            <span class="small text-muted fw-semibold">Active</span>
+          </div>
+          <div class="fs-2 fw-bold">{{ stats.active }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
+      <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4 border-danger">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-person-x-fill fs-4 text-danger opacity-75 me-2"></i>
+            <span class="small text-muted fw-semibold">Inactive</span>
+          </div>
+          <div class="fs-2 fw-bold">{{ stats.inactive }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
+      <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4 border-warning">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-calendar-event fs-4 text-warning opacity-75 me-2"></i>
+            <span class="small text-muted fw-semibold">On Leave</span>
+          </div>
+          <div class="fs-2 fw-bold">{{ stats.on_leave }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
+      <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4 border-info">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-briefcase-fill fs-4 text-info opacity-75 me-2"></i>
+            <span class="small text-muted fw-semibold">Departments</span>
+          </div>
+          <div class="fs-2 fw-bold">{{ stats.designations }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
+      <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4" style="border-color:#ec4899!important">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-person-plus fs-4 opacity-75 me-2" style="color:#ec4899"></i>
+            <span class="small text-muted fw-semibold">New (7d)</span>
+          </div>
+          <div class="fs-2 fw-bold">{{ stats.new_this_week }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Filter Bar ───────────────────────────────────────────────────── #}
+  <div class="card border-0 shadow-sm rounded-4 mb-3">
+    <div class="card-body p-3">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-12 col-md-3">
+          <label class="form-label small fw-semibold text-secondary mb-1">Search</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" name="q" value="{{ search }}" class="form-control border-start-0 bg-light" placeholder="Name, email or phone…">
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold text-secondary mb-1">Designation</label>
+          <select name="designation" class="form-select form-select-sm bg-light">
+            <option value="">All Designations</option>
+            {% for val, lbl in designations %}
+            <option value="{{ val }}" {% if designation_filter == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold text-secondary mb-1">Shift</label>
+          <select name="shift" class="form-select form-select-sm bg-light">
+            <option value="">All Shifts</option>
+            {% for val, lbl in shifts %}
+            <option value="{{ val }}" {% if shift_filter == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold text-secondary mb-1">Status</label>
+          <select name="status" class="form-select form-select-sm bg-light">
+            <option value="">All Status</option>
+            {% for val, lbl in statuses %}
+            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold text-secondary mb-1">Performance</label>
+          <select name="performance" class="form-select form-select-sm bg-light">
+            <option value="">All Performance</option>
+            {% for val, lbl in performances %}
+            <option value="{{ val }}" {% if performance_filter == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-1 d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Filter</button>
+          <a href="{% url 'staff_list' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── Staff Table ───────────────────────────────────────────────────── #}
+  <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <form method="post" id="bulkForm">
+      {% csrf_token %}
+      {# Bulk Actions Bar #}
+      <div class="card-header bg-white border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2 py-2 px-3">
+        <div class="d-flex align-items-center gap-2">
+          <input class="form-check-input mt-0" type="checkbox" id="selectAll" title="Select all">
+          <span class="text-muted small" id="selectedCount">0 selected</span>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <select name="bulk_action" class="form-select form-select-sm" style="width:auto;">
+            <option value="">Bulk Action</option>
+            <option value="activate">Activate</option>
+            <option value="deactivate">Deactivate</option>
+            <option value="export">Export Selected (CSV)</option>
+            <option value="delete">Delete Selected</option>
+          </select>
+          <button type="submit" class="btn btn-secondary btn-sm" id="bulkApply">Apply</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3 py-3" style="width:40px;"></th>
+              <th class="py-3 text-uppercase fw-bold text-secondary" style="font-size:.72rem;">Staff</th>
+              <th class="py-3 text-uppercase fw-bold text-secondary" style="font-size:.72rem;">Contact</th>
+              <th class="py-3 text-uppercase fw-bold text-secondary" style="font-size:.72rem;">Designation</th>
+              <th class="py-3 text-uppercase fw-bold text-secondary" style="font-size:.72rem;">Shift</th>
+              <th class="py-3 text-uppercase fw-bold text-secondary" style="font-size:.72rem;">Salary</th>
+              <th class="py-3 text-uppercase fw-bold text-secondary" style="font-size:.72rem;">Performance</th>
+              <th class="py-3 text-uppercase fw-bold text-secondary" style="font-size:.72rem;">Status</th>
+              <th class="py-3 text-uppercase fw-bold text-secondary" style="font-size:.72rem;">Joined</th>
+              <th class="pe-3 py-3 text-end text-uppercase fw-bold text-secondary" style="font-size:.72rem;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in page_obj %}
+            <tr>
+              <td class="ps-3">
+                <input class="form-check-input row-check" type="checkbox" name="selected_staff" value="{{ s.id }}">
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  {% if s.user.profile.photo %}
+                  <img src="{{ s.user.profile.photo.url }}" class="rounded-circle object-fit-cover shadow-sm" width="40" height="40">
+                  {% else %}
+                  <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center fw-bold" style="width:40px;height:40px;font-size:.9rem;">
+                    {{ s.name|first|upper }}
+                  </div>
+                  {% endif %}
+                  <div>
+                    <div class="fw-semibold small">{{ s.name }}</div>
+                    <div class="text-muted" style="font-size:.72rem;">
+                      {% if s.user %}@{{ s.user.username }}{% else %}<span class="fst-italic">no login</span>{% endif %}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="small text-muted">{{ s.email }}</div>
+                <div class="text-muted" style="font-size:.72rem;">{{ s.phone|default:"—" }}</div>
+              </td>
+              <td>
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1">
+                  {{ s.get_designation_display }}
+                </span>
+              </td>
+              <td class="small text-muted">{{ s.get_shift_display }}</td>
+              <td class="fw-semibold small" style="color:#16a34a;">₹{{ s.salary|floatformat:0 }}</td>
+              <td>
+                <span class="badge rounded-pill px-2 py-1
+                  {% if s.performance == 'excellent' %}bg-success-subtle text-success
+                  {% elif s.performance == 'good' %}bg-success-subtle text-success
+                  {% elif s.performance == 'average' %}bg-warning-subtle text-warning
+                  {% else %}bg-danger-subtle text-danger{% endif %}">
+                  {{ s.get_performance_display }}
+                </span>
+              </td>
+              <td>
+                <span class="badge rounded-pill px-2 py-1
+                  {% if s.status == 'active' %}bg-success-subtle text-success
+                  {% elif s.status == 'on_leave' %}bg-warning-subtle text-warning
+                  {% else %}bg-danger-subtle text-danger{% endif %}">
+                  <i class="bi bi-circle-fill me-1" style="font-size:.4rem;"></i>
+                  {{ s.get_status_display }}
+                </span>
+              </td>
+              <td class="text-muted small">{{ s.doj|date:"d M Y" }}</td>
+              <td class="pe-3 text-end">
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary rounded-3 dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-three-dots"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3" style="min-width:200px;">
+                    <li>
+                      <a class="dropdown-item small" href="{% url 'staff_edit' s.pk %}">
+                        <i class="bi bi-pencil me-2 text-primary"></i>Edit Staff
+                      </a>
+                    </li>
+                    {% if s.user %}
+                    <li>
+                      <a class="dropdown-item small" href="{% url 'user_detail' s.user.id %}">
+                        <i class="bi bi-eye me-2 text-info"></i>View Profile
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item small" href="{% url 'user_reset_password' s.user.id %}">
+                        <i class="bi bi-key me-2 text-warning"></i>Reset Password
+                      </a>
+                    </li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider my-1"></li>
+                    {# Toggle Active/Inactive #}
+                    <li>
+                      <form method="post" action="{% url 'staff_toggle_status' s.pk %}">
+                        {% csrf_token %}
+                        <button class="dropdown-item small" type="submit">
+                          {% if s.status == 'active' %}
+                          <i class="bi bi-person-dash me-2 text-warning"></i>Set Inactive
+                          {% else %}
+                          <i class="bi bi-person-check me-2 text-success"></i>Set Active
+                          {% endif %}
+                        </button>
+                      </form>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                      <button class="dropdown-item small text-danger" type="button"
+                        data-bs-toggle="modal" data-bs-target="#delModal{{ s.pk }}">
+                        <i class="bi bi-trash me-2"></i>Delete Staff
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+
+            {# Delete Confirm Modal #}
+            <div class="modal fade" id="delModal{{ s.pk }}" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content border-0 shadow rounded-4">
+                  <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Delete {{ s.name }}?</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body text-muted small">
+                    This will permanently delete the staff profile{% if s.user %} and their login account{% endif %}. This action cannot be undone.
+                  </div>
+                  <div class="modal-footer border-0 pt-0">
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'staff_delete' s.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {% empty %}
+            <tr>
+              <td colspan="10" class="py-5 text-center text-muted">
+                <i class="bi bi-person-x display-4 opacity-25 d-block mb-2"></i>
+                No staff members found matching your criteria.
+                <div class="mt-2">
+                  <a href="{% url 'staff_create' %}" class="btn btn-sm btn-primary">Add First Staff</a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+
+    {# Pagination #}
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center px-3 py-2">
+      <span class="text-muted small">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        &nbsp;·&nbsp; {{ page_obj.paginator.count }} total staff
+      </span>
+      <nav>
+        <ul class="pagination pagination-sm mb-0 gap-1">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link rounded-3" href="?page={{ page_obj.previous_page_number }}&q={{ search }}&designation={{ designation_filter }}&status={{ status_filter }}&shift={{ shift_filter }}&performance={{ performance_filter }}">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+          {% endif %}
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link rounded-3" href="?page={{ page_obj.next_page_number }}&q={{ search }}&designation={{ designation_filter }}&status={{ status_filter }}&shift={{ shift_filter }}&performance={{ performance_filter }}">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+// Bulk selection logic
+const selectAll = document.getElementById('selectAll');
+const rowChecks = document.querySelectorAll('.row-check');
+const countLabel = document.getElementById('selectedCount');
+
+function updateCount() {
+  const count = document.querySelectorAll('.row-check:checked').length;
+  countLabel.textContent = count + ' selected';
+}
+selectAll.addEventListener('change', () => {
+  rowChecks.forEach(c => c.checked = selectAll.checked);
+  updateCount();
+});
+rowChecks.forEach(c => c.addEventListener('change', updateCount));
+
+// Bulk-delete confirmation
+document.getElementById('bulkApply').addEventListener('click', function(e) {
+  const action = document.querySelector('[name="bulk_action"]').value;
+  const checked = document.querySelectorAll('.row-check:checked').length;
+  if (action === 'delete' && checked > 0) {
+    if (!confirm(`Are you sure you want to delete ${checked} staff member(s)? This cannot be undone.`)) {
+      e.preventDefault();
+    }
+  }
+});
+</script>
+{% endblock %}

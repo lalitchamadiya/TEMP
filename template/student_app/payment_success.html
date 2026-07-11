@@ -1,0 +1,18 @@
+{% extends "student_base.html" %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card border shadow rounded">
+                <div class="card-header bg-success text-white py-2">
+                    <h5 class="mb-0">Payment Successful</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-success">Your payment has been processed successfully!</p>
+                    <a href="{% url 'student_app:student_profile' %}" class="btn btn-primary">Go to Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

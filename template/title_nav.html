@@ -1,0 +1,30 @@
+{% load static %}
+
+{% block content %}
+<a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">Noble Hostel</a>
+  <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="navbar-nav ">
+    {% if request.user.is_authenticated %}
+    <form action="{% url 'logout'%}" method="post" class="nav-item text-nowrap d-flex justify-content-center align-items-center">
+      {% csrf_token %}
+      {% if request.user.student and request.user.student.photo %}
+        <img src="{{ request.user.student.photo.url }}" class="shadow-sm" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 2px solid #e2e8f0;" alt="User">
+      {% else %}
+        <img src="{% static 'image/User.jpg' %}" class="shadow-sm" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 2px solid #e2e8f0;" alt="User">
+      {% endif %}
+      <a class="nav-link m-2 fw-semibold" href="#">
+        {% if request.user.student %}
+          {{ request.user.student.name }}
+        {% else %}
+          {{ request.user.username }}
+        {% endif %}
+      </a>
+      <input class="btn btn-sm btn-outline-secondary m-2 mx-3" type="submit" value="Logout">
+    </form>
+  {% else %}
+    <!-- display login link or other content for anonymous users -->
+  {% endif %}
+  </div>
+{% endblock  %}

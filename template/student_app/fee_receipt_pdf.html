@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fee Payment Receipt - {{ payment.transaction_id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.4;
+            font-size: 10pt;
+        }
+        .container {
+            width: 100%;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #0d6efd;
+            margin: 0;
+            font-size: 24pt;
+            text-transform: uppercase;
+        }
+        .header p {
+            margin: 2px 0;
+            color: #666;
+        }
+        .receipt-title {
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .info-table td {
+            padding: 8px;
+            vertical-align: top;
+        }
+        .label {
+            font-weight: bold;
+            color: #666;
+            width: 30%;
+        }
+        .value {
+            width: 70%;
+            border-bottom: 1px dotted #ccc;
+        }
+        .fee-details {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .fee-details th {
+            background-color: #0d6efd;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .fee-details td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .total-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: right;
+        }
+        .signature-line {
+            border-top: 1px solid #333;
+            width: 200px;
+            display: inline-block;
+            margin-top: 40px;
+            text-align: center;
+        }
+        .watermark {
+            position: absolute;
+            top: 40%;
+            left: 20%;
+            font-size: 60pt;
+            color: rgba(0, 0, 0, 0.05);
+            transform: rotate(-45deg);
+            z-index: -1;
+        }
+        .status-badge {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="watermark">PAID</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Hostel Management System</h1>
+            <p>123 Institutional Area, Knowledge Park, City - 400001</p>
+            <p>Phone: +91 999 888 7777 | Email: accounts@hostelsystem.com</p>
+            <p>Website: www.hostelsystem.com</p>
+        </div>
+
+        <div class="receipt-title">FEE PAYMENT RECEIPT</div>
+
+        <table class="info-table">
+            <tr>
+                <td class="label">Receipt Number:</td>
+                <td class="value">{{ payment.receipt_no }}</td>
+                <td class="label">Date:</td>
+                <td class="value">{{ payment.created_at|date:"d M Y, h:i A" }}</td>
+            </tr>
+            <tr>
+                <td class="label">Transaction ID:</td>
+                <td class="value">{{ payment.transaction_id }}</td>
+                <td class="label">Status:</td>
+                <td class="value"><span class="status-badge">{{ payment.transaction_status }}</span></td>
+            </tr>
+        </table>
+
+        <div style="margin-top: 10px; font-weight: bold; color: #0d6efd; border-bottom: 1px solid #eee; padding-bottom: 5px;">STUDENT INFORMATION</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Student Name:</td>
+                <td class="value">{{ student.name }}</td>
+            </tr>
+            <tr>
+                <td class="label">Enrollment No:</td>
+                <td class="value">{{ student.roll|default:student.student_id }}</td>
+            </tr>
+            <tr>
+                <td class="label">Course/Dept:</td>
+                <td class="value">{{ student.get_course_display }} / {{ student.get_department_display }}</td>
+            </tr>
+        </table>
+
+        <div style="margin-top: 20px; font-weight: bold; color: #0d6efd; border-bottom: 1px solid #eee; padding-bottom: 5px;">PAYMENT DETAILS</div>
+        <table class="fee-details">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th style="text-align: right;">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Hostel Fee Payment (Transaction: {{ payment.transaction_id }})</td>
+                    <td style="text-align: right;">{{ payment.amount }}</td>
+                </tr>
+                {% if payment.fee_breakdown %}
+                    {% for item, amt in payment.fee_breakdown.items %}
+                    <tr>
+                        <td style="padding-left: 30px; font-size: 9pt; color: #666;">- {{ item }}</td>
+                        <td style="text-align: right; font-size: 9pt; color: #666;">{{ amt }}</td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+                <tr class="total-row">
+                    <td>Total Amount Received</td>
+                    <td style="text-align: right;">₹{{ payment.amount }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 10px;">
+            <p><strong>Payment Method:</strong> {{ payment.payment_type }} (via {{ payment.gateway_name|default:"Direct HMS" }})</p>
+            {% if payment.gateway_payment_id %}
+            <p><strong>Gateway Ref:</strong> {{ payment.gateway_payment_id }}</p>
+            {% endif %}
+        </div>
+
+        <div class="footer">
+            <div class="signature-line">
+                Authorized Signatory<br>
+                <small>(Accounts Department)</small>
+            </div>
+            <p style="margin-top: 40px; font-size: 8pt; color: #999; text-align: center;">
+                This is a computer-generated receipt and does not require a physical signature.<br>
+                Generated on {{ today|date:"d M Y, h:i A" }}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

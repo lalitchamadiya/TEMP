@@ -1,0 +1,52 @@
+{% extends "student_base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h2 class="h3 fw-bold text-dark mb-2 mt-3">Weekly Food Schedule</h2>
+        <p class="text-muted">Stay healthy with our delicious meal plans crafted by certified nutritionists.</p>
+    </div>
+    <div class="pro-card shadow-lg border-0 overflow-hidden mb-5">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th class="py-3 px-4 text-primary fw-bold text-uppercase border-bottom-0">Day</th>
+                        <th class="py-3 px-4 text-success fw-bold text-uppercase border-bottom-0">Breakfast</th>
+                        <th class="py-3 px-4 text-warning fw-bold text-uppercase border-bottom-0">Lunch</th>
+                        <th class="py-3 px-4 text-danger fw-bold text-uppercase border-bottom-0">Dinner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day, meals in food_schedule.items %}
+                    <tr class="border-bottom">
+                        <td class="px-4 py-4 text-dark fw-bold bg-light bg-opacity-50"><span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm">{{ day }}</span></td>
+                        <td class="px-3 py-4">
+                            <div class="d-flex flex-column align-items-center">
+                                <img src="{{ meals.breakfast_image }}" alt="{{ meals.breakfast }}" class="img-fluid rounded-circle shadow-sm border border-2 border-white mb-3" style="width: 70px; height: 70px; object-fit: cover;">
+                                <span class="fw-semibold text-secondary small">{{ meals.breakfast }}</span>
+                            </div>
+                        </td>
+                        <td class="px-3 py-4 bg-light bg-opacity-25">
+                            <div class="d-flex flex-column align-items-center">
+                                <img src="{{ meals.lunch_image }}" alt="{{ meals.lunch }}" class="img-fluid rounded-circle shadow-sm border border-2 border-white mb-3" style="width: 70px; height: 70px; object-fit: cover;">
+                                <span class="fw-semibold text-secondary small">{{ meals.lunch }}</span>
+                            </div>
+                        </td>
+                        <td class="px-3 py-4">
+                            <div class="d-flex flex-column align-items-center">
+                                <img src="{{ meals.dinner_image }}" alt="{{ meals.dinner }}" class="img-fluid rounded-circle shadow-sm border border-2 border-white mb-3" style="width: 70px; height: 70px; object-fit: cover;">
+                                <span class="fw-semibold text-secondary small">{{ meals.dinner }}</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

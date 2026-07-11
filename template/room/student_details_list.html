@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --accent: #6366f1;
+        --accent-2: #a855f7;
+        --accent-soft: rgba(99,102,241,0.07);
+        --glass-bg: rgba(255,255,255,0.85);
+        --border: rgba(226,232,240,0.8);
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+    }
+    body { font-family: 'Outfit', sans-serif; background: #f1f5f9; }
+
+    /* Page Header */
+    .page-header {
+        background: var(--glass-bg);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.25rem 1.5rem;
+        display: flex; align-items: center; justify-content: space-between;
+        margin-top: 1.5rem; margin-bottom: 1.5rem;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.02);
+    }
+    .page-header h4 { font-weight: 700; margin: 0; font-size: 1.15rem; color: var(--text-main); }
+    .page-header p  { margin: 0; font-size: 0.82rem; color: var(--text-muted); }
+
+    /* Stats Section */
+    .stat-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.2rem;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+        display: flex; align-items: center; gap: 1rem;
+    }
+    .stat-icon {
+        width: 44px; height: 44px;
+        border-radius: 0.75rem;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    /* Card Layout */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        overflow: hidden;
+    }
+
+    /* Actions Bar */
+    .actions-bar {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.4);
+    }
+    .search-input-group {
+        position: relative;
+        max-width: 380px; width: 100%;
+    }
+    .search-input-group i {
+        position: absolute; left: 1rem; top: 50%;
+        transform: translateY(-50%); color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+    .search-input-group .form-control {
+        padding-left: 2.5rem;
+        background: rgba(248, 250, 252, 0.8) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 0.75rem;
+        font-size: 0.88rem;
+    }
+    .search-input-group .form-control:focus {
+        background: white !important;
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.15) !important;
+    }
+
+    /* Table styling */
+    .table thead {
+        background: rgba(248, 250, 252, 0.7);
+        border-bottom: 2px solid var(--border);
+    }
+    .table thead th {
+        font-size: 0.72rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        color: var(--text-muted); padding: 0.9rem 1.25rem;
+        border-bottom: none;
+    }
+    .table tbody td {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.88rem;
+        color: var(--text-main);
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+
+    /* Badges */
+    .badge-glass-primary {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid rgba(99,102,241,0.25);
+    }
+    .badge-glass-secondary {
+        background: rgba(148,163,184,0.08);
+        color: #475569;
+        border: 1px solid rgba(148,163,184,0.25);
+    }
+
+    /* Resident item */
+    .student-avatar {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .student-avatar-empty {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: var(--text-muted);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border: 2px solid white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+</style>
+
+<div class="container-fluid py-2 px-md-4">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h4><i class="bi bi-people me-2 text-primary"></i>Resident Registry</h4>
+            <p>Active student room allocations and presence status list</p>
+        </div>
+        <div>
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill fw-semibold" id="registryCount">
+                Total Allocated: 0
+            </span>
+        </div>
+    </div>
+
+    {% include "room/room_nav.html" %}
+
+    <!-- Info Stats Registry Grid -->
+    <div class="row g-3 mb-4 mt-1">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e0e7ff; color:#4f46e5;"><i class="bi bi-journal-bookmark-fill"></i></div>
+                <div>
+                    <h6 class="mb-0 text-muted fw-semibold" style="font-size:0.75rem; text-transform:uppercase;">Allocated Beds</h6>
+                    <h4 class="mb-0 fw-bold mt-1 text-dark" id="statAllocated">0</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#ecfdf5; color:#059669;"><i class="bi bi-person-check-fill"></i></div>
+                <div>
+                    <h6 class="mb-0 text-muted fw-semibold" style="font-size:0.75rem; text-transform:uppercase;">Present Today</h6>
+                    <h4 class="mb-0 fw-bold mt-1 text-success" id="statPresent">0</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fef2f2; color:#dc2626;"><i class="bi bi-person-x-fill"></i></div>
+                <div>
+                    <h6 class="mb-0 text-muted fw-semibold" style="font-size:0.75rem; text-transform:uppercase;">On Leave</h6>
+                    <h4 class="mb-0 fw-bold mt-1 text-danger" id="statLeave">0</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main List Card -->
+    <div class="glass-card mb-4 mx-1">
+        <!-- Actions/Search bar -->
+        <div class="actions-bar d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="search-input-group">
+                <i class="bi bi-search"></i>
+                <input type="text" id="registrySearch" class="form-control form-control-sm" placeholder="Search name, roll, phone, room, or building...">
+            </div>
+            <div class="text-muted small" id="searchResultLabel">
+                Showing all records
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="registryTable">
+                <thead>
+                    <tr>
+                        <th>Resident Info</th>
+                        <th>Contact details</th>
+                        <th>Assigned Hostel Unit</th>
+                        <th>Beds Info</th>
+                        <th>Current Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bed in beds %}
+                    {% if bed.student.roll %}
+                    <tr class="registry-row" 
+                        data-name="{{ bed.student.name }}" 
+                        data-roll="{{ bed.student.roll }}" 
+                        data-phone="{{ bed.student.phone_number }}"
+                        data-email="{{ bed.student.email }}"
+                        data-room="{{ bed.room.room_number }}"
+                        data-building="{{ bed.room.building.name }}"
+                        data-status="{% if bed.student.hostelleave_set.last.status == 'approved' %}leave{% else %}present{% endif %}">
+                        
+                        <!-- Resident Info -->
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                {% if bed.student.photo %}
+                                    <img src="{{ bed.student.photo.url }}" class="student-avatar" alt="{{ bed.student.name }}">
+                                {% else %}
+                                    <div class="student-avatar-empty">
+                                        {{ bed.student.name|slice:":1"|upper }}
+                                    </div>
+                                {% endif %}
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ bed.student.name }}</span>
+                                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing:0.02em;">Roll No: {{ bed.student.roll }}</span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Contact details -->
+                        <td>
+                            <div class="d-flex flex-column gap-1 text-muted" style="font-size: 0.8rem;">
+                                <div><i class="bi bi-envelope me-1.5 align-middle"></i>{{ bed.student.email }}</div>
+                                {% if bed.student.phone_number %}
+                                    <div><i class="bi bi-telephone me-1.5 align-middle"></i>{{ bed.student.phone_number }}</div>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Assigned Hostel Unit -->
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold text-dark" style="font-size: 0.88rem;">{{ bed.room.building.name|default:"—" }}</span>
+                                <span class="text-muted small" style="font-size: 0.78rem;">
+                                    {% if bed.room.block %}Block {{ bed.room.get_block_display }}{% endif %}
+                                    {% if bed.room.floor %} — Floor {{ bed.room.floor.floor_number }}{% endif %}
+                                </span>
+                            </div>
+                        </td>
+
+                        <!-- Beds Info -->
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge badge-glass-primary px-2.5 py-1.5 rounded-3 fw-bold" style="font-size:0.75rem;">Room {{ bed.room.room_number }}</span>
+                                <span class="badge badge-glass-secondary px-2.5 py-1.5 rounded-3 fw-bold" style="font-size:0.75rem;">{{ bed.bed_number }}</span>
+                            </div>
+                        </td>
+
+                        <!-- Current Status -->
+                        <td>
+                            {% if bed.student.hostelleave_set.last.status == 'approved' %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-calendar-event me-1"></i>On Leave</span> 
+                            {% else %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-check-circle me-1"></i>Present</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 opacity-25"></i>
+                            <div class="mt-2 fw-semibold">No allocated student records found</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const rows = document.querySelectorAll('.registry-row');
+    const searchInput = document.getElementById('registrySearch');
+    const registryCountBadge = document.getElementById('registryCount');
+    const statAllocated = document.getElementById('statAllocated');
+    const statPresent = document.getElementById('statPresent');
+    const statLeave = document.getElementById('statLeave');
+    const searchResultLabel = document.getElementById('searchResultLabel');
+
+    // Calculate registry statistics
+    function updateRegistryStats() {
+        const total = rows.length;
+        let presentCount = 0;
+        let leaveCount = 0;
+
+        rows.forEach(row => {
+            if (row.dataset.status === 'leave') {
+                leaveCount++;
+            } else {
+                presentCount++;
+            }
+        });
+
+        if (statAllocated) statAllocated.textContent = total;
+        if (statPresent) statPresent.textContent = presentCount;
+        if (statLeave) statLeave.textContent = leaveCount;
+        if (registryCountBadge) registryCountBadge.textContent = 'Total Allocated: ' + total;
+    }
+
+    updateRegistryStats();
+
+    // Client-side live search
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.dataset.name.toLowerCase();
+                const roll = row.dataset.roll.toLowerCase();
+                const phone = row.dataset.phone ? row.dataset.phone.toLowerCase() : '';
+                const email = row.dataset.email ? row.dataset.email.toLowerCase() : '';
+                const room = row.dataset.room.toLowerCase();
+                const building = row.dataset.building ? row.dataset.building.toLowerCase() : '';
+
+                const matches = name.includes(query) || 
+                                roll.includes(query) || 
+                                phone.includes(query) || 
+                                email.includes(query) || 
+                                room.includes(query) || 
+                                building.includes(query);
+
+                if (matches) {
+                    row.classList.remove('d-none');
+                    visibleCount++;
+                } else {
+                    row.classList.add('d-none');
+                }
+            });
+
+            if (query === '') {
+                searchResultLabel.textContent = 'Showing all records';
+            } else {
+                searchResultLabel.textContent = `Found ${visibleCount} matching record${visibleCount !== 1 ? 's' : ''}`;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

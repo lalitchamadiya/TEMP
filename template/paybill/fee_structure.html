@@ -1,0 +1,130 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+        <div>
+            <h2 class="fw-bold mb-1">Fee Structure</h2>
+            <p class="text-muted mb-0 small">Define and manage the hostel fee categories.</p>
+        </div>
+    </div>
+{% include 'paybill/paybill_nav.html' %}
+
+
+<div class="row g-4">
+    <!-- Left column: Add Fees -->
+    <div class="col-lg-6">
+        <form method="post" action="{% url 'fee_structure' %}">
+            {% csrf_token %}
+            <h5 class="mt-3 d-flex align-items-center">
+                <span class="material-symbols-outlined text-muted" style="font-size: 25px; margin-right:2px;">keyboard_double_arrow_right</span>Add Fees
+            </h5>
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="fee_type" class="form-label text-secondary small fw-bold">Fees Type</label>
+                            <select name="fee_type" class="form-select form-select-sm" required>
+                                <option value="" disabled selected>Select Fee Type</option>
+                                <option value="rent">Hostel Rent</option>
+                                <option value="deposit">Security Deposit</option>
+                                <option value="electricity">Electricity Charges</option>
+                                <option value="mess">Mess Charges</option>
+                                <option value="maintenance">Maintenance Charges</option>
+                                <option value="other">Other Charges</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label text-secondary small fw-bold">Amount</label>
+                            <input type="text" name="amount" class="form-control form-control-sm" placeholder="Enter Amount" required />
+                        </div>
+                        <div class="col-12 mt-3">
+                            <button type="submit" class="rounded-1 btn btn-success btn-sm shadow-sm d-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined" style="font-size: 2.2vh;">Currency_rupee</span>Add Fee
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right column: Installment Config -->
+    <div class="col-lg-6">
+        <form method="post" action="{% url 'fee_structure' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_installments" />
+            <h5 class="mt-3 d-flex align-items-center">
+                <span class="material-symbols-outlined text-muted" style="font-size: 25px; margin-right:2px;">settings</span>Installment & Penalty Schedule
+            </h5>
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Part 1: Start of Year -->
+                        <div class="col-md-6">
+                            <label for="part1_due_date" class="form-label text-secondary small fw-bold">Part 1 Due Date</label>
+                            <input type="date" name="part1_due_date" class="form-control form-control-sm" value="{% if installment_config.part1_due_date %}{{ installment_config.part1_due_date|date:'Y-m-d' }}{% endif %}" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="part1_late_fee_per_day" class="form-label text-secondary small fw-bold">Part 1 Late Fee (₹/Day)</label>
+                            <input type="number" name="part1_late_fee_per_day" class="form-control form-control-sm" step="0.01" value="{{ installment_config.part1_late_fee_per_day|default:'0.00' }}" required />
+                        </div>
+
+                        <!-- Part 2: Mid-Year -->
+                        <div class="col-md-6">
+                            <label for="part2_due_date" class="form-label text-secondary small fw-bold">Part 2 Due Date</label>
+                            <input type="date" name="part2_due_date" class="form-control form-control-sm" value="{% if installment_config.part2_due_date %}{{ installment_config.part2_due_date|date:'Y-m-d' }}{% endif %}" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="part2_late_fee_per_day" class="form-label text-secondary small fw-bold">Part 2 Late Fee (₹/Day)</label>
+                            <input type="number" name="part2_late_fee_per_day" class="form-control form-control-sm" step="0.01" value="{{ installment_config.part2_late_fee_per_day|default:'0.00' }}" required />
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <button type="submit" class="rounded-1 btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined" style="font-size: 2.2vh;">save</span>Save Schedule
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+    <div class="table-responsive">
+        <table class="table align-middle table-hover mb-0">
+            <thead class="bg-light">
+                <tr class="text-muted small text-uppercase fw-bold">
+                    <th class="ps-4">Fee Name</th>
+                    <th>Amount</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fee_structure in fee_structures %}
+                <tr>
+                    <td class="ps-4 fw-semibold">{{ fee_structure.get_fee_type_display }}</td>
+                    <td class="text-primary fw-bold">₹{{ fee_structure.amount }}</td>
+                    <td class="text-end pe-4">
+                        <form method="post" action="{% url 'delete_fee_item' fee_structure.id %}" onsubmit="return confirm('Delete this fee item?')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-light border p-1 d-inline-flex text-danger" title="Delete">
+                                <i class="material-symbols-outlined fs-5">delete</i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center py-5 text-muted">
+                        <i class="material-symbols-outlined fs-1 opacity-25">account_balance</i>
+                        <p class="mt-2 mb-0">No fee categories defined yet.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+{% endblock %}

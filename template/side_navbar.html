@@ -1,0 +1,133 @@
+{% load static %}
+{% load rbac_tags %}
+
+{% block content %}
+<div class="col-md-3 col-lg-2 d-md-block p-0 sidebar-wrapper collapse z-2">
+    <nav id="sidebarMenu" class="sidebar-pro">
+        
+        <!-- Premium Brand Header -->
+        <div class="sidebar-brand px-4 py-2 mb-2 d-flex align-items-center">
+            <div class="brand-icon me-3 rounded-3 bg-gradient-primary d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
+                <span class="material-symbols-outlined text-white fs-5">diamond</span>
+            </div>
+            <div class="d-flex flex-column">
+                <span class="fs-5 fw-bold text-white lh-1 tracking-tighter">HMS<span class="fw-light opacity-75">Core</span></span>
+                <span class="text-white opacity-40 mt-1" style="font-size: 0.625rem; letter-spacing: 0.05em; text-transform: uppercase;">Enterprise Edition</span>
+            </div>
+        </div>
+
+        <ul class="nav flex-column mb-auto">
+            {% if user.is_superuser or user.profile.role.is_superadmin or user.profile.role.name == 'Admin' or user.profile.role.name == 'Staff' %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'superadmin_dashboard' %}active{% endif %}" aria-current="page" href="{% url 'superadmin_dashboard' %}">
+                    <span class="material-symbols-outlined">speed</span>
+                    Dashboard
+                </a>
+            </li>
+            {% endif %}
+
+            {% if user.profile.role.name == 'Warden' %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'warden_dashboard' %}active{% endif %}" href="{% url 'warden_dashboard' %}">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    Warden Dashboard
+                </a>
+            </li>
+            {% endif %}
+
+            {% if user.profile.role.name == 'Student' %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}" href="{% url 'student_app:student_dashboard' %}">
+                    <span class="material-symbols-outlined">person_pin</span>
+                    My Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'my_gate_passes' %}active{% endif %}" href="{% url 'student_app:my_gate_passes' %}">
+                    <span class="material-symbols-outlined">qr_code</span>
+                    My Gate Passes
+                </a>
+            </li>
+            {% endif %}
+            
+            {# Student profile / passes section always visible to student #}
+            {% if user.profile.role.name == 'Student' %}
+            <li class="nav-section">
+                <span class="section-title">My Profile</span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'student_app:student_profile' %}">
+                    <span class="material-symbols-outlined">person</span>
+                    My Profile
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'student_app:change_password' %}">
+                    <span class="material-symbols-outlined">lock</span>
+                    Change Password
+                </a>
+            </li>
+            <li class="nav-section">
+                <span class="section-title">Logistics & Fees</span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <span class="material-symbols-outlined">bed</span>
+                    My Room
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'student_app:student_leave_details' %}">
+                    <span class="material-symbols-outlined">event_note</span>
+                    My Leave Requests
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'student_app:food_schedule' %}">
+                    <span class="material-symbols-outlined">restaurant</span>
+                    Food Schedule
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'student_app:student_fee_details' %}">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    Fee Details
+                </a>
+            </li>
+            {% else %}
+            {# Dynamic Admin Sidebar Gating #}
+            {% if visible_modules %}
+            <li class="nav-section">
+                <span class="section-title">HMS Modules</span>
+            </li>
+            {% for module in visible_modules %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% url module.url_name %}">
+                    {% if "bi-" in module.icon %}
+                    <i class="bi {{ module.icon }} me-3 opacity-75 fs-5"></i>
+                    {% else %}
+                    <span class="material-symbols-outlined me-3">{{ module.icon }}</span>
+                    {% endif %}
+                    {{ module.menu_label }}
+                </a>
+            </li>
+            {% endfor %}
+            {% endif %}
+            {% endif %}
+
+        </ul>
+        
+        <!-- Bottom Role Badge -->
+        <div class="user-role-card mt-5 mb-4">
+            <div class="user-role-icon shadow-sm border border-secondary border-opacity-25">
+                <span class="material-symbols-outlined text-primary fs-5">shield_person</span>
+            </div>
+            <div class="d-flex flex-column">
+                <span class="fw-bold text-white fs-6 lh-1">{{ user.profile.role.name|default:"No Role" }}</span>
+                <span class="text-white opacity-50" style="font-size: 0.65rem;">System Access</span>
+            </div>
+        </div>
+        
+    </nav>
+</div>
+{% endblock %}

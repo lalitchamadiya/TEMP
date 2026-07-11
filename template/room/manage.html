@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Room Management Dashboard{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .room-number-badge {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+    }
+
+    .bed-icon {
+        font-size: 1.4rem;
+        transition: transform 0.2s ease;
+    }
+    .bed-icon:hover { transform: scale(1.2); }
+
+    .status-available { color: #10b981; }
+    .status-occupied { color: #ef4444; }
+
+    .table thead th {
+        background: rgba(241, 245, 249, 0.5);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 2px solid #f1f5f9;
+        padding: 1rem;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .btn-view { background: #e0f2fe; color: #0369a1; }
+    .btn-view:hover { background: #0369a1; color: white; }
+    .btn-edit { background: #f0fdf4; color: #16a34a; }
+    .btn-edit:hover { background: #16a34a; color: white; }
+    .btn-del { background: #fee2e2; color: #b91c1c; border: none; }
+    .btn-del:hover { background: #b91c1c; color: white; }
+
+</style>
+
+<div class="container-fluid py-4">
+    
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-0" style="letter-spacing: -0.02em;">Room Management</h2>
+            <p class="text-muted small mb-0">
+                {% if selected_building %}
+                <span class="badge rounded-pill me-1" style="background:rgba(99,102,241,0.1);color:#6366f1;font-weight:700;font-size:0.75rem;">
+                    <i class="bi bi-building me-1"></i>{{ selected_building.name }}
+                </span> Showing {{ rooms|length }} room{{ rooms|length|pluralize }}
+                <a href="{% url 'room_manage' %}" class="text-muted ms-1" style="font-size:0.75rem;"><i class="bi bi-x-circle"></i> Clear</a>
+                {% else %}
+                Monitor occupancy and manage hostel infrastructure
+                {% endif %}
+            </p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <div class="d-flex align-items-center bg-white px-3 py-2 rounded-pill shadow-sm border">
+                <span class="dot bg-success me-2" style="width:8px; height:8px; border-radius:50%;"></span>
+                <span class="x-small fw-bold text-muted">AVAILABLE</span>
+                <span class="mx-2 text-divider opacity-25">|</span>
+                <span class="dot bg-danger me-2" style="width:8px; height:8px; border-radius:50%;"></span>
+                <span class="x-small fw-bold text-muted">OCCUPIED</span>
+            </div>
+            <a href="{% url 'create_room' %}" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i>New Room
+            </a>
+        </div>
+    </div>
+
+    {% include "room/room_nav.html" %}
+
+    <div class="glass-card overflow-hidden mt-2">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Room Detail</th>
+                        <th>Building / Block</th>
+                        <th>Type &amp; Wing</th>
+                        <th>Occupancy Status</th>
+                        <th>Live Bed Map</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for roomDetails in rooms %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="room-number-badge">
+                                    {{ roomDetails.room_number }}
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold text-dark">Unit #{{ roomDetails.room_number }}{% if roomDetails.room_name %} &ndash; {{ roomDetails.room_name }}{% endif %}</span>
+                                    <span class="text-muted" style="font-size: 0.7rem;">ID: RO-{{ roomDetails.id }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                {% if roomDetails.building %}
+                                <span class="fw-semibold text-dark" style="font-size:0.82rem;">{{ roomDetails.building.name }}</span>
+                                {% endif %}
+                                {% if roomDetails.block %}
+                                <span class="text-muted" style="font-size:0.7rem;"><i class="bi bi-grid me-1"></i>{{ roomDetails.get_block_display }}</span>
+                                {% endif %}
+                                {% if not roomDetails.building and not roomDetails.block %}
+                                <span class="text-muted" style="font-size:0.75rem;">—</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <span class="badge bg-light text-primary border border-primary border-opacity-25 rounded-pill mb-1" style="width: fit-content; font-size: 0.7rem;">
+                                    {{ roomDetails.room_type }} BEDS
+                                </span>
+                                <span class="fw-bold text-uppercase text-secondary" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                                    <i class="bi bi-gender-ambiguous me-1"></i>{{ roomDetails.gender }} WING
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            {% with total=roomDetails.room_type occupied=roomDetails.bed_set.all|length %}
+                                <div class="progress mb-1" style="height: 6px; width: 100px; border-radius: 10px; background: #f1f5f9;">
+                                    {% widthratio roomDetails.bed_set.all|length roomDetails.room_type 100 as percentage %}
+                                    <div class="progress-bar {% if percentage == '100' %}bg-danger{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ percentage }}%; border-radius: 10px;"></div>
+                                </div>
+                                <span class="text-muted x-small fw-bold">{{ roomDetails.bed_set.all|length }}/{{ roomDetails.room_type }} FILLED</span>
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                {% for bed in roomDetails.bed_set.all %} 
+                                    {% if bed.student %}
+                                        <i class="bi bi-person-fill status-occupied bed-icon" title="Bed {{bed.bed_number}}: {{bed.student.name}}"></i>
+                                    {% else %}
+                                        <i class="bi bi-person status-available bed-icon" title="Bed {{bed.bed_number}}: Available"></i>
+                                    {% endif %} 
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{% url 'student_allocated_view' roomDetails.id %}" class="action-btn btn-view" title="Room Details">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+                                <a href="{% url 'edit_room' roomDetails.id %}" class="action-btn btn-edit" title="Edit Room">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button type="button" class="action-btn btn-del" data-bs-toggle="modal" data-bs-target="#deleteRoomModal{{ roomDetails.id }}" title="Delete Room">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Delete Modals Outside of Overflow Containers -->
+    {% for roomDetails in rooms %}
+    <div class="modal fade" id="deleteRoomModal{{ roomDetails.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg p-3" style="border-radius: 1.5rem;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-danger">Safety Check</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="text-muted mb-1">Confirm deletion of resource:</p>
+                    <p class="fs-4 fw-bold text-dark">ROOM #{{ roomDetails.room_number }}</p>
+                    <div class="alert alert-warning border-0 small mt-3 mb-0" style="background: #fffbeb; color: #92400e;">
+                        <i class="bi bi-exclamation-triangle me-2"></i>This action will remove all bed links and historical data for this room.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Keep Room</button>
+                    <form method="post" action="{% url 'delete_room' roomDetails.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm">Delete Forever</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

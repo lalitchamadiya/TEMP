@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Student Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Main Dashboard Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <!-- Card Header -->
+        <div class="card-header bg-white border-0 py-3 px-4">
+            <div class="row align-items-center g-3">
+                <div class="col-md-6">
+                    <h5 class="fw-bold mb-0 text-dark">Student Records</h5>
+                    <p class="text-muted small mb-0">Manage all registered students in the system</p>
+                </div>
+                <div class="col-md-6 d-flex justify-content-md-end">
+                    <a href="{% url 'create_student' %}" class="btn btn-primary btn-sm rounded-3 px-3 shadow-sm border-0">
+                        <i class="bi bi-plus-lg me-1"></i> Add Student
+                    </a>
+                </div>
+                <div class="col-12 mt-3">
+                    <form method="GET" action="{% url 'student_list' %}" class="row g-2 align-items-center">
+                        <!-- Integrated Search -->
+                        <div class="col-lg-4 col-md-6">
+                            <div class="input-group input-group-sm rounded-3 overflow-hidden border">
+                                <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                                <input type="search" name="q" class="form-control border-0 shadow-none px-2 py-2" placeholder="Search by name, roll, email..." value="{{ current_filters.q|default_if_none:'' }}">
+                            </div>
+                        </div>
+
+                        <!-- Department Filter -->
+                        <div class="col-lg-2 col-md-3">
+                            <select name="department" class="form-select form-select-sm border rounded-3 shadow-none py-2" onchange="this.form.submit()">
+                                <option value="">Department</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept }}" {% if current_filters.department == dept %}selected{% endif %}>{{ dept }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Course Filter -->
+                        <div class="col-lg-2 col-md-3">
+                            <select name="course" class="form-select form-select-sm border rounded-3 shadow-none py-2" onchange="this.form.submit()">
+                                <option value="">Course</option>
+                                {% for course in courses %}
+                                <option value="{{ course }}" {% if current_filters.course == course %}selected{% endif %}>{{ course }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="col-lg-2 col-md-3">
+                            <select name="status" class="form-select form-select-sm border rounded-3 shadow-none py-2" onchange="this.form.submit()">
+                                <option value="">Status</option>
+                                {% for status in statuses %}
+                                <option value="{{ status }}" {% if current_filters.status == status %}selected{% endif %}>{{ status }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="col-lg-2 col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-dark btn-sm rounded-3 flex-grow-1 py-1">
+                                <i class="bi bi-funnel me-1"></i> Filter
+                            </button>
+                            {% if current_filters.q or current_filters.department or current_filters.course or current_filters.status %}
+                            <a href="{% url 'student_list' %}" class="btn btn-outline-danger btn-sm rounded-circle shadow-none" title="Clear Filters" style="width: 31px; height: 31px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Body -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th scope="col" class="ps-4 py-3 fs-6 fw-bold text-uppercase text-secondary" style="font-size: 0.75rem !important; letter-spacing: 0.05em;">Profile</th>
+                        <th scope="col" class="py-3 fs-6 fw-bold text-uppercase text-secondary" style="font-size: 0.75rem !important; letter-spacing: 0.05em;">Roll Number</th>
+                        <th scope="col" class="py-3 fs-6 fw-bold text-uppercase text-secondary" style="font-size: 0.75rem !important; letter-spacing: 0.05em;">Course</th>
+                        <th scope="col" class="py-3 fs-6 fw-bold text-uppercase text-secondary" style="font-size: 0.75rem !important; letter-spacing: 0.05em;">Contact Info</th>
+                        <th scope="col" class="py-3 fs-6 fw-bold text-uppercase text-secondary" style="font-size: 0.75rem !important; letter-spacing: 0.05em;">Admission Date</th>
+                        <th scope="col" class="py-3 fs-6 fw-bold text-uppercase text-secondary" style="font-size: 0.75rem !important; letter-spacing: 0.05em;">Status</th>
+                        <th scope="col" class="pe-4 py-3 fs-6 fw-bold text-uppercase text-secondary text-end" style="font-size: 0.75rem !important; letter-spacing: 0.05em;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr style="height: 60px;">
+                        <td class="ps-4 py-2">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    {% if student.photo %}
+                                    <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="rounded-circle" style="width: 42px; height: 42px; object-fit: cover;">
+                                    {% else %}
+                                    <img src="{% static 'image/User.jpg' %}" alt="User Photo" class="rounded-circle" style="width: 42px; height: 42px; object-fit: cover;">
+                                    {% endif %}
+                                </div>
+                                <div class="ms-3">
+                                    <div class="fw-semibold text-dark">{{ student.name }}</div>
+                                    <div class="text-muted small">#{{ student.roll|slice:":6" }}...</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-2 fw-medium text-dark">{{ student.roll }}</td>
+                        <td class="py-2">
+                            <span class="badge bg-primary-subtle text-primary border-0 rounded-pill px-3">{{ student.course }}</span>
+                        </td>
+                        <td class="py-2 text-muted small">
+                            <div class="text-dark fw-medium">{{ student.phone_number }}</div>
+                            <div>{{ student.email }}</div>
+                        </td>
+                        <td class="py-2 text-muted small">{{ student.admission_date|date:"d M, Y" }}</td>
+                        <td class="py-2">
+                            {% if student.is_active %}
+                            <span class="badge bg-success-subtle text-success border-0 rounded-pill px-3">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger border-0 rounded-pill px-3">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="pe-4 py-2 text-end">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a href="{% url 'view_student' student.pk %}" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center text-primary" style="width: 32px; height: 32px;" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'update_student' student.pk %}" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center text-warning" style="width: 32px; height: 32px;" title="Edit Record">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button type="button" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center text-danger" style="width: 32px; height: 32px;" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ student.pk }}" title="Delete Record">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+
+                            <!-- Delete Modal -->
+                            <div class="modal fade text-start" id="deleteModal-{{ student.pk }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow rounded-4">
+                                        <div class="modal-header border-0 pb-0">
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body py-4 text-center">
+                                            <div class="text-danger mb-3">
+                                                <i class="bi bi-exclamation-octagon fs-1"></i>
+                                            </div>
+                                            <h5 class="fw-bold mb-2">Delete Student?</h5>
+                                            <p class="text-muted mb-0">Are you sure you want to delete <strong>{{ student.name }}</strong>?</p>
+                                            <p class="text-muted small mt-1">Total recovery of this data is not possible.</p>
+                                        </div>
+                                        <div class="modal-footer border-0 pt-0 justify-content-center gap-2 pb-4">
+                                            <button type="button" class="btn btn-light px-4 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="post" action="{% url 'delete_student' student.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger px-4 rounded-3 shadow-sm">Delete Student</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-people mb-2 fs-1 d-block opacity-25"></i>
+                                <p class="mb-0">No students found matching your criteria.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="card-footer bg-white border-0 py-3 px-4">
+            <nav aria-label="Student list pagination" class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <p class="text-muted small mb-0">Showing {{ students|length }} students</p>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item disabled">
+                        <a class="page-link border-0 rounded-circle me-1 d-flex align-items-center" href="#" tabindex="-1" aria-disabled="true">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item active" aria-current="page"><a class="page-link border-0 rounded-circle me-1" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link border-0 rounded-circle me-1" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link border-0 rounded-circle me-1" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link border-0 rounded-circle d-flex align-items-center" href="#">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}

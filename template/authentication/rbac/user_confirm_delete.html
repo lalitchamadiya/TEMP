@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Confirm Deletion{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <div class="rounded-circle bg-danger bg-opacity-10 text-danger d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-exclamation-triangle display-4"></i>
+                        </div>
+                        <h3 class="fw-bold text-dark">Confirm Deletion</h3>
+                        <p class="text-muted">You are about to permanently delete the user account for <strong>{{ target.username }}</strong>.</p>
+                    </div>
+
+                    <div class="alert alert-warning border-0 small text-start mb-4">
+                        <i class="bi bi-info-circle-fill me-2"></i> This action cannot be undone. All associated profile data and activity history will be removed from the primary records.
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger py-2 fw-bold">
+                                <i class="bi bi-trash-fill me-2"></i>Delete Permanently
+                            </button>
+                            <a href="{% url 'user_management' %}" class="btn btn-light py-2">
+                                Cancel and Go Back
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <p class="text-muted small">Need to just disable access? <br> Try <strong>Deactivating</strong> the user from the management dashboard instead.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,236 @@
+{% extends 'student_base.html' %}
+{% load static %}
+
+{% block title %} | My Resident Profile{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-input-modern {
+        border-radius: 0.85rem;
+        border: 1px solid #e2e8f0;
+        padding: 0.65rem 1rem;
+        font-size: 0.95rem;
+        background: rgba(255,255,255,0.95);
+        color: #1e293b;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .profile-input-modern:disabled {
+        background-color: #f1f5f9;
+        color: #475569;
+        cursor: not-allowed;
+        border-style: dashed;
+    }
+
+    .avatar-ring {
+        width: 140px;
+        height: 140px;
+        position: relative;
+        padding: 8px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        margin: 0 auto;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .avatar-ring:hover {
+        transform: scale(1.05);
+    }
+    .avatar-ring img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #f8fafc;
+    }
+
+    .section-title-premium {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: #6366f1;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .edit-profile-btn {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        padding: 0.6rem 1.25rem;
+        border-radius: 50rem;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-decoration: none !important;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+    }
+    .edit-profile-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(99, 102, 241, 0.3);
+        color: white;
+    }
+
+</style>
+
+<div class="container-fluid py-4 px-lg-5">
+    
+    <!-- Modern Header -->
+    <div class="d-flex align-items-center justify-content-between mb-5 px-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-0" style="letter-spacing: -0.02em;">My Resident Profile</h2>
+            <p class="text-muted small mb-0">Manage your personal and academic record in the hostel system</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Sidebar: Identity Snapshot -->
+        <div class="col-lg-3">
+            <div class="glass-card p-4 text-center">
+                <div class="avatar-ring mb-4">
+                    <img src="{% if student.photo %}{{ student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" alt="Avatar">
+                </div>
+                <h4 class="fw-bold text-dark mb-1">{{ student.name }}</h4>
+                <div class="d-flex flex-column align-items-center gap-2 mt-2">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 px-3 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                        ROLL: {{ student.roll }}
+                    </span>
+                    <span class="text-muted small fw-medium">{{ student.email }}</span>
+                </div>
+                
+                <div class="mt-4 pt-4 border-top border-light d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-muted">Status</span>
+                        <span class="text-success fw-bold">Active Resident</span>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-muted">Member Since</span>
+                        <span class="text-dark fw-bold">Session '24</span>
+                    </div>
+                </div>
+
+                <a href="{% url 'student_app:student_profile_update' %}" class="edit-profile-btn mt-4 w-100 d-inline-flex justify-content-center align-items-center">
+                    <i class="bi bi-pencil-square me-2"></i> Update Profile
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Details Workspace -->
+        <div class="col-lg-9">
+            <div class="d-flex flex-column gap-4">
+                
+                <!-- Personal Details Panel -->
+                <div class="glass-card p-4 p-lg-5">
+                    <div class="section-title-premium">
+                        <i class="bi bi-person-bounding-box fs-5"></i>
+                        Personal Identification
+                    </div>
+                    
+                    <div class="row g-4 mt-1">
+                        <div class="col-md-4">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control profile-input-modern" value="{{ student.name }}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Email Address</label>
+                            <input type="text" class="form-control profile-input-modern" value="{{ student.email }}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Mobile Contact</label>
+                            <input type="text" class="form-control profile-input-modern" value="{{ student.phone_number }}" disabled>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Father's Name</label>
+                            <input type="text" class="form-control profile-input-modern" value="{{ student.father_name }}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Mother's Name</label>
+                            <input type="text" class="form-control profile-input-modern" value="{{ student.mother_name }}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date of Birth</label>
+                            <input type="text" class="form-control profile-input-modern" value="{{ student.dob|date:'d-m-Y' }}" disabled>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Gender</label>
+                            <input type="text" class="form-control profile-input-modern" value="{{ student.gender }}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State / Region</label>
+                            <input type="text" class="form-control profile-input-modern" value="{{ student.state }}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Hometown / City</label>
+                            <input type="text" class="form-control profile-input-modern" value="{{ student.city }}" disabled>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Residential Address</label>
+                            <textarea class="form-control profile-input-modern" rows="2" disabled>{{ student.address }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Details Panel -->
+                <div class="glass-card p-4 p-lg-5">
+                    <div class="section-title-premium">
+                        <i class="bi bi-mortarboard-fill fs-4 text-indigo"></i>
+                        Academic Credentials
+                    </div>
+                    
+                    <div class="row g-4 mt-1">
+                        <div class="col-md-4">
+                            <div class="p-3 rounded-4 bg-light bg-opacity-50 border border-white">
+                                <label class="form-label">Enrollment ID</label>
+                                <div class="h5 fw-bold text-dark mb-0">{{ student.roll }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 rounded-4 bg-light bg-opacity-50 border border-white">
+                                <label class="form-label">Course / Discipline</label>
+                                <div class="h5 fw-bold text-dark mb-0">{{ student.course }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 rounded-4 bg-light bg-opacity-50 border border-white">
+                                <label class="form-label">Current Year / Sem</label>
+                                <div class="h5 fw-bold text-dark mb-0">Semester {{ student.semester }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

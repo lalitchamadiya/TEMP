@@ -1,0 +1,248 @@
+{% extends "student_base.html" %}
+{% load static %}
+
+{% block title %}Secure Demo Payment Gateway{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <!-- Payment Gateway Container -->
+            <div class="card border-0 shadow-lg payment-gateway-card overflow-hidden">
+                <!-- Header -->
+                <div class="gateway-header p-4 text-white d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-white p-1 rounded-circle">
+                            <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 40px; width: 40px;">
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Hostel Management</h5>
+                            <small class="opacity-75">Secure Demo Gateway</small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold h4 mb-0">₹{{ payment.amount }}</div>
+                        <small class="opacity-75">Order: {{ order.id|truncatechars:12 }}</small>
+                    </div>
+                </div>
+
+                <!-- Simulation Body -->
+                <div id="payment-body" class="card-body p-4 bg-white">
+                    <div id="selection-screen">
+                        <p class="text-muted small mb-4 fw-bold text-uppercase">Select Payment Method</p>
+                        
+                        <div class="method-item d-flex align-items-center p-3 rounded-3 border mb-3 cursor-pointer" onclick="startSimulation('UPI')">
+                            <i class="material-symbols-outlined fs-2 text-primary me-3">qr_code_2</i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">UPI (GPay, PhonePe, Paytm)</div>
+                                <small class="text-muted">Pay using any UPI App</small>
+                            </div>
+                            <i class="material-symbols-outlined text-muted">chevron_right</i>
+                        </div>
+
+                        <div class="method-item d-flex align-items-center p-3 rounded-3 border mb-3 cursor-pointer" onclick="startSimulation('Card')">
+                            <i class="material-symbols-outlined fs-2 text-primary me-3">credit_card</i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">Cards (Debit/Credit)</div>
+                                <small class="text-muted">Visa, Mastercard, RuPay, Maestro</small>
+                            </div>
+                            <i class="material-symbols-outlined text-muted">chevron_right</i>
+                        </div>
+
+                        <div class="method-item d-flex align-items-center p-3 rounded-3 border mb-3 cursor-pointer" onclick="startSimulation('NetBanking')">
+                            <i class="material-symbols-outlined fs-2 text-primary me-3">account_balance</i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">Net Banking</div>
+                                <small class="text-muted">All major Indian banks supported</small>
+                            </div>
+                            <i class="material-symbols-outlined text-muted">chevron_right</i>
+                        </div>
+
+                        <div class="text-center mt-4 border-top pt-3">
+                            <i class="material-symbols-outlined align-middle fs-5 text-success">verified_user</i>
+                            <span class="small text-muted align-middle">100% Secure Transaction • PCI-DSS Compliant</span>
+                        </div>
+                    </div>
+
+                    <!-- Processing Screen -->
+                    <div id="processing-screen" style="display: none;" class="text-center py-5">
+                        <div class="spinner-wrapper mb-4">
+                            <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <h5 id="status-text" class="fw-bold mb-2 text-primary">Initializing Payment...</h5>
+                        <p id="status-subtext" class="text-muted small">Please do not refresh or close clinical browser.</p>
+                        
+                        <div class="mt-4 px-4 w-100">
+                             <div class="progress" style="height: 6px;">
+                                <div id="sim-progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Result Screen -->
+                    <div id="result-screen" style="display: none;" class="text-center py-5">
+                        <div id="success-anim" style="display: none;">
+                            <div class="mb-4">
+                                <i class="material-symbols-outlined fs-big text-success scale-up">check_circle</i>
+                            </div>
+                            <h4 class="fw-bold text-success mb-2">Payment Successful!</h4>
+                            <p class="text-muted small mb-4">Your transaction was processed successfully.</p>
+                            <div class="bg-light p-3 rounded-3 mb-4 text-start small">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Transaction ID:</span>
+                                    <span class="fw-bold text-dark">{{ transaction_id }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Amount Paid:</span>
+                                    <span class="fw-bold text-dark">₹{{ payment.amount }}</span>
+                                </div>
+                            </div>
+                            <button id="success-btn" class="btn btn-success w-100 py-3 fw-bold shadow-sm">View Fee Details</button>
+                        </div>
+
+                        <div id="failure-anim" style="display: none;">
+                            <div class="mb-4">
+                                <i class="material-symbols-outlined fs-big text-danger shake">error</i>
+                            </div>
+                            <h4 class="fw-bold text-danger mb-2">Payment Failed</h4>
+                            <p class="text-muted small mb-4">Your bank declined the transaction. Please try again.</p>
+                            <button onclick="window.location.reload()" class="btn btn-outline-danger w-100 py-3 fw-bold mb-2">Retry Payment</button>
+                            <a href="{% url 'student_app:student_fee_details' %}" class="btn btn-link text-muted small">Go back to dashboard</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="bg-light p-3 text-center border-top">
+                    <img src="https://img.icons8.com/color/48/000000/rupay.png" style="height: 20px;" class="me-2 opacity-50">
+                    <img src="https://img.icons8.com/color/48/000000/visa.png" style="height: 20px;" class="me-2 opacity-50">
+                    <img src="https://img.icons8.com/color/48/000000/mastercard.png" style="height: 20px;" class="me-2 opacity-50">
+                    <img src="https://img.icons8.com/color/48/000000/upay.png" style="height: 20px;" class="opacity-50">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const stages = [
+        { text: "Initializing Payment...", progress: 20, time: 800 },
+        { text: "Connecting to Secure Bank...", progress: 45, time: 1200 },
+        { text: "Authenticating with UPI/Bank...", progress: 70, time: 1000 },
+        { text: "Finalizing Transaction...", progress: 95, time: 1000 }
+    ];
+
+    function startSimulation(method) {
+        document.getElementById('selection-screen').style.display = 'none';
+        document.getElementById('processing-screen').style.display = 'block';
+        
+        let currentStage = 0;
+        
+        function runStage() {
+            if (currentStage < stages.length) {
+                const stage = stages[currentStage];
+                document.getElementById('status-text').innerText = stage.text;
+                document.getElementById('sim-progress').style.width = stage.progress + '%';
+                
+                setTimeout(() => {
+                    currentStage++;
+                    runStage();
+                }, stage.time);
+            } else {
+                finalizeSimulation();
+            }
+        }
+        
+        runStage();
+    }
+
+    function finalizeSimulation() {
+        // Simulating success (85% probability) or failure
+        const isSuccess = Math.random() < 0.85;
+        
+        document.getElementById('processing-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+
+        if (isSuccess) {
+            document.getElementById('success-anim').style.display = 'block';
+            
+            // Call verification endpoint
+            processBackendVerification();
+        } else {
+            document.getElementById('failure-anim').style.display = 'block';
+        }
+    }
+
+    function processBackendVerification() {
+        // Send AJAX to verify_payment
+        const formData = new FormData();
+        formData.append('gateway', 'demo');
+        formData.append('demo_signature', 'DEMO_SUCCESS_SIG');
+        formData.append('order_id', '{{ order.id }}');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch("{% url 'student_app:verify_payment' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('success-btn').onclick = function() {
+                    window.location.href = "{% url 'student_app:student_fee_details' %}";
+                };
+            } else {
+                // Should not happen in demo success path but handle anyway
+                alert("Backend Verification Failed: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+
+<style>
+    .payment-gateway-card {
+        border-radius: 20px;
+    }
+    .gateway-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #00428a 100%);
+    }
+    .method-item {
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+    .method-item:hover {
+        background: #f8f9fa;
+        border-color: #0d6efd !important;
+        transform: translateY(-2px);
+    }
+    .cursor-pointer { cursor: pointer; }
+    .fs-big { font-size: 80px; }
+    
+    .scale-up {
+        animation: scaleUp 0.5s ease forwards;
+    }
+    .shake {
+        animation: shake 0.5s ease-in-out forwards;
+    }
+
+    @keyframes scaleUp {
+        0% { transform: scale(0); opacity: 0; }
+        70% { transform: scale(1.1); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-10px); }
+        75% { transform: translateX(10px); }
+    }
+</style>
+{% endblock %}

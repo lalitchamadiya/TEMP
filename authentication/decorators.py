@@ -1,0 +1,109 @@
+from django.shortcuts import redirect
+from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
+from functools import wraps
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Utility helper — callable anywhere in views
+# ──────────────────────────────────────────────────────────────────────────────
+
+def check_perm(user, module_code, action):
+    """
+    Returns True if the user has the given action permission on the module.
+    Actions: view, add, edit, delete, approve, reject, export, print, import, hide, disable
+    Always returns True for super-admins or Django superusers.
+    """
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    if hasattr(user, 'profile') and user.profile.role and user.profile.role.is_superadmin:
+        return True
+    if hasattr(user, 'profile') and user.profile.role:
+        perm = user.profile.role.permissions.filter(module__code=module_code).first()
+        if perm:
+            return getattr(perm, f'can_{action}', False)
+    return False
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# role_required — guard by role name(s)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def role_required(*role_names):
+    """
+    Decorator that checks whether the logged-in user has one of the specified roles.
+    Super Admin and Django superusers always pass.
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return redirect('login')
+            # Super Admin bypass
+            if request.user.is_superuser or (
+                hasattr(request.user, 'profile') and
+                request.user.profile.role and
+                request.user.profile.role.is_superadmin
+            ):
+                return view_func(request, *args, **kwargs)
+
+            if hasattr(request.user, 'profile') and request.user.profile.role:
+                if request.user.profile.role.name in role_names:
+                    return view_func(request, *args, **kwargs)
+
+            raise PermissionDenied
+        return _wrapped_view
+    return decorator
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# permission_required — guard by module + action (redirects on fail)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def permission_required(module_code, action):
+    """
+    Decorator that checks whether the user's role has a specific permission for a module.
+    Raises PermissionDenied (→ 403 HTML page) on failure.
+    Actions: view, add, edit, delete, approve, reject, export, print, import, hide, disable
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return redirect('login')
+
+            if check_perm(request.user, module_code, action):
+                return view_func(request, *args, **kwargs)
+
+            raise PermissionDenied
+        return _wrapped_view
+    return decorator
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# api_permission_required — guard AJAX/API endpoints (returns JSON 403)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def api_permission_required(module_code, action):
+    """
+    Decorator for AJAX / JSON API views.
+    Returns JsonResponse({'error': 'Forbidden'}, status=403) instead of raising PermissionDenied.
+    This avoids Django's default HTML error page format which breaks JSON clients.
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return JsonResponse({'error': 'Authentication required'}, status=401)
+
+            if check_perm(request.user, module_code, action):
+                return view_func(request, *args, **kwargs)
+
+            return JsonResponse(
+                {'error': 'Forbidden: you do not have permission to perform this action.'},
+                status=403
+            )
+        return _wrapped_view
+    return decorator

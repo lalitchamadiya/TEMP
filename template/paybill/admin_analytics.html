@@ -1,0 +1,242 @@
+{% extends "hms/base.html" %}
+{% load static %}
+
+{% block title %}Fee Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'paybill_base' %}">Fee Management</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Analytics Dashboard</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Fee Analytics Dashboard</h2>
+            <p class="text-muted mb-0">Real-time insights into hostel fee collections and gateway performance.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-white border shadow-sm btn-sm d-flex align-items-center gap-1">
+                <i class="material-symbols-outlined fs-5">calendar_month</i> Time: All Time
+            </button>
+            <button class="btn btn-primary shadow-sm btn-sm d-flex align-items-center gap-1" onclick="window.print()">
+                <i class="material-symbols-outlined fs-5">download</i> Export Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm glass-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="bg-primary-subtle p-2 rounded-3 text-primary">
+                            <i class="material-symbols-outlined fs-3">payments</i>
+                        </div>
+                        <h6 class="text-muted fw-bold mb-0">Total Collection</h6>
+                    </div>
+                    <h3 class="fw-bold mb-1">₹{{ total_revenue|floatformat:2 }}</h3>
+                    <p class="text-success small mb-0"><i class="material-symbols-outlined fs-6 align-middle">trending_up</i> Overall revenue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm glass-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="bg-success-subtle p-2 rounded-3 text-success">
+                            <i class="material-symbols-outlined fs-3">today</i>
+                        </div>
+                        <h6 class="text-muted fw-bold mb-0">Today's Collection</h6>
+                    </div>
+                    <h3 class="fw-bold mb-1">₹{{ daily_revenue|floatformat:2 }}</h3>
+                    <p class="text-muted small mb-0">Processed today</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm glass-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="bg-warning-subtle p-2 rounded-3 text-warning">
+                            <i class="material-symbols-outlined fs-3">pending_actions</i>
+                        </div>
+                        <h6 class="text-muted fw-bold mb-0">Pending Txns</h6>
+                    </div>
+                    <h3 class="fw-bold mb-1">{{ pending_count }}</h3>
+                    <p class="text-warning small mb-0">Requires verification</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm glass-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="bg-info-subtle p-2 rounded-3 text-info">
+                            <i class="material-symbols-outlined fs-3">calendar_view_month</i>
+                        </div>
+                        <h6 class="text-muted fw-bold mb-0">Monthly Revenue</h6>
+                    </div>
+                    <h3 class="fw-bold mb-1">₹{{ monthly_revenue|floatformat:2 }}</h3>
+                    <p class="text-info small mb-0">Current billing cycle</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Revenue Chart -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm glass-card mb-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0">Collection Trends</h5>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="revenueChart" height="300"></canvas>
+                </div>
+            </div>
+            
+            <!-- Recent Transactions -->
+            <div class="card border-0 shadow-sm glass-card">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Live Transactions</h5>
+                    <a href="{% url 'transaction_record' %}" class="small text-decoration-none">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover mb-0">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="px-4">Student</th>
+                                    <th>Method</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th class="text-end px-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in recent_transactions %}
+                                <tr>
+                                    <td class="px-4">
+                                        <div class="fw-bold">{{ tx.student.name }}</div>
+                                        <small class="text-muted">{{ tx.enrollment_number }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark rounded-pill border">{{ tx.payment_type }}</span>
+                                    </td>
+                                    <td class="fw-bold">₹{{ tx.amount }}</td>
+                                    <td class="small text-muted">{{ tx.created_at|date:"d M, h:i A" }}</td>
+                                    <td class="text-end px-4">
+                                        <a href="{% url 'student_app:fee_receipt' tx.transaction_id %}" target="_blank" class="btn btn-sm btn-light border rounded-pill">
+                                            <i class="material-symbols-outlined fs-6 align-middle">visibility</i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center py-4">No recent successful transactions.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribution Charts -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm glass-card mb-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0">Payment Methods</h5>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="methodChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm glass-card">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0">Gateway Utilization</h5>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="gatewayChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Monthly Trend Chart
+    const trendCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for item in monthly_trend %}'{{ item.month|date:"M Y" }}',{% endfor %}],
+            datasets: [{
+                label: 'Revenue (₹)',
+                data: [{% for item in monthly_trend %}{{ item.total }},{% endfor %}],
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Method Distribution Chart
+    const methodCtx = document.getElementById('methodChart').getContext('2d');
+    new Chart(methodCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for item in method_data %}'{{ item.payment_type }}',{% endfor %}],
+            datasets: [{
+                data: [{% for item in method_data %}{{ item.total }},{% endfor %}],
+                backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#0dcaf0'],
+                borderWidth: 0
+            }]
+        },
+        options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // Gateway Distribution Chart
+    const gatewayCtx = document.getElementById('gatewayChart').getContext('2d');
+    new Chart(gatewayCtx, {
+        type: 'pie',
+        data: {
+            labels: [{% for item in gateway_data %}'{{ item.gateway_name|title }}',{% endfor %}],
+            datasets: [{
+                data: [{% for item in gateway_data %}{{ item.total }},{% endfor %}],
+                backgroundColor: ['#6f42c1', '#fd7e14', '#20c997'],
+                borderWidth: 0
+            }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+    });
+</script>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    .bg-primary-subtle { background-color: #e0f2fe !important; }
+    .bg-success-subtle { background-color: #dcfce7 !important; }
+    .bg-warning-subtle { background-color: #fef9c3 !important; }
+    .bg-info-subtle { background-color: #e0f2fe !important; }
+</style>
+{% endblock %}

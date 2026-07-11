@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Room Management Dashboard{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .stat-card-premium {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    .stat-card-premium:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.08);
+    }
+
+    .icon-box-gradient {
+        width: 54px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 1rem;
+        font-size: 1.5rem;
+        color: white;
+        margin-bottom: 1.25rem;
+    }
+
+    .grad-blue { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); box-shadow: 0 8px 15px rgba(99, 102, 241, 0.2); }
+    .grad-purple { background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%); box-shadow: 0 8px 15px rgba(168, 85, 247, 0.2); }
+    .grad-pink { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); box-shadow: 0 8px 15px rgba(236, 72, 153, 0.2); }
+    .grad-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 8px 15px rgba(16, 185, 129, 0.2); }
+    .grad-orange { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 8px 15px rgba(245, 158, 11, 0.2); }
+
+    .stat-value {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: #1e293b;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+</style>
+
+<div class="container-fluid py-4">
+    
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-0" style="letter-spacing: -0.02em;">Hostel Dashboard</h2>
+            <p class="text-muted small mb-0">Operational overview of rooms and student residency</p>
+        </div>
+    </div>
+
+    {% include 'room/room_nav.html' %}
+
+    <div class="row g-4 mt-1">
+        <!-- Card 1: Total Rooms -->
+        <div class="col-md-4 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+            <div class="glass-card stat-card-premium p-4 h-100">
+                <div class="icon-box-gradient grad-blue">
+                    <i class="bi bi-door-closed"></i>
+                </div>
+                <div class="stat-value">{{ total_availabel_room }}</div>
+                <div class="stat-label">Total Rooms</div>
+            </div>
+        </div>
+
+        <!-- Card 2: Boys Rooms -->
+        <div class="col-md-4 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+            <div class="glass-card stat-card-premium p-4 h-100">
+                <div class="icon-box-gradient grad-purple">
+                    <i class="bi bi-person-standing"></i>
+                </div>
+                <div class="stat-value">{{ total_boys_rooms|default:0 }}</div>
+                <div class="stat-label">Boys Wing</div>
+            </div>
+        </div>
+
+        <!-- Card 3: Girls Rooms -->
+        <div class="col-md-4 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+            <div class="glass-card stat-card-premium p-4 h-100">
+                <div class="icon-box-gradient grad-pink">
+                    <i class="bi bi-person-standing-dress"></i>
+                </div>
+                <div class="stat-value">{{ total_girls_rooms|default:0 }}</div>
+                <div class="stat-label">Girls Wing</div>
+            </div>
+        </div>
+
+        <!-- Card 4: Allocated Beds -->
+        <div class="col-md-6 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+            <div class="glass-card stat-card-premium p-4 h-100">
+                <div class="icon-box-gradient grad-green">
+                    <i class="bi bi-check-all"></i>
+                </div>
+                <div class="stat-value">{{ total_allocated_beds }}</div>
+                <div class="stat-label">Allocated</div>
+            </div>
+        </div>
+
+        <!-- Card 5: Unallocated Beds -->
+        <div class="col-md-6 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+            <div class="glass-card stat-card-premium p-4 h-100">
+                <div class="icon-box-gradient grad-orange">
+                    <i class="bi bi-exclamation-square"></i>
+                </div>
+                <div class="stat-value">{{ total_unallocated_beds }}</div>
+                <div class="stat-label">Vacant Beds</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State for additional components -->
+    <div class="row mt-5">
+        <div class="col-12 text-center opacity-25 py-5">
+            <i class="bi bi-bar-chart-line display-1"></i>
+            <p class="mt-3 fw-bold">Select a module from the navigation above to manage hostel data</p>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

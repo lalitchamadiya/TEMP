@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load rbac_tags %}
+
+{% block title %} | {% if role %}Edit{% else %}Create{% endif %} Role{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">{% if role %}Edit{% else %}Create{% endif %} Role</h2>
+                    <p class="text-muted small mb-0">Define role identity and granular module-level permissions.</p>
+                </div>
+                <a href="{% url 'role_list' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-2"></i> Back to List
+                </a>
+            </div>
+
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Role Identity Card -->
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center me-3" style="width: 32px; height: 32px;">
+                                <i class="bi bi-info-circle"></i>
+                            </div>
+                            <h5 class="mb-0 fw-bold">Role Information</h5>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Role Name</label>
+                                <input type="text" name="name" class="form-control rounded-3" value="{{ role.name }}" placeholder="e.g. Accountant" required {% if role.is_superadmin %}readonly{% endif %}>
+                            </div>
+                            <div class="col-md-6 text-md-end d-flex align-items-end justify-content-md-end pb-1">
+                                <div class="form-check form-switch custom-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="isActive" {% if not role or role.is_active %}checked{% endif %}>
+                                    <label class="form-check-label small fw-bold text-muted ms-2" for="isActive">Role is Active</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-muted">Description</label>
+                                <textarea name="description" class="form-control rounded-3" rows="2" placeholder="Briefly describe the responsibilities of this role...">{{ role.description }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissions Matrix Card -->
+                <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center me-3" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-key"></i>
+                                    </div>
+                                    <h5 class="mb-0 fw-bold">Permission Matrix</h5>
+                                </div>
+                                <p class="text-muted small mt-2 mb-0">Select individual capabilities for each system module.</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-success rounded-pill px-3 py-1 btn-sm" id="btn-grant-all">
+                                    <i class="bi bi-check-all me-1"></i> Grant All
+                                </button>
+                                <button type="button" class="btn btn-outline-danger rounded-pill px-3 py-1 btn-sm" id="btn-revoke-all">
+                                    <i class="bi bi-x-circle me-1"></i> Revoke All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive mt-3">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light border-top border-bottom">
+                                    <tr>
+                                        <th class="ps-4 py-3 text-secondary fs-xs text-uppercase fw-bold" style="width: 20%;">Module</th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>View</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="view" style="width: 14px; height: 14px;" title="Select All View">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Add</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="add" style="width: 14px; height: 14px;" title="Select All Add">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Edit</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="edit" style="width: 14px; height: 14px;" title="Select All Edit">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Delete</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="delete" style="width: 14px; height: 14px;" title="Select All Delete">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Approve</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="approve" style="width: 14px; height: 14px;" title="Select All Approve">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Reject</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="reject" style="width: 14px; height: 14px;" title="Select All Reject">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Export</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="export" style="width: 14px; height: 14px;" title="Select All Export">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Print</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="print" style="width: 14px; height: 14px;" title="Select All Print">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Import</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="import" style="width: 14px; height: 14px;" title="Select All Import">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Hide</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="hide" style="width: 14px; height: 14px;" title="Select All Hide">
+                                            </div>
+                                        </th>
+                                        <th class="py-3 text-center text-secondary fs-xs text-uppercase fw-bold">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span>Disable</span>
+                                                <input type="checkbox" class="form-check-input col-toggle mt-1" data-action="disable" style="width: 14px; height: 14px;" title="Select All Disable">
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for module in modules %}
+                                    <tr class="border-bottom">
+                                        <td class="ps-4">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <div class="fw-bold text-dark">{{ module.name }}</div>
+                                                    <div class="fs-xs text-muted">ID: {{ module.code }}</div>
+                                                </div>
+                                                <div class="form-check form-check-inline me-2" title="Select/Deselect All Row">
+                                                    <input type="checkbox" class="form-check-input row-toggle" style="width: 15px; height: 15px;">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        {% with perm=role_perms|get_item:module.id %}
+                                        <td class="text-center">
+                                            <input type="checkbox" name="view_{{ module.id }}" class="form-check-input perm-checkbox" data-action="view" {% if perm.can_view %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="add_{{ module.id }}" class="form-check-input perm-checkbox" data-action="add" {% if perm.can_add %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="edit_{{ module.id }}" class="form-check-input perm-checkbox" data-action="edit" {% if perm.can_edit %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="delete_{{ module.id }}" class="form-check-input perm-checkbox" data-action="delete" {% if perm.can_delete %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="approve_{{ module.id }}" class="form-check-input perm-checkbox" data-action="approve" {% if perm.can_approve %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="reject_{{ module.id }}" class="form-check-input perm-checkbox" data-action="reject" {% if perm.can_reject %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="export_{{ module.id }}" class="form-check-input perm-checkbox" data-action="export" {% if perm.can_export %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="print_{{ module.id }}" class="form-check-input perm-checkbox" data-action="print" {% if perm.can_print %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="import_{{ module.id }}" class="form-check-input perm-checkbox" data-action="import" {% if perm.can_import %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="hide_{{ module.id }}" class="form-check-input perm-checkbox" data-action="hide" {% if perm.can_hide %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" name="disable_{{ module.id }}" class="form-check-input perm-checkbox" data-action="disable" {% if perm.can_disable %}checked{% endif %}>
+                                        </td>
+                                        {% endwith %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end mb-4">
+                    <a href="{% url 'role_list' %}" class="btn btn-light rounded-pill px-4 me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 shadow">
+                        {% if role %}Update{% else %}Create{% endif %} Role
+                    </button>
+                </div>
+
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const table = document.querySelector('table');
+                    const matrixCheckboxes = table.querySelectorAll('tbody input[type="checkbox"].perm-checkbox');
+                    const colToggles = table.querySelectorAll('.col-toggle');
+                    const rowToggles = table.querySelectorAll('.row-toggle');
+                    const btnGrantAll = document.getElementById('btn-grant-all');
+                    const btnRevokeAll = document.getElementById('btn-revoke-all');
+
+                    // Grant All / Revoke All globals
+                    if (btnGrantAll) {
+                        btnGrantAll.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            matrixCheckboxes.forEach(cb => cb.checked = true);
+                            rowToggles.forEach(cb => cb.checked = true);
+                            colToggles.forEach(cb => cb.checked = true);
+                        });
+                    }
+                    if (btnRevokeAll) {
+                        btnRevokeAll.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            matrixCheckboxes.forEach(cb => cb.checked = false);
+                            rowToggles.forEach(cb => cb.checked = false);
+                            colToggles.forEach(cb => cb.checked = false);
+                        });
+                    }
+
+                    // Row-level Select All
+                    rowToggles.forEach(rowToggle => {
+                        rowToggle.addEventListener('change', function() {
+                            const tr = this.closest('tr');
+                            const rowCheckboxes = tr.querySelectorAll('input.perm-checkbox');
+                            rowCheckboxes.forEach(cb => cb.checked = this.checked);
+                            syncColumnToggles();
+                        });
+                    });
+
+                    // Column-level Select All
+                    colToggles.forEach(colToggle => {
+                        colToggle.addEventListener('change', function() {
+                            const action = this.getAttribute('data-action');
+                            const colCheckboxes = table.querySelectorAll(`tbody input[data-action="${action}"]`);
+                            colCheckboxes.forEach(cb => cb.checked = this.checked);
+                            syncRowToggles();
+                        });
+                    });
+
+                    // Individual checkboxes update row & column selects
+                    matrixCheckboxes.forEach(cb => {
+                        cb.addEventListener('change', function() {
+                            syncRowToggles();
+                            syncColumnToggles();
+                        });
+                    });
+
+                    function syncRowToggles() {
+                        rowToggles.forEach(rowToggle => {
+                            const tr = rowToggle.closest('tr');
+                            const rowCheckboxes = tr.querySelectorAll('input.perm-checkbox');
+                            const checkedCount = tr.querySelectorAll('input.perm-checkbox:checked').length;
+                            rowToggle.checked = (checkedCount === rowCheckboxes.length);
+                        });
+                    }
+
+                    function syncColumnToggles() {
+                        colToggles.forEach(colToggle => {
+                            const action = colToggle.getAttribute('data-action');
+                            const colCheckboxes = table.querySelectorAll(`tbody input[data-action="${action}"]`);
+                            const checkedCount = table.querySelectorAll(`tbody input[data-action="${action}"]:checked`).length;
+                            colToggle.checked = (checkedCount === colCheckboxes.length);
+                        });
+                    }
+
+                    // Initial sync
+                    syncRowToggles();
+                    syncColumnToggles();
+                });
+                </script>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fs-xs { font-size: 0.7rem; }
+    .table > :not(caption) > * > * { border-bottom-width: 0; }
+    .custom-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
+</style>
+{% endblock %}

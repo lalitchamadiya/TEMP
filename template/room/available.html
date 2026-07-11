@@ -1,0 +1,39 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<nav class="navbar navbar-light bg-light  my-4 mx-1 py-2 shadow-sm">
+  <div class="container-fluid">
+    <h5 class="navbar-title mb-0 mx-1">Hostel Room Management</h5>
+  </div>
+</nav> 
+{% include "room/room_nav.html" %}
+
+<div style="height: 300px; overflow-y: auto">
+  <table class="table table-striped table-sm table-bordered shadow-sm">
+    <thead class="table-dark">
+      <tr>
+        <th scope="col">Room number</th>
+        <th scope="col">Type</th>
+        <th scope="col">Gender</th>
+        <th scope="col"> <div class="d-flex align-items-center"><span class="material-symbols-outlined text-success mx-2" style="font-size: 20px; padding : 1px">check_circle</span> Available
+          <span class="material-symbols-outlined text-danger mx-2 " style="font-size: 20px; padding : 1px">Cancel</span>Not Available</div></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for roomDetails in rooms %}
+      <tr>
+        <td>{{ roomDetails.room_number }}</td>
+        <td>{{ roomDetails.room_type }} </td>
+        <td>{{ roomDetails.gender }} </td>
+        <td ><span class="material-symbols-outlined text-success " style="font-size: 20px; padding : 1px">check_circle</span>
+        <span class="material-symbols-outlined text-success " style="font-size: 20px; padding : 1px">check_circle</span>
+        {% if roomDetails.room_type == '4B' %}
+        <span class="material-symbols-outlined text-success " style="font-size: 20px; padding : 1px">check_circle</span>
+        <span class="material-symbols-outlined text-success " style="font-size: 20px; padding : 1px">check_circle</span>
+        {% endif %}
+      </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

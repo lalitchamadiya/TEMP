@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | {% if edit_mode %}Edit User{% else %}Add New User{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    {# ── Page Header ─────────────────────────────────────────────────── #}
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'user_management' %}" class="btn btn-outline-secondary btn-sm rounded-circle me-3 p-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Back to User List">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fw-bold mb-0">{% if edit_mode %}Edit User Profile{% else %}Create New User{% endif %}</h2>
+            <p class="text-muted small mb-0">{% if edit_mode %}Update system credentials and profile information for <strong>{{ target.username }}</strong>.{% else %}Register a new account and assign a system role.{% endif %}</p>
+        </div>
+    </div>
+
+    {% include '_messages.html' %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row g-4">
+            {# ── Left Column: Main Form ──────────────────────────────────── #}
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-person-badge me-2 text-primary"></i>Personal Information</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">First Name</label>
+                                <input type="text" name="first_name" class="form-control" value="{% if edit_mode %}{{ target.first_name }}{% else %}{{ form_data.first_name }}{% endif %}" placeholder="Enter first name">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Last Name</label>
+                                <input type="text" name="last_name" class="form-control" value="{% if edit_mode %}{{ target.last_name }}{% else %}{{ form_data.last_name }}{% endif %}" placeholder="Enter last name">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" name="email" class="form-control" value="{% if edit_mode %}{{ target.email }}{% else %}{{ form_data.email }}{% endif %}" placeholder="email@example.com">
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Phone Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                                    <input type="text" name="phone" class="form-control" value="{% if edit_mode %}{{ profile.phone }}{% else %}{{ form_data.phone }}{% endif %}" placeholder="+1 234 567 8900">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-key me-2 text-primary"></i>Account Credentials</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small text-secondary">Username</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-at"></i></span>
+                                    <input type="text" name="username" class="form-control" value="{% if edit_mode %}{{ target.username }}{% else %}{{ form_data.username }}{% endif %}" {% if edit_mode %}readonly{% endif %} placeholder="Choose a unique username" required>
+                                </div>
+                                {% if edit_mode %}<div class="form-text small opacity-75">Username cannot be changed after registration.</div>{% endif %}
+                            </div>
+                            {% if not edit_mode %}
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
+                                    <input type="password" name="password" class="form-control" placeholder="Create a secure password" required>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Confirm Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-check-all"></i></span>
+                                    <input type="password" name="confirm_password" class="form-control" placeholder="Repeat the password" required>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── Right Column: Sidebar ───────────────────────────────────── #}
+            <div class="col-12 col-lg-4">
+                {# Profile Photo #}
+                <div class="card border-0 shadow-sm rounded-4 mb-4 text-center">
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            {% if edit_mode and profile.photo %}
+                            <img src="{{ profile.photo.url }}" class="rounded-circle shadow-sm border border-3 border-white mb-3 object-fit-cover" width="120" height="120" id="photoPreview">
+                            {% else %}
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3 shadow-sm border border-3 border-white" style="width:120px; height:120px;" id="photoPreview">
+                                <i class="bi bi-person-circle display-3"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <h6 class="fw-bold mb-1">Profile Photo</h6>
+                        <p class="text-muted small mb-3">Upload a clean profile picture (JPG or PNG).</p>
+                        <input type="file" name="photo" class="form-control form-control-sm" accept="image/*" id="photoInput">
+                    </div>
+                </div>
+
+                {# Access Control #}
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 fw-bold fs-6"><i class="bi bi-shield-lock me-2 text-primary"></i>Access Control</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold small text-secondary">System Role</label>
+                            <select name="role" class="form-select bg-light border-0" required>
+                                <option value="">Select Role…</option>
+                                {% for r in roles %}
+                                <option value="{{ r.id }}" {% if edit_mode and profile.role.id == r.id %}selected{% elif not edit_mode and form_data.role == r.id|stringformat:"s" %}selected{% endif %}>{{ r.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" {% if edit_mode %}{% if target.is_active %}checked{% endif %}{% else %}checked{% endif %}>
+                            <label class="form-check-label fw-semibold text-secondary small" for="isActive">Account Active</label>
+                        </div>
+                        {% if edit_mode %}
+                        <div class="bg-light p-3 rounded-3 small text-muted">
+                            <div class="d-flex justify-content-between mb-1"><span>Joined:</span> <span class="fw-bold">{{ target.date_joined|date:"d M Y" }}</span></div>
+                            <div class="d-flex justify-content-between"><span>Last Login:</span> <span class="fw-bold">{% if target.last_login %}{{ target.last_login|date:"d M H:i" }}{% else %}Never{% endif %}</span></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Actions #}
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold mb-2">
+                            <i class="bi bi-check-circle-fill me-2"></i>{% if edit_mode %}Update User{% else %}Save User Profile{% endif %}
+                        </button>
+                        <a href="{% url 'user_management' %}" class="btn btn-outline-secondary w-100 py-2">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Live photo preview
+    document.getElementById('photoInput').addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('photoPreview');
+                if (preview.tagName === 'IMG') {
+                    preview.src = e.target.result;
+                } else {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.width = 120;
+                    img.height = 120;
+                    img.id = 'photoPreview';
+                    img.className = 'rounded-circle shadow-sm border border-3 border-white mb-3 object-fit-cover';
+                    preview.parentNode.replaceChild(img, preview);
+                }
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+</script>
+{% endblock %}

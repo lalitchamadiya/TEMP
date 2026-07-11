@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page { size: A4; margin: 0.5cm; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; background-color: #ffffff; margin: 0; padding: 0; line-height: 1.2; }
+        .pass-wrapper { position: relative; padding: 5px; }
+        .watermark { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 40px; color: rgba(30, 27, 75, 0.03); z-index: -100; font-weight: bold; width: 800px; text-align: center; }
+        .info-header { width: 100%; border-bottom: 2px solid #1e1b4b; padding-bottom: 8px; margin-bottom: 8px; }
+        .institution-name { font-size: 20px; font-weight: bold; color: #1e1b4b; margin: 0; text-align: center; }
+        .institution-address { font-size: 10px; text-align: center; color: #64748b; margin: 2px 0; }
+        .main-title { text-align: center; margin: 5px 0; }
+        .main-title h2 { margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; color: #1e1b4b; border: 1px solid #1e1b4b; display: inline-block; padding: 3px 20px; border-radius: 4px; }
+        .meta-table { width: 100%; margin-bottom: 10px; }
+        .meta-text { font-size: 11px; font-weight: bold; }
+        .status-banner { width: 100%; padding: 6px; text-align: center; font-weight: 800; font-size: 14px; text-transform: uppercase; margin-bottom: 10px; border-radius: 4px; }
+        .status-approved { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .status-expired { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .section-card { border: 1px solid #e2e8f0; border-radius: 4px; padding: 10px; margin-bottom: 10px; width: 100%; }
+        .section-header { background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; margin: -10px -10px 10px -10px; padding: 5px 10px; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #1e1b4b; }
+        .layout-table { width: 100%; }
+        .info-label { font-size: 9px; color: #64748b; text-transform: uppercase; padding-top: 3px; }
+        .info-value { font-size: 12px; font-weight: bold; color: #1e293b; padding-bottom: 3px; }
+        .student-photo-box { width: 110px; height: 130px; border: 1px solid #cbd5e1; padding: 2px; background: #fff; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { background-color: #f1f5f9; text-align: left; font-size: 9px; padding: 6px; border: 1px solid #e2e8f0; color: #475569; }
+        .data-table td { font-size: 11px; padding: 6px; border: 1px solid #e2e8f0; font-weight: bold; }
+        .sign-table { width: 100%; margin-top: 15px; }
+        .sign-line { border-top: 1px solid #1e293b; width: 80%; margin: 0 auto; margin-top: 6px; }
+        .seal-box { width: 80px; height: 80px; border: 2px dashed #cbd5e1; margin: 0 auto; border-radius: 50%; text-align: center; padding-top: 25px; font-size: 9px; color: #cbd5e1; font-weight: bold; }
+        .rules-box { background-color: #1e1b4b; color: #fff; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .rules-box h4 { margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 3px; }
+        .rules-list { font-size: 9px; padding-left: 12px; margin: 0; }
+        .rules-list li { margin-bottom: 2px; }
+        .qr-section { padding: 10px; border: 1px solid #e2e8f0; background: #f8fafc; text-align: center; }
+        .footer { margin-top: 20px; text-align: center; font-size: 8px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="pass-wrapper">
+        <div class="watermark">OFFICIAL HOSTEL GATE PASS</div>
+        <table class="info-header">
+            <tr>
+                <td style="width: 20%;"><div style="width: 80px; height: 80px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 50%; text-align: center; padding-top: 30px; font-size: 10px; color: #475569;">LOGO</div></td>
+                <td style="width: 60%;">
+                    <h1 class="institution-name">University Residency Council</h1>
+                    <p class="institution-address">Hostel Management Division, Main Campus Road</p>
+                    <p class="institution-address">Contact: +91 98765 43210 | Email: hostel@university.edu.in</p>
+                    <p class="institution-address">www.university-hostels.ac.in</p>
+                </td>
+                <td style="width: 20%; text-align: right;">
+                    <div style="width: 90px; height: 90px; background: #fff; border: 1px solid #e2e8f0; padding: 5px;">
+                        <p style="font-size: 8px; margin: 0; padding-top: 30px; text-align: center; color: #1e1b4b;">SCAN TO<br>VERIFY</p>
+                        <p style="font-size: 6px; margin-top: 15px; text-align: center;">GP-{{ gp.id }}</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <div class="main-title"><h2>HOSTEL GATE PASS</h2></div>
+        <table class="meta-table">
+            <tr>
+                <td class="meta-text" style="color: #64748b;">PASS NUMBER: <span style="color: #1e1b4b; font-size: 15px;">{{ gp.gate_pass_no }}</span></td>
+                <td class="meta-text" style="text-align: right; color: #64748b;">ISSUE DATE: {{ gp.leave_request.approval_date|date:"d M Y" }}</td>
+            </tr>
+        </table>
+        <div class="status-banner status-approved">APPROVED</div>
+        <table class="layout-table">
+            <tr>
+                <td style="width: 78%; vertical-align: top; padding-right: 20px;">
+                    <div class="section-card">
+                        <div class="section-header">Student Identification</div>
+                        <table class="layout-table">
+                            <tr>
+                                <td style="width: 50%;">
+                                    <div class="info-label">Student Name</div><div class="info-value">{{ student.name }}</div>
+                                    <div class="info-label">Roll Number</div><div class="info-value">{{ student.roll }}</div>
+                                    <div class="info-label">Course / Dept</div><div class="info-value">{{ student.get_course_display }} / {{ student.get_department_display }}</div>
+                                </td>
+                                <td style="width: 50%;">
+                                    <div class="info-label">Student ID</div><div class="info-value">{{ student.student_id }}</div>
+                                    <div class="info-label">Enrollment No</div><div class="info-value">{{ student.admission_number|default:student.roll }}</div>
+                                    <div class="info-label">Semester / Gen.</div><div class="info-value">{{ student.get_semester_display }} Sem / {{ student.gender }}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="section-card">
+                        <div class="section-header">Hostel Allocation Details</div>
+                        <table class="layout-table">
+                            <tr>
+                                <td style="width: 33%;"><div class="info-label">Hostel Block</div><div class="info-value">{% with bed=student.bed_set.first %}{{ bed.room.floor.block.name|default:"Main Block" }}{% endwith %}</div></td>
+                                <td style="width: 33%;"><div class="info-label">Room / Bed</div><div class="info-value">{% with bed=student.bed_set.first %}{{ bed.room.room_number }} / {{ bed.bed_number }}{% endwith %}</div></td>
+                                <td style="width: 33%;"><div class="info-label">Floor</div><div class="info-value">{% with bed=student.bed_set.first %}Floor {{ bed.room.floor.floor_number }}{% endwith %}</div></td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+                <td style="width: 22%; vertical-align: top; text-align: center;">
+                    <div class="student-photo-box">
+                        {% if student.photo %}<img src="{{ student.photo.path }}" style="width: 100%; height: 100%;">{% else %}<p style="padding-top: 60px; font-size: 10px; color: #94a3b8;">NO PHOTO</p>{% endif %}
+                    </div>
+                    <div class="info-label" style="margin-top: 10px;">Primary Contact</div>
+                    <div class="info-value" style="font-family: monospace; font-size: 11px;">{{ student.phone_number }}</div>
+                </td>
+            </tr>
+        </table>
+        <div class="section-header" style="margin-top: 0;">Journey & Leave Schedule</div>
+        <table class="data-table" style="margin-bottom: 25px;">
+            <tr><th style="width: 25%;">Field</th><th style="width: 25%;">Departure Details</th><th style="width: 25%;">Expected Return</th><th style="width: 25%;">Journey Info</th></tr>
+            <tr>
+                <td>Date / Time</td>
+                <td>{{ gp.leave_request.leave_date|date:"d M Y" }}<br>{{ gp.leave_request.start_time|default:"--:--" }}</td>
+                <td>{{ gp.leave_request.return_date|date:"d M Y" }}<br>{{ gp.leave_request.end_time|default:"--:--" }}</td>
+                <td>Mode: {{ gp.leave_request.transport_mode|default:"Not Specified" }}</td>
+            </tr>
+            <tr><td>Destination</td><td colspan="2">{{ gp.leave_request.destination|default:"Contact Home Address" }}</td><td>Days: {{ gp.leave_request.total_days }}</td></tr>
+            <tr><td>Reason / Type</td><td colspan="2">{{ gp.leave_request.reason }}</td><td>Emergency No: {{ student.emergency_phone }}</td></tr>
+        </table>
+        <table class="layout-table">
+            <tr>
+                <td style="width: 65%; vertical-align: top;">
+                    <div class="section-card" style="margin-top: 0;">
+                        <div class="section-header">Approval Details</div>
+                        <table class="layout-table">
+                            <tr>
+                                <td style="width: 50%;"><div class="info-label">Approved By</div><div class="info-value">{{ gp.leave_request.approved_by.get_full_name|default:gp.leave_request.approved_by.username }}</div></td>
+                                <td style="width: 50%;"><div class="info-label">Approval Date & Time</div><div class="info-value">{{ gp.leave_request.approval_date|date:"d M Y, H:i" }}</div></td>
+                            </tr>
+                            <tr><td colspan="2"><div class="info-label">Remarks from Authority</div><div class="info-value" style="font-style: italic;">{{ gp.leave_request.remarks|default:"Leave granted as per university regulations." }}</div></td></tr>
+                        </table>
+                    </div>
+                </td>
+                <td style="width: 35%; text-align: center; vertical-align: middle;">
+                    <p style="font-family: 'Courier', monospace; font-size: 14px; color: #4338ca; font-weight: bold; margin-bottom: 5px;">{{ gp.leave_request.approved_by.username|upper }}</p>
+                    <div class="signature-line" style="width: 80%; border-top: 1px solid #1e293b; margin: 0 auto;"></div>
+                    <p style="font-size: 9px; margin-top: 5px; font-weight: bold;">OFFICIALLY APPROVED (DIGITAL)</p>
+                    <div class="seal-box" style="margin-top: 15px;">OFFICIAL SEAL</div>
+                </td>
+            </tr>
+        </table>
+        <div class="rules-box">
+            <h4>Resident Rules & Instructions</h4>
+            <ul class="rules-list">
+                <li>This pass must be presented at the main security gate during departure and entry.</li>
+                <li>The resident is responsible for returning on or before the specified return time.</li>
+                <li>Any discrepancy or policy violation will be reported immediately to the Chief Warden.</li>
+                <li>Carry this Gate Pass whenever requested by hostel authorities for verification.</li>
+                <li>Misuse of this digital pass may result in immediate suspension of hostel privileges.</li>
+            </ul>
+        </div>
+        <div class="footer">
+            <table class="layout-table" style="font-size: 9px;"><tr><td style="text-align: left;">Generated By: HMS Core-System</td><td style="text-align: center;">Digitally Verified Document - No Physical Signature Required</td><td style="text-align: right;">Page 1 of 1</td></tr></table>
+            <p style="margin-top: 10px;">Copyright &copy; Hostel Management System | Generated on {{ now|date:"d M Y, H:i" }}</p>
+        </div>
+    </div>
+</body>
+</html>

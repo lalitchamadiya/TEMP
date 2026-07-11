@@ -1,0 +1,194 @@
+{% load static %} {% block content %}
+
+<style>
+    .receipt-container {
+  max-width: 800px;
+  margin: 0 auto;
+  border-radius: 10px;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+.receipt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #000;
+  
+  margin-bottom: 20px;
+}
+
+.receipt-header .logo img {
+  width: 80px;
+}
+
+.receipt-header .title {
+  text-align: center;
+}
+
+.receipt-header .title h1 {
+  font-size: 24px;
+  margin: 0;
+}
+
+.receipt-header .title p {
+  margin: 0;
+}
+
+.receipt-header .title .subtitle {
+  font-size: 14px;
+  color: #666;
+}
+
+.receipt-header .copy {
+  text-align: right;
+  font-weight: bold;
+}
+
+.student-details {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.student-details div {
+  width: 30%;
+}
+
+.student-details p {
+  margin: 5px 0;
+}
+
+.fee-details {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.fee-details th,
+.fee-details td {
+  border: 1px solid #000;
+  padding: 10px;
+  text-align: left;
+}
+
+.fee-details th {
+  background-color: #f2f2f2;
+}
+
+.payment-details {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.payment-details div {
+  width: 45%;
+}
+
+.footer {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.footer .signature {
+  text-align: right;
+  margin-top: 20px;
+}
+
+.footer .contact {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #333;
+}
+</style>
+
+
+
+<div class="receipt-container">
+  <!-- Header Section -->
+  <div class="receipt-header">
+    <div class="logo">
+      <img src="{% static 'image/NU-final-T-1.jpg' %}" alt="Logo">
+    </div>
+    <div class="title">
+      <h1>NOBLE UNIVERSITY</h1>
+      <p>(Faculty of Computer Application (NU))</p>
+      <p class="subtitle">Global Vision</p>
+    </div>
+    <div class="copy">
+      <p><strong>Student Copy</strong></p>
+    </div>
+  </div>
+
+  <!-- Student Details Section -->
+  <div class="student-details">
+    <div>
+      <p><strong>Name:</strong> {{ payment.user_name }}</p>
+      <p><strong>Semester:</strong> {{ payment.student.semester }}</p>
+    </div>
+    <div>
+      <p><strong>Receipt No:</strong> {{ payment.receipt_no }}</p>
+      <p><strong>Roll No:</strong> {{ payment.student.roll }}</p>
+    </div>
+    <div>
+      <p><strong>Date:</strong> {{ payment.created_at|date:"d/m/Y" }}</p>
+      <p><strong>Year:</strong> 2024-2025</p>
+    </div>
+  </div>
+
+  <!-- Fee Details Section -->
+  <table class="fee-details">
+    <thead>
+      <tr>
+        <th>Particular</th>
+        <th>Amount (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Repeater Exam Form Fee</td>
+        <td>{{ payment.amount }}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <th>Total</th>
+        <th>{{ payment.amount }}</th>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Payment Details Section -->
+  <div class="payment-details">
+    <div>
+      <p><strong>DD / Cheque No / Order Id:</strong> 100000098665</p>
+      <p><strong>Bank Name / Tracking Id:</strong> -</p>
+      <p><strong>Payment Type:</strong> {{ payment.payment_type }}</p>
+      <p><strong>Amount In Words:</strong> Rupees Two Hundred Fifty Only</p>
+    </div>
+    <div>
+      <p><strong>Remaining Amount:</strong> ₹0.00</p>
+      <p><strong>Remarks:</strong> -</p>
+    </div>
+  </div>
+
+  <!-- Footer Section -->
+  <div class="footer">
+    <p>* Fees once paid are neither refundable nor transferable.</p>
+    <p>* Cheques are subject to realization.</p>
+    <div class="signature">
+      <p>_____________________</p>
+      <p>Signature</p>
+    </div>
+    <p class="contact">
+      PARTH VATIKA, Junagadh-Bhesan Road, Via. Vadal. Nr. Bamangam, Dist/City: Junagadh - 362310 (Gujarat) INDIA. <br>
+      Contact: (0285)2680233/44/55/66/77. E-contact: info@ngivt.edu.in | www.ngivt.edu.in
+    </p>
+  </div>
+</div>
+
+{% endblock %}
+
+

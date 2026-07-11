@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} | {{ action }} Building{% endblock %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Outfit', sans-serif; background: #f1f5f9; }
+    :root { --accent: #6366f1; --glass: rgba(255,255,255,0.82); --border: rgba(226,232,240,0.75); }
+
+    .page-header { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--border);
+        border-radius: 1rem; padding: 1rem 1.5rem; display: flex; align-items: center;
+        justify-content: space-between; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .page-header h4 { font-weight: 700; margin: 0; font-size: 1.1rem; color: #1e293b; }
+
+    .form-card { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--border);
+        border-radius: 1rem; padding: 1.75rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    .form-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.3rem; }
+    .form-control, .form-select { background: rgba(248,250,252,0.9) !important;
+        border: 1px solid var(--border) !important; font-size: 0.9rem; }
+    .form-control:focus, .form-select:focus { background: #fff !important; border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.12) !important; }
+
+    .btn-save { background: linear-gradient(135deg, #6366f1, #a855f7); border: none; color: white;
+        padding: 0.65rem 2.2rem; font-weight: 700; border-radius: 0.625rem;
+        box-shadow: 0 4px 12px rgba(99,102,241,0.25); transition: all 0.2s; }
+    .btn-save:hover { transform: translateY(-2px); color: white; }
+
+    .section-header { font-size: 0.78rem; font-weight: 800; text-transform: uppercase;
+        letter-spacing: 0.06em; color: var(--accent); border-bottom: 1px solid var(--border);
+        padding-bottom: 0.5rem; margin-bottom: 1.1rem; margin-top: 1.4rem; }
+    .section-header:first-child { margin-top: 0; }
+</style>
+
+<div class="container-fluid py-3 px-md-4" style="max-width: 680px;">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h4><i class="bi bi-buildings me-2 text-primary"></i>{{ action }} Hostel Building</h4>
+            <p class="text-muted small mb-0">{{ action }} building details below</p>
+        </div>
+        <a href="{% url 'building_list' %}" class="btn btn-light btn-sm rounded-pill border px-3 fw-semibold">
+            <i class="bi bi-x me-1"></i>Cancel
+        </a>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible rounded-3 border-0 shadow-sm py-2 mb-3 fade show">
+        {{ message }} <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if form.errors %}
+    <div class="alert alert-danger rounded-3 border-0 shadow-sm py-2 mb-3">
+        <strong><i class="bi bi-exclamation-triangle me-1"></i>Please fix:</strong>
+        <ul class="mb-0 mt-1 small">
+            {% for field in form %}{% for error in field.errors %}
+            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+            {% endfor %}{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="form-card">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="section-header">Building Details</div>
+            <div class="row g-3 mb-3">
+                <div class="col-12">
+                    <label class="form-label">Building Name <span class="text-danger">*</span></label>
+                    {{ form.name }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Gender Allocation</label>
+                    {{ form.gender }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Total Floors</label>
+                    {{ form.total_floors }}
+                    <small class="text-muted d-block mt-1">Floors auto-created on save.</small>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Description <small class="text-muted fw-normal">(optional)</small></label>
+                    {{ form.description }}
+                </div>
+            </div>
+
+            <div class="section-header">Settings</div>
+            <div class="form-check form-switch mb-4">
+                {{ form.is_active }}
+                <label class="form-check-label ms-2 fw-semibold" for="{{ form.is_active.id_for_label }}">
+                    Building is Active (visible in room creation dropdowns)
+                </label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-save btn">
+                    <i class="bi bi-save2 me-1"></i>{{ action }} Building
+                </button>
+                <a href="{% url 'building_list' %}" class="btn btn-light rounded-3 px-4 fw-semibold">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Edit Student: {{ student.name }}{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --primary-gradient: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        --input-bg: rgba(248, 250, 252, 0.8);
+    }
+
+    body {
+        font-family: 'Outfit', sans-serif;
+        background-color: #f1f5f9;
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(5, 150, 105, 0.05) 0px, transparent 50%);
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    .form-page-title {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #1e293b;
+        font-size: 1.5rem;
+    }
+
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .form-control, .form-select {
+        background: var(--input-bg);
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: #fff;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        outline: none;
+    }
+
+    .photo-upload-compact {
+        width: 100px;
+        height: 100px;
+        border-radius: 1rem;
+        border: 2px dashed #cbd5e1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+
+    .photo-upload-compact:hover {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.05);
+    }
+
+    .section-header {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: #059669;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 0.5rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .btn-save {
+        background: var(--primary-gradient);
+        border: none;
+        color: white;
+        padding: 0.6rem 2rem;
+        border-radius: 0.6rem;
+        font-weight: 700;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-save:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+    }
+
+</style>
+
+<div class="container-fluid py-4 px-lg-5">
+    
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="form-page-title mb-0">Update Student: {{ student.name }}</h2>
+            <p class="text-muted small mb-0">Modify student records and save changes</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'student_list' %}" class="btn btn-light btn-sm rounded-3 px-3 fw-semibold border">
+                Cancel
+            </a>
+            <button type="submit" form="studentForm" class="btn btn-save btn-sm">
+                Save Changes
+            </button>
+        </div>
+    </div>
+
+    <div class="glass-card p-4">
+        <form method="post" enctype="multipart/form-data" id="studentForm">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="alert alert-danger rounded-3 mb-4 border-0 shadow-sm py-2">
+                <ul class="mb-0 x-small">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="row g-4">
+                <!-- Sidebar Info: Photo -->
+                <div class="col-lg-2">
+                    <label class="form-label d-block text-center">Photo</label>
+                    <div class="photo-upload-compact mx-auto" onclick="document.getElementById('id_photo').click()">
+                        <img src="{% if student.photo %}{{ student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" id="photoPreview" class="w-100 h-100 object-fit-cover" alt="Preview">
+                        <input type="file" name="photo" id="id_photo" class="d-none" onchange="previewImage(this)">
+                    </div>
+                </div>
+
+                <!-- Main Form Area -->
+                <div class="col-lg-10">
+                    
+                    <div class="section-header mt-0">Personal Information</div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.name.label }}</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.roll.label }}</label>
+                            {{ form.roll }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.email.label }}</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.phone_number.label }}</label>
+                            {{ form.phone_number }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.gender.label }}</label>
+                            {{ form.gender }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.dob.label }}</label>
+                            {{ form.dob }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.blood_group.label }}</label>
+                            {{ form.blood_group }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.category.label }}</label>
+                            {{ form.category }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.nationality.label }}</label>
+                            {{ form.nationality }}
+                        </div>
+                    </div>
+
+                    <div class="section-header">Academic Details</div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.department.label }}</label>
+                            {{ form.department }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.course.label }}</label>
+                            {{ form.course }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">{{ form.semester.label }}</label>
+                            {{ form.semester }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">{{ form.division.label }}</label>
+                            {{ form.division }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Status</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.admission_date.label }}</label>
+                            {{ form.admission_date }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Admission No.</label>
+                            {{ form.admission_number }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Academic Year</label>
+                            {{ form.academic_year }}
+                        </div>
+                    </div>
+
+                    <div class="section-header">Parents & Emergency Info</div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.father_name.label }}</label>
+                            {{ form.father_name }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.mother_name.label }}</label>
+                            {{ form.mother_name }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.parent_email.label }}</label>
+                            {{ form.parent_email }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.guardian_name.label }}</label>
+                            {{ form.guardian_name }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.guardian_phone.label }}</label>
+                            {{ form.guardian_phone }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.guardian_occupation.label }}</label>
+                            {{ form.guardian_occupation }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Emergency Name</label>
+                            {{ form.emergency_name }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Relation</label>
+                            {{ form.emergency_relation }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Emergency Phone</label>
+                            {{ form.emergency_phone }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Alt Emergency Phone</label>
+                            {{ form.emergency_alt_phone }}
+                        </div>
+                    </div>
+
+                    <div class="section-header">Address</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Address Line 1</label>
+                            {{ form.address }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Address Line 2</label>
+                            {{ form.address_line_2 }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.city.label }}</label>
+                            {{ form.city }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.state.label }}</label>
+                            {{ form.state }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.country.label }}</label>
+                            {{ form.country }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ form.pincode.label }}</label>
+                            {{ form.pincode }}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="text-end mt-5 pt-3 border-top">
+                <button type="submit" class="btn btn-save">Update Student</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('photoPreview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const rollInput = document.getElementById('id_roll');
+        if (rollInput) {
+            const feedback = document.createElement('div');
+            feedback.id = 'roll-feedback';
+            feedback.className = 'small mt-1 fw-semibold d-none';
+            rollInput.parentNode.appendChild(feedback);
+
+            let debounceTimeout;
+            rollInput.addEventListener('input', function() {
+                clearTimeout(debounceTimeout);
+                const roll = this.value.trim();
+                
+                if (!roll) {
+                    feedback.className = 'small mt-1 fw-semibold d-none';
+                    feedback.textContent = '';
+                    rollInput.classList.remove('is-invalid', 'is-valid');
+                    return;
+                }
+
+                feedback.className = 'small mt-1 fw-semibold text-muted';
+                feedback.textContent = 'Checking availability...';
+                feedback.classList.remove('d-none');
+
+                debounceTimeout = setTimeout(async () => {
+                    try {
+                        const url = `{% url 'check_roll_number' %}?roll=${encodeURIComponent(roll)}&student_id={{ student.pk }}`;
+                        const res = await fetch(url);
+                        const data = await res.json();
+                        
+                        if (data.available) {
+                            feedback.className = 'small mt-1 fw-semibold text-success';
+                            feedback.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Enrollment number is available';
+                            rollInput.classList.remove('is-invalid');
+                            rollInput.classList.add('is-valid');
+                        } else {
+                            feedback.className = 'small mt-1 fw-semibold text-danger';
+                            feedback.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i> Enrollment number is already registered';
+                            rollInput.classList.remove('is-valid');
+                            rollInput.classList.add('is-invalid');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        feedback.className = 'small mt-1 fw-semibold text-warning';
+                        feedback.textContent = 'Uniqueness check failed to run';
+                    }
+                }, 400);
+            });
+        }
+    });
+</script>
+
+{% endblock %}

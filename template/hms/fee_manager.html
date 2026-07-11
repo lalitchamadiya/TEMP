@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}| Fee & Financial Management{% endblock %}
+{% block content %}
+<style>
+:root{--card-bg:#161b22;--glass-border:rgba(255,255,255,0.1);}
+.mod-header{background:linear-gradient(135deg,#0e1f10,#0a180c);border:1px solid var(--glass-border);border-radius:14px;padding:1.5rem 2rem;margin-bottom:1.5rem;}
+.fin-stat{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1.25rem 1.5rem;}
+.panel-card{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:14px;overflow:hidden;margin-bottom:1.5rem;}
+.panel-title{font-size:0.9rem;font-weight:600;color:rgba(255,255,255,0.85);padding:1rem 1.25rem;border-bottom:1px solid var(--glass-border);display:flex;align-items:center;gap:8px;}
+.sa-table{color:rgba(255,255,255,0.8);font-size:0.82rem;}
+.sa-table thead th{color:rgba(255,255,255,0.4);font-size:0.72rem;text-transform:uppercase;border-bottom:1px solid var(--glass-border);background:rgba(255,255,255,0.02);padding:0.7rem 1rem;}
+.sa-table tbody td{border-bottom:1px solid rgba(255,255,255,0.04);padding:0.65rem 1rem;vertical-align:middle;}
+.sa-table tbody tr:hover{background:rgba(255,255,255,0.03);}
+.badge-s{font-size:0.68rem;padding:3px 9px;border-radius:20px;font-weight:600;}
+.s-green{background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);}
+.s-yellow{background:rgba(234,179,8,0.15);color:#eab308;border:1px solid rgba(234,179,8,0.3);}
+.s-red{background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);}
+.modal-content{background:#1a1f35;border:1px solid var(--glass-border);color:#fff;}
+.modal-header,.modal-footer{border-color:var(--glass-border);}
+.form-control,.form-select{background:#0d1117;border:1px solid var(--glass-border);color:#fff;}
+.form-control:focus,.form-select:focus{background:#0d1117;border-color:#22c55e;color:#fff;box-shadow:0 0 0 3px rgba(34,197,94,0.15);}
+</style>
+
+<div class="mod-header">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <h2 class="text-white fw-bold mb-1"><i class="bi bi-cash-stack me-2 text-success"></i>Fee & Financial Management</h2>
+      <p class="text-white opacity-50 mb-0">Track collections, manage fee structures, and record payments</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'superadmin_dashboard' %}" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
+      <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addFeeStructModal"><i class="bi bi-plus"></i> Fee Structure</button>
+      <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#recordPaymentModal"><i class="bi bi-receipt me-1"></i>Record Payment</button>
+      <a href="{% url 'export_report' 'payments' %}" class="btn btn-sm btn-outline-light"><i class="bi bi-download me-1"></i>Export</a>
+    </div>
+  </div>
+  <div class="row g-3 mt-2">
+    <div class="col-6 col-md-3"><div class="fin-stat">
+      <div style="font-size:1.6rem;font-weight:700;color:#22c55e;">₹{{ total_revenue|floatformat:0 }}</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">Total Revenue</div>
+    </div></div>
+    <div class="col-6 col-md-3"><div class="fin-stat">
+      <div style="font-size:1.6rem;font-weight:700;color:#4f9cf9;">₹{{ monthly_revenue|floatformat:0 }}</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">This Month</div>
+    </div></div>
+    <div class="col-6 col-md-3"><div class="fin-stat">
+      <div style="font-size:1.6rem;font-weight:700;color:#eab308;">₹{{ today_revenue|floatformat:0 }}</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">Today</div>
+    </div></div>
+    <div class="col-6 col-md-3"><div class="fin-stat">
+      <div style="font-size:1.6rem;font-weight:700;color:#ef4444;">{{ pending_count }}</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">Pending Payments</div>
+    </div></div>
+  </div>
+</div>
+
+<!-- Fee Structures -->
+<div class="panel-card">
+  <div class="panel-title"><i class="bi bi-list-task text-success"></i> Fee Structure</div>
+  <div class="table-responsive">
+    <table class="table sa-table mb-0">
+      <thead><tr><th>Fee Type</th><th>Amount</th><th>Due Date</th><th>Late Fee/Day</th></tr></thead>
+      <tbody>
+        {% for fs in fee_structures %}
+        <tr>
+          <td class="fw-semibold text-white">{{ fs.get_fee_type_display }}</td>
+          <td style="color:#22c55e;font-weight:bold;">₹{{ fs.amount|floatformat:0 }}</td>
+          <td>{{ fs.due_date|date:"d M Y"|default:"—" }}</td>
+          <td>{{ fs.late_fee_per_day }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center py-4 text-muted">No fee structures defined yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent Payments -->
+<div class="panel-card">
+  <div class="panel-title"><i class="bi bi-credit-card-fill text-primary"></i> Recent Payments</div>
+  <div class="table-responsive">
+    <table class="table sa-table mb-0">
+      <thead><tr><th>Txn ID</th><th>Student</th><th>Amount</th><th>Type</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for p in recent_payments %}
+        <tr>
+          <td><code style="color:#06b6d4;font-size:0.72rem;">{{ p.transaction_id }}</code></td>
+          <td>{{ p.user_name }}</td>
+          <td class="fw-bold" style="color:#22c55e;">₹{{ p.amount|floatformat:0 }}</td>
+          <td>{{ p.payment_type }}</td>
+          <td><span class="badge-s {% if p.transaction_status == 'SUCCESSFUL' %}s-green{% elif p.transaction_status == 'PENDING' %}s-yellow{% else %}s-red{% endif %}">{{ p.transaction_status }}</span></td>
+          <td class="text-muted">{{ p.created_at|date:"d M Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-4 text-muted">No payments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="addFeeStructModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header"><h6 class="modal-title">Define Fee Structure</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{% url 'fee_structure_create' %}">{% csrf_token %}<div class="modal-body">
+    <div class="row g-3">
+      <div class="col-12"><label class="form-label text-white-50">Fee Type</label>
+        <select name="fee_type" class="form-select" required>{% for v,l in fee_types %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+      </div>
+      <div class="col-6"><label class="form-label text-white-50">Amount (₹)</label><input type="number" name="amount" class="form-control" step="0.01" required></div>
+      <div class="col-6"><label class="form-label text-white-50">Due Date</label><input type="date" name="due_date" class="form-control"></div>
+      <div class="col-6"><label class="form-label text-white-50">Late Fee/Day (₹)</label><input type="number" name="late_fee_per_day" class="form-control" value="0" step="0.01"></div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success btn-sm">Save Structure</button></div></form>
+</div></div></div>
+
+<div class="modal fade" id="recordPaymentModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header"><h6 class="modal-title">Record Manual Payment</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{% url 'fee_payment_create' %}">{% csrf_token %}<div class="modal-body">
+    <div class="row g-3">
+      <div class="col-12"><label class="form-label text-white-50">Student Name (or leave blank for walk-in)</label><input type="text" name="user_name" class="form-control" placeholder="Student name"></div>
+      <div class="col-6"><label class="form-label text-white-50">Amount (₹) *</label><input type="number" name="amount" class="form-control" step="0.01" required></div>
+      <div class="col-6"><label class="form-label text-white-50">Payment Type</label>
+        <select name="payment_type" class="form-select"><option>Cash</option><option>UPI</option><option>Card</option><option>NetBanking</option></select>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-receipt me-1"></i>Record</button></div></form>
+</div></div></div>
+{% endblock %}

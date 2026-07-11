@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} | Hostel Buildings{% endblock %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Outfit', sans-serif; background: #f1f5f9; }
+    :root { --accent: #6366f1; --accent-2: #a855f7; --glass: rgba(255,255,255,0.82); --border: rgba(226,232,240,0.75); }
+
+    .page-header { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--border);
+        border-radius: 1rem; padding: 1rem 1.5rem; display: flex; align-items: center;
+        justify-content: space-between; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .page-header h4 { font-weight: 700; margin: 0; font-size: 1.1rem; color: #1e293b; }
+
+    .building-card {
+        background: var(--glass); backdrop-filter: blur(12px);
+        border: 1px solid var(--border); border-radius: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        transition: all 0.2s ease; overflow: hidden;
+    }
+    .building-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
+    .building-card-header {
+        padding: 1.1rem 1.25rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #fff;
+    }
+    .building-card-body { padding: 1.1rem 1.25rem; }
+    .building-card-title { font-weight: 700; font-size: 1rem; margin: 0; }
+    .building-meta { font-size: 0.78rem; opacity: 0.8; margin-top: 0.2rem; }
+
+    .stat-chip {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        background: #f8fafc; border: 1px solid #e2e8f0;
+        border-radius: 0.5rem; padding: 0.3rem 0.65rem;
+        font-size: 0.78rem; font-weight: 600; color: #475569;
+    }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-inactive { background: #fef3c7; color: #92400e; }
+
+    .action-btn { width: 30px; height: 30px; border-radius: 0.5rem; display: flex; align-items: center;
+        justify-content: center; text-decoration: none; border: none; font-size: 0.8rem; transition: all 0.2s; }
+    .btn-edit { background: #e0f2fe; color: #0369a1; }
+    .btn-edit:hover { background: #0369a1; color: white; }
+    .btn-del2 { background: #fee2e2; color: #b91c1c; }
+    .btn-del2:hover { background: #b91c1c; color: white; }
+    .btn-toggle-on { background: #dcfce7; color: #166534; }
+    .btn-toggle-on:hover { background: #166534; color: white; }
+    .btn-toggle-off { background: #fef3c7; color: #92400e; }
+    .btn-toggle-off:hover { background: #92400e; color: white; }
+
+    .empty-state { text-align: center; padding: 4rem 2rem; color: #94a3b8; }
+    .filter-badge {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+        border-radius: 50rem; padding: 0.35rem 0.9rem;
+        font-size: 0.78rem; font-weight: 700; color: var(--accent);
+        text-decoration: none; transition: all .2s;
+    }
+    .filter-badge.active { background: var(--accent); color: #fff; }
+    .filter-badge:hover { background: var(--accent); color: #fff; }
+</style>
+
+<div class="container-fluid py-3 px-md-4">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h4><i class="bi bi-buildings me-2 text-primary"></i>Hostel Buildings</h4>
+            <p class="text-muted small mb-0">Manage all hostel buildings and wings</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'room_manage' %}" class="btn btn-light btn-sm rounded-pill border px-3 fw-semibold">
+                <i class="bi bi-arrow-left me-1"></i>Back to Rooms
+            </a>
+            <a href="{% url 'building_create' %}" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i>Add Building
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible rounded-3 border-0 shadow-sm py-2 mb-3 fade show">
+        {{ message }} <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if buildings %}
+    <div class="row g-4">
+        {% for building in buildings %}
+        <div class="col-sm-6 col-lg-4 col-xl-3">
+            <div class="building-card h-100">
+                <div class="building-card-header d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="building-card-title">{{ building.name }}</div>
+                        <div class="building-meta">
+                            <i class="bi bi-gender-ambiguous me-1"></i>{{ building.get_gender_display }}
+                            &nbsp;·&nbsp;
+                            <i class="bi bi-layers me-1"></i>{{ building.total_floors }} floor{{ building.total_floors|pluralize }}
+                        </div>
+                    </div>
+                    <span class="badge {{ building.is_active|yesno:'badge-active,badge-inactive' }} rounded-pill px-2 py-1 fs-7">
+                        {{ building.is_active|yesno:'Active,Inactive' }}
+                    </span>
+                </div>
+                <div class="building-card-body">
+                    {% if building.description %}
+                    <p class="text-muted small mb-3">{{ building.description }}</p>
+                    {% endif %}
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <span class="stat-chip"><i class="bi bi-door-closed"></i> {{ building.room_count }} room{{ building.room_count|pluralize }}</span>
+                        <a href="{% url 'room_manage' %}?building={{ building.pk }}" class="stat-chip text-primary" style="text-decoration:none; border-color: rgba(99,102,241,0.3);">
+                            <i class="bi bi-eye"></i> View Rooms
+                        </a>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'building_edit' building.pk %}" class="action-btn btn-edit" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="post" action="{% url 'building_toggle' building.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn {{ building.is_active|yesno:'btn-toggle-on,btn-toggle-off' }}"
+                                    title="{{ building.is_active|yesno:'Deactivate,Activate' }}">
+                                <i class="bi bi-power"></i>
+                            </button>
+                        </form>
+                        {% if building.room_count == 0 %}
+                        <button type="button" class="action-btn btn-del2" data-bs-toggle="modal"
+                                data-bs-target="#deleteBuildingModal{{ building.pk }}" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        {% else %}
+                        <span class="action-btn" style="background:#f1f5f9; color:#94a3b8; cursor:not-allowed;" title="Has rooms — cannot delete">
+                            <i class="bi bi-trash"></i>
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Modal -->
+            <div class="modal fade" id="deleteBuildingModal{{ building.pk }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow rounded-4 p-2">
+                        <div class="modal-header border-0">
+                            <h5 class="modal-title fw-bold text-danger">Delete Building?</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center py-3">
+                            <i class="bi bi-building-x display-4 text-danger d-block mb-2"></i>
+                            <p class="text-muted">Are you sure you want to permanently delete <strong>{{ building.name }}</strong>?</p>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
+                            <form method="post" action="{% url 'building_delete' building.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger rounded-3 px-4 fw-bold">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="building-card">
+        <div class="empty-state">
+            <i class="bi bi-buildings display-1 d-block mb-3"></i>
+            <h5 class="fw-bold text-dark">No Buildings Found</h5>
+            <p class="mb-3">Start by adding a hostel building to organize rooms.</p>
+            <a href="{% url 'building_create' %}" class="btn btn-primary rounded-pill px-4 fw-bold">
+                <i class="bi bi-plus-lg me-1"></i>Add First Building
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

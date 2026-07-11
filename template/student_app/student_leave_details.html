@@ -1,0 +1,62 @@
+{% extends "student_base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container my-5">
+    <div class="pro-card shadow-sm">
+        <div class="card-header bg-transparent border-bottom px-4 py-3">
+            <h5 class="mb-0 text-primary fw-bold">My Leave Requests</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                {% if leave_requests %}
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-secondary">
+                        <tr>
+                            <th scope="col" class="px-4">#</th>
+                            <th scope="col">Reason</th>
+                            <th scope="col">Leave Date</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Submitted On</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leave_requests %}
+                            <tr>
+                                <td class="px-4 text-muted fw-semibold">{{ forloop.counter }}</td>
+                                <td class="fw-semibold">{{ leave.reason }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ leave.leave_date }}</span></td>
+                                <td>
+                                    {% if leave.status == 'approved' or leave.status == 'entered' %}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-success rounded-pill px-3">Approved</span>
+                                            {% if leave.gate_pass %}
+                                            <a href="{% url 'download_gate_pass' leave.gate_pass.id %}" target="_blank" class="btn btn-sm btn-outline-primary border-0 rounded-circle" title="Download Gate Pass">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    {% elif leave.status == 'rejected' %}
+                                        <span class="badge bg-danger rounded-pill px-3">Rejected</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark rounded-pill px-3">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">{{ leave.created_at|date:"d M Y, h:i A" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="p-5 text-center text-muted">
+                    <span class="material-symbols-outlined mb-3" style="font-size: 48px; opacity: 0.2">calendar_today</span>
+                    <h6>No leave requests pending.</h6>
+                    <p class="small text-muted mb-0">You can submit a new leave request from the Leave Request portal.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

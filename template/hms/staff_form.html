@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | {{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    {# ── Page Header ─────────────────────────────────────────────────── #}
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'staff_list' %}" class="btn btn-outline-secondary btn-sm rounded-circle me-3 p-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Back to Staff List">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fw-bold mb-0">{{ page_title }}</h2>
+            <p class="text-muted small mb-0">
+                {% if staff %}Update details for staff member <strong>{{ staff.name }}</strong>.{% else %}Add a new staff member and configure system access details.{% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% include '_messages.html' %}
+
+    <form method="post" enctype="multipart/form-data" action="{% if staff %}{% url 'staff_edit' staff.pk %}{% else %}{% url 'staff_create' %}{% endif %}">
+        {% csrf_token %}
+        <div class="row g-4">
+            {# ── Left Column: Staff Info & Credentials ──────────────────── #}
+            <div class="col-12 col-lg-8">
+                {# Staff Information Card #}
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-person-workspace me-2"></i>Staff Information</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Full Name *</label>
+                                <input type="text" name="name" class="form-control" value="{{ staff.name|default:'' }}" required placeholder="Enter full name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Email Address *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" name="email" class="form-control" value="{{ staff.email|default:'' }}" required placeholder="email@example.com">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Phone Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                                    <input type="text" name="phone" class="form-control" value="{{ staff.phone|default:'' }}" placeholder="+1 234 567 8900">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Designation *</label>
+                                <select name="designation" class="form-select" required>
+                                    {% for val, lbl in designations %}
+                                    <option value="{{ val }}" {% if staff.designation == val %}selected{% endif %}>{{ lbl }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small text-secondary">Working Shift</label>
+                                <select name="shift" class="form-select">
+                                    {% for val, lbl in shifts %}
+                                    <option value="{{ val }}" {% if staff.shift == val %}selected{% endif %}>{{ lbl }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small text-secondary">Status</label>
+                                <select name="status" class="form-select">
+                                    {% for val, lbl in statuses %}
+                                    <option value="{{ val }}" {% if staff.status == val %}selected{% endif %}>{{ lbl }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small text-secondary">Performance Review</label>
+                                <select name="performance" class="form-select">
+                                    {% for val, lbl in performances %}
+                                    <option value="{{ val }}" {% if staff.performance == val %}selected{% endif %}>{{ lbl }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small text-secondary">Salary (₹)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted">₹</span>
+                                    <input type="number" name="salary" class="form-control" value="{{ staff.salary|default:'0' }}" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small text-secondary">Date of Joining</label>
+                                <input type="date" name="doj" class="form-control" value="{{ staff.doj|date:'Y-m-d'|default:'' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small text-secondary">Documents Submitted</label>
+                                <input type="text" name="documents" class="form-control" value="{{ staff.documents|default:'' }}" placeholder="e.g. Aadhar, CV">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# User Account Settings Card #}
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-shield-lock me-2"></i>User Account Settings</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Username (Only for Login) {% if not staff %}*{% endif %}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-at"></i></span>
+                                    <input type="text" name="username" class="form-control" value="{{ staff.user.username|default:'' }}" {% if staff.user %}readonly{% endif %} {% if not staff %}required{% endif %} placeholder="e.g. johndoe">
+                                </div>
+                                {% if staff.user %}
+                                <div class="form-text text-muted small">Username cannot be changed.</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">System Role {% if not staff %}*{% endif %}</label>
+                                <select name="role" class="form-select bg-light" {% if not staff %}required{% endif %}>
+                                    <option value="" disabled {% if not staff %}selected{% endif %}>Select System Role...</option>
+                                    {% for r in roles %}
+                                    <option value="{{ r.id }}" {% if staff.user.profile.role.id == r.id %}selected{% endif %}>{{ r.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Password {% if not staff %}*{% endif %}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
+                                    <input type="password" name="password" class="form-control" {% if not staff %}required{% endif %} placeholder="{% if staff %}Leave blank to keep current{% else %}Min. 6 characters{% endif %}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-secondary">Confirm Password {% if not staff %}*{% endif %}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-check-all"></i></span>
+                                    <input type="password" name="confirm_password" class="form-control" {% if not staff %}required{% endif %} placeholder="{% if staff %}Leave blank to keep current{% else %}Repeat password{% endif %}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── Right Column: Photo & Actions ──────────────────────────── #}
+            <div class="col-12 col-lg-4">
+                {# Profile Photo Card #}
+                <div class="card border-0 shadow-sm rounded-4 mb-4 text-center">
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            {% if staff.user.profile.photo %}
+                            <img src="{{ staff.user.profile.photo.url }}" class="rounded-circle shadow-sm border border-3 border-white mb-3 object-fit-cover" width="120" height="120" id="photoPreview">
+                            {% else %}
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3 shadow-sm border border-3 border-white" style="width:120px; height:120px;" id="photoPreview">
+                                <i class="bi bi-person-circle display-3"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <h6 class="fw-bold mb-1">Profile Photo</h6>
+                        <p class="text-muted small mb-3">Upload a clean profile picture (JPG or PNG).</p>
+                        <input type="file" name="photo" class="form-control form-control-sm" accept="image/*" id="photoInput">
+                    </div>
+                </div>
+
+                {# Actions Card #}
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold mb-2">
+                            <i class="bi bi-check-circle-fill me-2"></i>Save Staff Member
+                        </button>
+                        <a href="{% url 'staff_list' %}" class="btn btn-outline-secondary w-100 py-2">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Live photo preview
+    document.getElementById('photoInput').addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('photoPreview');
+                if (preview.tagName === 'IMG') {
+                    preview.src = e.target.result;
+                } else {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.width = 120;
+                    img.height = 120;
+                    img.id = 'photoPreview';
+                    img.className = 'rounded-circle shadow-sm border border-3 border-white mb-3 object-fit-cover';
+                    preview.parentNode.replaceChild(img, preview);
+                }
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+</script>
+{% endblock %}

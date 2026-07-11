@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Accounting & Billing{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+        <div>
+            <h2 class="fw-bold mb-1">Accounting & Billing</h2>
+            <p class="text-muted mb-0 small">Manage fee collection, billing records, and financial settings.</p>
+        </div>
+    </div>
+
+    <!-- Action Nav Bar -->
+    <div class="card border-0 shadow-sm mb-4 rounded-3 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="d-flex align-items-stretch overflow-x-auto flex-nowrap">
+                <a href="{% url 'paybill_base' %}" class="paybill-nav-link {% if request.resolver_match.url_name == 'paybill_base' %}active{% endif %}">
+                    <i class="material-symbols-outlined">dashboard</i>
+                    <span>Overview</span>
+                </a>
+                <a href="{% url 'collect_fees' %}" class="paybill-nav-link {% if request.resolver_match.url_name == 'collect_fees' %}active{% endif %}">
+                    <i class="material-symbols-outlined">point_of_sale</i>
+                    <span>Collect Fees</span>
+                </a>
+                <a href="{% url 'pending_fees' %}" class="paybill-nav-link {% if request.resolver_match.url_name == 'pending_fees' %}active{% endif %}">
+                    <i class="material-symbols-outlined">pending_actions</i>
+                    <span>Pending Dues</span>
+                </a>
+                <a href="{% url 'transaction_record' %}" class="paybill-nav-link {% if request.resolver_match.url_name == 'transaction_record' %}active{% endif %}">
+                    <i class="material-symbols-outlined">receipt_long</i>
+                    <span>Transactions</span>
+                </a>
+                <a href="{% url 'fee_structure' %}" class="paybill-nav-link {% if request.resolver_match.url_name == 'fee_structure' %}active{% endif %}">
+                    <i class="material-symbols-outlined">account_balance</i>
+                    <span>Fee Structure</span>
+                </a>
+                <a href="{% url 'admin_analytics' %}" class="paybill-nav-link {% if request.resolver_match.url_name == 'admin_analytics' %}active{% endif %} ms-auto">
+                    <i class="material-symbols-outlined">bar_chart</i>
+                    <span>Analytics</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Summary Row -->
+    <div class="row g-3 mb-4 px-1">
+        <div class="col-md-4 col-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="bg-danger bg-opacity-10 rounded-3 p-2">
+                            <i class="material-symbols-outlined text-danger fs-4">group</i>
+                        </div>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle small">Unpaid</span>
+                    </div>
+                    <h3 class="fw-bold mb-1">{{ total_count }}</h3>
+                    <p class="text-muted mb-0 small">Students with Pending Fees</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="bg-warning bg-opacity-10 rounded-3 p-2">
+                            <i class="material-symbols-outlined text-warning fs-4">payments</i>
+                        </div>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle small">Overdue</span>
+                    </div>
+                    <h3 class="fw-bold mb-1">₹{{ total_pending_amount }}</h3>
+                    <p class="text-muted mb-0 small">Total Pending Amount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-12">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1 small fw-bold text-uppercase">Quick Actions</p>
+                        <div class="d-flex gap-2 mt-2">
+                            <a href="{% url 'collect_fees' %}" class="btn btn-primary btn-sm">
+                                <i class="material-symbols-outlined fs-6 me-1 align-middle">add_circle</i>Collect Fee
+                            </a>
+                            <a href="{% url 'transaction_record' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="material-symbols-outlined fs-6 me-1 align-middle">history</i>View All
+                            </a>
+                        </div>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                        <i class="material-symbols-outlined text-primary fs-2">account_balance_wallet</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+.paybill-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+.paybill-nav-link:hover {
+    color: #2563eb;
+    background: rgba(37,99,235,0.04);
+}
+.paybill-nav-link.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    background: rgba(37,99,235,0.05);
+}
+.paybill-nav-link i {
+    font-size: 1.1rem;
+}
+
+.bg-danger-subtle  { background-color: #fee2e2 !important; }
+.bg-warning-subtle { background-color: #fef9c3 !important; }
+</style>
+{% endblock %}

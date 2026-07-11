@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}| Inventory Management{% endblock %}
+{% block content %}
+<style>
+:root{--card-bg:#161b22;--glass-border:rgba(255,255,255,0.1);}
+.mod-header{background:linear-gradient(135deg,#161825,#1a1628);border:1px solid var(--glass-border);border-radius:14px;padding:1.5rem 2rem;margin-bottom:1.5rem;}
+.stat-mini{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem 1.25rem;text-align:center;}
+.panel-card{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:14px;overflow:hidden;}
+.sa-table{color:rgba(255,255,255,0.8);font-size:0.82rem;}
+.sa-table thead th{color:rgba(255,255,255,0.4);font-size:0.72rem;text-transform:uppercase;border-bottom:1px solid var(--glass-border);background:rgba(255,255,255,0.02);padding:0.7rem 1rem;}
+.sa-table tbody td{border-bottom:1px solid rgba(255,255,255,0.04);padding:0.65rem 1rem;vertical-align:middle;}
+.sa-table tbody tr:hover{background:rgba(255,255,255,0.03);}
+.badge-s{font-size:0.68rem;padding:3px 9px;border-radius:20px;font-weight:600;}
+.s-green{background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);}
+.s-yellow{background:rgba(234,179,8,0.15);color:#eab308;border:1px solid rgba(234,179,8,0.3);}
+.s-red{background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);}
+.s-info{background:rgba(6,182,212,0.15);color:#06b6d4;border:1px solid rgba(6,182,212,0.3);}
+.modal-content{background:#1a1f35;border:1px solid var(--glass-border);color:#fff;}
+.modal-header,.modal-footer{border-color:var(--glass-border);}
+.form-control,.form-select{background:#0d1117;border:1px solid var(--glass-border);color:#fff;}
+.form-control:focus,.form-select:focus{background:#0d1117;border-color:#a855f7;color:#fff;box-shadow:0 0 0 3px rgba(168,85,247,0.15);}
+</style>
+
+<div class="mod-header">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <h2 class="text-white fw-bold mb-1"><i class="bi bi-boxes me-2 text-purple" style="color:#a855f7;"></i>Inventory Management</h2>
+      <p class="text-white opacity-50 mb-0">Track hostel furniture, assets, and consumable stock</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'superadmin_dashboard' %}" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
+      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addItemModal"><i class="bi bi-plus-circle me-1"></i>Add Item</button>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-2">
+    <div class="col-4"><div class="stat-mini">
+      <div style="font-size:1.8rem;font-weight:700;color:#a855f7;">{{ total_items }}</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">Total Items</div>
+    </div></div>
+    <div class="col-4"><div class="stat-mini">
+      <div style="font-size:1.8rem;font-weight:700;color:#ef4444;">{{ low_stock }}</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">Out of Stock</div>
+    </div></div>
+    <div class="col-4"><div class="stat-mini">
+      <div style="font-size:1.8rem;font-weight:700;color:#eab308;">{{ damaged }}</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">Damaged</div>
+    </div></div>
+  </div>
+
+  <div class="d-flex gap-2 mt-3 flex-wrap">
+    <a href="{% url 'inventory_list' %}" class="btn btn-sm {% if not category %}btn-primary{% else %}btn-outline-light{% endif %}">All</a>
+    {% for val, label in categories %}
+    <a href="?category={{ val }}" class="btn btn-sm {% if category == val %}btn-primary{% else %}btn-outline-light{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="panel-card">
+  <div class="table-responsive">
+    <table class="table sa-table mb-0">
+      <thead>
+        <tr><th>#</th><th>Item Name</th><th>Category</th><th>Qty</th><th>Available</th><th>Vendor</th><th>Status</th><th>Purchase Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td class="text-muted">{{ forloop.counter }}</td>
+          <td><div class="fw-semibold text-white">{{ item.name }}</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.4);">PO: {{ item.purchase_order_no|default:"—" }}</div></td>
+          <td>{{ item.get_category_display }}</td>
+          <td>{{ item.quantity }}</td>
+          <td class="{% if item.available_quantity == 0 %}text-danger{% else %}text-success{% endif %} fw-bold">{{ item.available_quantity }}</td>
+          <td><div>{{ item.vendor_name|default:"—" }}</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.4);">{{ item.vendor_contact|default:"" }}</div></td>
+          <td>
+            <span class="badge-s {% if item.status == 'good' %}s-green{% elif item.status == 'oos' %}s-red{% elif item.status == 'damaged' %}s-yellow{% else %}s-info{% endif %}">
+              {{ item.get_status_display }}
+            </span>
+          </td>
+          <td class="text-muted">{{ item.purchase_date|date:"d M Y" }}</td>
+          <td>
+            <a href="{% url 'inventory_edit' item.pk %}" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-pencil"></i></a>
+            <button class="btn btn-sm btn-outline-danger py-0 px-2" data-bs-toggle="modal" data-bs-target="#delItem{{ item.pk }}"><i class="bi bi-trash"></i></button>
+            <div class="modal fade" id="delItem{{ item.pk }}" tabindex="-1">
+              <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                  <div class="modal-body text-center py-4">Remove <strong>{{ item.name }}</strong>?</div>
+                  <div class="modal-footer">
+                    <button class="btn btn-sm btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'inventory_delete' item.pk %}">{% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-box-seam fs-2 d-block mb-2 opacity-25"></i>No inventory items yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Add Inventory Item</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <form method="post" action="{% url 'inventory_create' %}">{% csrf_token %}
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label text-white-50">Item Name *</label><input type="text" name="name" class="form-control" required></div>
+          <div class="col-md-6"><label class="form-label text-white-50">Category *</label>
+            <select name="category" class="form-select" required>{% for v,l in categories %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+          </div>
+          <div class="col-md-4"><label class="form-label text-white-50">Total Qty</label><input type="number" name="quantity" class="form-control" value="1" min="0"></div>
+          <div class="col-md-4"><label class="form-label text-white-50">Available Qty</label><input type="number" name="available_quantity" class="form-control" value="1" min="0"></div>
+          <div class="col-md-4"><label class="form-label text-white-50">Status</label>
+            <select name="status" class="form-select">{% for v,l in statuses %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+          </div>
+          <div class="col-md-6"><label class="form-label text-white-50">Vendor Name</label><input type="text" name="vendor_name" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label text-white-50">Vendor Contact</label><input type="text" name="vendor_contact" class="form-control"></div>
+          <div class="col-md-12"><label class="form-label text-white-50">Purchase Order No.</label><input type="text" name="purchase_order_no" class="form-control"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Add Item</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

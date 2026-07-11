@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Warden Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="pro-card p-4 d-flex justify-content-between align-items-center bg-white border-0 shadow-sm border-start border-4 border-indigo">
+                <div>
+                    <h2 class="h4 mb-1 fw-bold text-slate-800">Warden Dashboard</h2>
+                    <p class="mb-0 text-muted">A summary of activities and student overview for your assigned blocks.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-indigo rounded-pill px-4 shadow-sm"><i class="bi bi-plus-lg me-2"></i>New Notice</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assigned Blocks Pill Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="text-muted small fw-bold text-uppercase me-2">Managed Blocks:</span>
+                {% for block in assigned_blocks %}
+                    <span class="badge rounded-pill bg-indigo bg-opacity-10 text-indigo border border-indigo border-opacity-25 px-3 py-2 fw-medium">{{ block.name }}</span>
+                {% empty %}
+                    <span class="text-muted small italic">No blocks assigned. Contact Super Admin.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="pro-card p-4 h-100 border-0 shadow-sm bg-indigo text-white">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <p class="opacity-75 small text-uppercase fw-bold mb-1">Total Students</p>
+                        <h3 class="h2 mb-0 fw-bold">{{ total_students }}</h3>
+                    </div>
+                    <div class="bg-white bg-opacity-20 p-2 rounded-2">
+                        <span class="material-symbols-outlined">group</span>
+                    </div>
+                </div>
+                <div class="mt-2 text-white opacity-75 small">Across assigned blocks</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pro-card p-4 h-100 border-0 shadow-sm">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <p class="text-muted small text-uppercase fw-bold mb-1">Total Rooms</p>
+                        <h3 class="h2 mb-0 fw-bold text-slate-800">{{ total_rooms }}</h3>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-2 rounded-2 text-primary">
+                        <span class="material-symbols-outlined">meeting_room</span>
+                    </div>
+                </div>
+                <div class="mt-2 text-muted small">Managed rooms</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pro-card p-4 h-100 border-0 shadow-sm">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <p class="text-muted small text-uppercase fw-bold mb-1">Leaves Pending</p>
+                        <h3 class="h2 mb-0 fw-bold text-slate-800">0</h3>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 p-2 rounded-2 text-warning">
+                        <span class="material-symbols-outlined">clock_loader_60</span>
+                    </div>
+                </div>
+                <div class="mt-2 text-muted small">Requiring approval</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pro-card p-4 h-100 border-0 shadow-sm">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <p class="text-muted small text-uppercase fw-bold mb-1">Complaints</p>
+                        <h3 class="h2 mb-0 fw-bold text-slate-800">0</h3>
+                    </div>
+                    <div class="bg-danger bg-opacity-10 p-2 rounded-2 text-danger">
+                        <span class="material-symbols-outlined">report_problem</span>
+                    </div>
+                </div>
+                <div class="mt-2 text-muted small">Unresolved issues</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Admissions Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="pro-card border-0 shadow-sm">
+                <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">Recently Admitted Students</h5>
+                    <a href="{% url 'student_list' %}" class="btn btn-sm btn-outline-indigo rounded-pill px-3 fw-bold">View Directory</a>
+                </div>
+                <div class="p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="px-4 py-3 border-0 small text-uppercase fw-bold text-muted">Student</th>
+                                    <th class="py-3 border-0 small text-uppercase fw-bold text-muted">ID / Roll</th>
+                                    <th class="py-3 border-0 small text-uppercase fw-bold text-muted">Room</th>
+                                    <th class="py-3 border-0 small text-uppercase fw-bold text-muted">Course</th>
+                                    <th class="py-3 border-0 small text-uppercase fw-bold text-muted text-end px-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in recent_students %}
+                                <tr>
+                                    <td class="px-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar me-3 bg-indigo bg-opacity-10 text-indigo rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                {{ student.name|slice:":1" }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-slate-800" style="font-size: 0.9rem;">{{ student.name }}</div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">{{ student.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="small fw-medium">{{ student.roll }}</td>
+                                    <td class="small">
+                                        {% if student.bed_set.first %}
+                                            <span class="badge bg-soft-primary text-primary">{{ student.bed_set.first.room.room_number }}</span>
+                                        {% else %}
+                                            <span class="text-muted italic">No Bed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ student.get_course_display }}</td>
+                                    <td class="text-end px-4">
+                                        <a href="{% url 'view_student' student.pk %}" class="btn btn-sm btn-light rounded-pill px-3">View Profile</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">No students assigned to your blocks.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-indigo { background-color: #4f46e5; }
+    .text-indigo { color: #4f46e5; }
+    .btn-indigo { background-color: #4f46e5; color: white; }
+    .btn-indigo:hover { background-color: #4338ca; color: white; }
+    .btn-outline-indigo { border-color: #4f46e5; color: #4f46e5; }
+    .btn-outline-indigo:hover { background-color: #4f46e5; color: white; }
+    .border-indigo { border-color: #4f46e5 !important; }
+    .bg-soft-primary { background-color: #eef2ff; color: #6366f1; }
+</style>
+{% endblock %}
