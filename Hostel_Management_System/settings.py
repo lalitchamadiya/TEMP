@@ -112,9 +112,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Hostel_Management_System.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
 DATABASE_URL = os.getenv('DATABASE_URL', '')
 
 if DATABASE_URL and HAS_DJ_DATABASE_URL:
@@ -126,15 +123,8 @@ if DATABASE_URL and HAS_DJ_DATABASE_URL:
             conn_health_checks=True,
         )
     }
-elif not DEBUG:
-    # Production without DATABASE_URL — fail loudly instead of using ephemeral SQLite
-    from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured(
-        "DATABASE_URL environment variable is not set. "
-        "Add a PostgreSQL plugin in Railway and link DATABASE_URL to this service."
-    )
 else:
-    # Local development: SQLite fallback
+    # Fallback to SQLite (Development or if Railway PostgreSQL is not linked yet)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
