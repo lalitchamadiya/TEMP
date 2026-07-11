@@ -131,12 +131,23 @@ def leave_record(request):
     if request.method == 'POST':
         # Action requires approve/reject permission
         action = request.POST.get('action')
-        role = request.user.profile.role
-        perm = role.permissions.filter(module__code='leave').first()
-        
-        if action == 'approve' and not getattr(perm, 'can_approve', False):
-            raise PermissionDenied
-        if action == 'reject' and not getattr(perm, 'can_reject', False):
+        # Check permissions safely (Superusers and active super-admins always bypass)
+        is_authorized = False
+        if request.user.is_superuser:
+            is_authorized = True
+        elif hasattr(request.user, 'profile') and request.user.profile.role:
+            role = request.user.profile.role
+            if role.is_superadmin:
+                is_authorized = True
+            else:
+                perm = role.permissions.filter(module__code='leave').first()
+                if perm:
+                    if action == 'approve' and getattr(perm, 'can_approve', False):
+                        is_authorized = True
+                    elif action == 'reject' and getattr(perm, 'can_reject', False):
+                        is_authorized = True
+
+        if not is_authorized:
             raise PermissionDenied
 
         leave_id = request.POST.get('leave_id')
@@ -158,12 +169,23 @@ def leave_record(request):
 def pending_leave(request):
     if request.method == 'POST':
         action = request.POST.get('action')
-        role = request.user.profile.role
-        perm = role.permissions.filter(module__code='leave').first()
-        
-        if action == 'approve' and not getattr(perm, 'can_approve', False):
-            raise PermissionDenied
-        if action == 'reject' and not getattr(perm, 'can_reject', False):
+        # Check permissions safely (Superusers and active super-admins always bypass)
+        is_authorized = False
+        if request.user.is_superuser:
+            is_authorized = True
+        elif hasattr(request.user, 'profile') and request.user.profile.role:
+            role = request.user.profile.role
+            if role.is_superadmin:
+                is_authorized = True
+            else:
+                perm = role.permissions.filter(module__code='leave').first()
+                if perm:
+                    if action == 'approve' and getattr(perm, 'can_approve', False):
+                        is_authorized = True
+                    elif action == 'reject' and getattr(perm, 'can_reject', False):
+                        is_authorized = True
+
+        if not is_authorized:
             raise PermissionDenied
 
         leave_id = request.POST.get('leave_id')
