@@ -41,9 +41,10 @@ webencodings==0.5.1
 xhtml2pdf==0.2.17
 python-dotenv>=1.0.0
 openpyxl==3.1.2
+pyIsEmail>=2.0.0
 
 # Production server & deployment
 gunicorn==21.2.0
 whitenoise==6.7.0
 psycopg2-binary==2.9.9
-dj-database-url==2.2.0
+dj-database-url==2.2.0

@@ -4,4 +4,4 @@ buildCommand = "pip install -r requirements-prod.txt && python manage.py collect
 
 [deploy]
 releaseCommand = "python manage.py migrate && python manage.py seed_modules && python manage.py seed_super_admin"
-startCommand = "gunicorn Hostel_Management_System.wsgi --bind 0.0.0.0:$PORT --log-file -"
+startCommand = "gunicorn Hostel_Management_System.wsgi --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --preload --log-file -"

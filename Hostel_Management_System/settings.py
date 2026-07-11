@@ -38,7 +38,7 @@ from django.contrib import messages
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-1%8h(#9yx%1ywjw^!=8!a!#q)@dw6o!(*!5vyb69k2@dr7k@9m')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
 
@@ -173,8 +173,15 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise: serve compressed static files efficiently
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise: serve compressed static files efficiently (Django 5+ STORAGES format)
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -189,8 +196,10 @@ MESSAGE_TAGS={
 
 SESSION_COOKIE_AGE = 900  # 15 minutes in seconds
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+# Only enforce secure cookies over HTTPS in production
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
 
 LOGIN_URL = '/authentication/login/'  # Update this to the correct path for your login page
 

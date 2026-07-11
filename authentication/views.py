@@ -45,10 +45,10 @@ def get_client_ip(request):
 
 class EmailValidationView(View):
     def post(self, request):
-        from validate_email import validate_email
+        from pyIsEmail import is_email
         data = json.loads(request.body)
         email = data['email']
-        if not validate_email(email):
+        if not is_email(email):
             return JsonResponse({'email_error': 'Email is invalid'}, status=400)
         if User.objects.filter(email=email).exists():
             return JsonResponse({'email_error': 'Email already in use'}, status=409)
