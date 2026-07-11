@@ -8,11 +8,18 @@ register = template.Library()
 def has_role(user, role_names):
     if not user.is_authenticated:
         return False
-    if user.is_superuser or (hasattr(user, 'profile') and user.profile.role and user.profile.role.is_superadmin):
+
+    profile = None
+    try:
+        profile = user.profile
+    except Exception:
+        pass
+
+    if user.is_superuser or (profile and profile.role and profile.role.is_superadmin):
         return True
-    if hasattr(user, 'profile') and user.profile.role:
+    if profile and profile.role:
         names = [name.strip() for name in role_names.split(',')]
-        return user.profile.role.name in names
+        return profile.role.name in names
     return False
 
 

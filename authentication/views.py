@@ -121,8 +121,14 @@ class LoginView(View):
         if username and password:
             user = auth.authenticate(username=username, password=password)
             if user:
+                profile = None
+                try:
+                    profile = user.profile
+                except Exception:
+                    pass
+
                 # Check if account is locked
-                if hasattr(user, 'profile') and user.profile.is_locked:
+                if profile and profile.is_locked:
                     messages.error(request, 'Your account has been locked. Contact an administrator.')
                     return render(request, 'authentication/login.html')
 
@@ -131,8 +137,8 @@ class LoginView(View):
                     request.session.set_expiry(900)
                     log_action(user, 'login', user, request=request)
 
-                    if hasattr(user, 'profile') and user.profile.role:
-                        role_name = user.profile.role.name
+                    if profile and profile.role:
+                        role_name = profile.role.name
                         if role_name in ('Super Admin', 'Admin'):
                             return redirect('superadmin_dashboard')
                         elif role_name == 'Student':

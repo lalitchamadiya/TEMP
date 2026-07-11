@@ -26,11 +26,17 @@ def rbac_context(request):
     if hasattr(request, '_rbac_cache'):
         return request._rbac_cache
 
+    profile = None
+    try:
+        profile = request.user.profile
+    except Exception:
+        pass
+
     is_super = (
         request.user.is_superuser or (
-            hasattr(request.user, 'profile') and
-            request.user.profile.role and
-            request.user.profile.role.is_superadmin
+            profile and
+            profile.role and
+            profile.role.is_superadmin
         )
     )
 
@@ -49,7 +55,7 @@ def rbac_context(request):
         user_permissions = {}
         visible_modules = []
 
-        if hasattr(request.user, 'profile') and request.user.profile.role:
+        if profile and profile.role:
             role = request.user.profile.role
             perms = RolePermission.objects.filter(role=role).select_related('module')
 

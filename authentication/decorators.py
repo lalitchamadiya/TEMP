@@ -18,10 +18,17 @@ def check_perm(user, module_code, action):
         return False
     if user.is_superuser:
         return True
-    if hasattr(user, 'profile') and user.profile.role and user.profile.role.is_superadmin:
+
+    profile = None
+    try:
+        profile = user.profile
+    except Exception:
+        pass
+
+    if profile and profile.role and profile.role.is_superadmin:
         return True
-    if hasattr(user, 'profile') and user.profile.role:
-        perm = user.profile.role.permissions.filter(module__code=module_code).first()
+    if profile and profile.role:
+        perm = profile.role.permissions.filter(module__code=module_code).first()
         if perm:
             return getattr(perm, f'can_{action}', False)
     return False
@@ -42,15 +49,21 @@ def role_required(*role_names):
             if not request.user.is_authenticated:
                 return redirect('login')
             # Super Admin bypass
+            profile = None
+            try:
+                profile = request.user.profile
+            except Exception:
+                pass
+
             if request.user.is_superuser or (
-                hasattr(request.user, 'profile') and
-                request.user.profile.role and
-                request.user.profile.role.is_superadmin
+                profile and
+                profile.role and
+                profile.role.is_superadmin
             ):
                 return view_func(request, *args, **kwargs)
 
-            if hasattr(request.user, 'profile') and request.user.profile.role:
-                if request.user.profile.role.name in role_names:
+            if profile and profile.role:
+                if profile.role.name in role_names:
                     return view_func(request, *args, **kwargs)
 
             raise PermissionDenied
