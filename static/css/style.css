@@ -325,3 +325,108 @@ td {
     padding: 1.5rem;
     border-radius: var(--radius-lg);
 }
+
+/* ---- SIDEBAR COLLAPSE / EXPAND ---- */
+
+/* Toggle button in the top navbar */
+.sidebar-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius-sm);
+    transition: background 0.2s ease, color 0.2s ease;
+    line-height: 1;
+}
+.sidebar-toggle-btn:hover {
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary);
+}
+
+/* Sidebar transitions */
+.sidebar-wrapper {
+    transition: width 0.28s cubic-bezier(0.4,0,0.2,1), min-width 0.28s cubic-bezier(0.4,0,0.2,1);
+    width: 220px;
+    min-width: 220px;
+    overflow: hidden;
+}
+
+/* Collapsed state — icon strip only */
+.sidebar-wrapper.sidebar-collapsed {
+    width: 56px !important;
+    min-width: 56px !important;
+}
+
+/* Hide text labels when collapsed */
+.sidebar-wrapper.sidebar-collapsed .sidebar-label,
+.sidebar-wrapper.sidebar-collapsed .section-title,
+.sidebar-wrapper.sidebar-collapsed .sidebar-brand .d-flex.flex-column,
+.sidebar-wrapper.sidebar-collapsed .user-role-card .d-flex.flex-column {
+    display: none !important;
+}
+
+/* Centre icons when collapsed */
+.sidebar-wrapper.sidebar-collapsed .nav-link {
+    justify-content: center;
+    padding: 0.65rem 0.4rem !important;
+    margin: 0.15rem 0.25rem;
+}
+.sidebar-wrapper.sidebar-collapsed .nav-link .material-symbols-outlined,
+.sidebar-wrapper.sidebar-collapsed .nav-link .bi {
+    margin-right: 0 !important;
+}
+.sidebar-wrapper.sidebar-collapsed .sidebar-brand {
+    justify-content: center;
+    padding: 0.5rem !important;
+}
+.sidebar-wrapper.sidebar-collapsed .user-role-card {
+    justify-content: center;
+    padding: 0.5rem 0.25rem;
+    margin: 1rem 0.25rem;
+}
+.sidebar-wrapper.sidebar-collapsed .user-role-icon {
+    margin-right: 0;
+}
+
+/* Tooltip on collapsed icons — native browser title attr used */
+.sidebar-wrapper.sidebar-collapsed .nav-link {
+    position: relative;
+}
+
+/* Main content stretches when sidebar collapses */
+.sidebar-wrapper.sidebar-collapsed + main,
+.sidebar-wrapper.sidebar-collapsed ~ main {
+    flex: 1 1 auto !important;
+    max-width: 100% !important;
+}
+
+/* Mobile: hidden by default, slide in on toggle */
+@media (max-width: 767.98px) {
+    .sidebar-wrapper {
+        position: fixed !important;
+        top: 61px;
+        left: 0;
+        bottom: 0;
+        height: calc(100vh - 61px);
+        transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1);
+        width: 220px !important;
+        min-width: 220px !important;
+        z-index: 1040;
+    }
+    .sidebar-wrapper.sidebar-mobile-open {
+        transform: translateX(0);
+    }
+    /* Overlay for mobile */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 1039;
+    }
+    .sidebar-overlay.active {
+        display: block;
+    }
+}
+

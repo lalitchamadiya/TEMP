@@ -111,7 +111,7 @@ class Command(BaseCommand):
                 'code': 'hostel_manager',
                 'name': 'Hostel Infra',
                 'menu_label': 'Hostel Infra',
-                'icon': 'bi-apartment',
+                'icon': 'bi-buildings',
                 'url_name': 'hostel_manager',
                 'order': 110,
                 'parent_code': ''
@@ -120,7 +120,7 @@ class Command(BaseCommand):
                 'code': 'fee_manager',
                 'name': 'Fee Manager',
                 'menu_label': 'Fee Manager',
-                'icon': 'bi-payments',
+                'icon': 'bi-cash-coin',
                 'url_name': 'fee_manager',
                 'order': 120,
                 'parent_code': ''

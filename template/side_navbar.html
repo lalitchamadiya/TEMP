@@ -17,7 +17,7 @@
         </div>
 
         <ul class="nav flex-column mb-auto">
-            {% if user.is_superuser or user.profile.role.is_superadmin or user.profile.role.name == 'Admin' or user.profile.role.name == 'Staff' %}
+            {% if is_superadmin or user.profile.role.name == 'Admin' or user.profile.role.name == 'Staff' %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'superadmin_dashboard' %}active{% endif %}" aria-current="page" href="{% url 'superadmin_dashboard' %}">
                     <span class="material-symbols-outlined">speed</span>
@@ -102,13 +102,13 @@
             </li>
             {% for module in visible_modules %}
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% url module.url_name %}">
+                <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% url module.url_name %}" title="{{ module.menu_label }}">
                     {% if "bi-" in module.icon %}
                     <i class="bi {{ module.icon }} me-3 opacity-75 fs-5"></i>
                     {% else %}
                     <span class="material-symbols-outlined me-3">{{ module.icon }}</span>
                     {% endif %}
-                    {{ module.menu_label }}
+                    <span class="sidebar-label">{{ module.menu_label }}</span>
                 </a>
             </li>
             {% endfor %}
@@ -123,7 +123,11 @@
                 <span class="material-symbols-outlined text-primary fs-5">shield_person</span>
             </div>
             <div class="d-flex flex-column">
+                {% if is_superadmin %}
+                <span class="fw-bold text-white fs-6 lh-1">Super Admin</span>
+                {% else %}
                 <span class="fw-bold text-white fs-6 lh-1">{{ user.profile.role.name|default:"No Role" }}</span>
+                {% endif %}
                 <span class="text-white opacity-50" style="font-size: 0.65rem;">System Access</span>
             </div>
         </div>

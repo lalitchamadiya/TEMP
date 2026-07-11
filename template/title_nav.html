@@ -1,10 +1,13 @@
 {% load static %}
 
 {% block content %}
-<a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">Noble Hostel</a>
-  <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
+<div class="d-flex align-items-center">
+  <!-- Sidebar toggle button - works on ALL screen sizes -->
+  <button id="sidebarToggleBtn" class="btn btn-sm sidebar-toggle-btn me-2 ms-2" type="button" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+    <i class="bi bi-layout-sidebar fs-5"></i>
   </button>
+  <a class="navbar-brand" href="#">Noble Hostel</a>
+</div>
   <div class="navbar-nav ">
     {% if request.user.is_authenticated %}
     <form action="{% url 'logout'%}" method="post" class="nav-item text-nowrap d-flex justify-content-center align-items-center">
@@ -27,4 +30,4 @@
     <!-- display login link or other content for anonymous users -->
   {% endif %}
   </div>
-{% endblock  %}
+{% endblock  %}
