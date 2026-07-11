@@ -8,6 +8,8 @@ class Command(BaseCommand):
     help = 'Auto-creates a superuser (if none exists) and seeds the Super Admin role with all permissions.'
 
     def handle(self, *args, **options):
+        self.stdout.write(self.style.HTTP_INFO('=== seed_super_admin starting ==='))
+
         # 1. Ensure Super Admin role exists
         role, created = Role.objects.get_or_create(
             name='Super Admin',
@@ -17,31 +19,35 @@ class Command(BaseCommand):
                 'is_superadmin': True
             }
         )
-        if not created:
+        if created:
+            self.stdout.write(self.style.SUCCESS("✓ Created 'Super Admin' role."))
+        else:
             role.is_superadmin = True
             role.is_active = True
             role.save()
+            self.stdout.write(self.style.SUCCESS("✓ 'Super Admin' role already exists — updated."))
 
         # 2. Grant all permissions to Super Admin for every module
         modules = Module.objects.all()
-        for module in modules:
-            rp, _ = RolePermission.objects.get_or_create(role=role, module=module)
-            rp.can_view = True
-            rp.can_add = True
-            rp.can_edit = True
-            rp.can_delete = True
-            rp.can_approve = True
-            rp.can_reject = True
-            rp.can_export = True
-            rp.can_print = True
-            rp.can_import = True
-            rp.can_hide = True
-            rp.can_disable = True
-            rp.save()
+        module_count = modules.count()
+        if module_count == 0:
+            self.stdout.write(self.style.WARNING(
+                "⚠ No modules found — run 'seed_modules' first. Role permissions skipped."
+            ))
+        else:
+            for module in modules:
+                rp, _ = RolePermission.objects.get_or_create(role=role, module=module)
+                rp.can_view = rp.can_add = rp.can_edit = rp.can_delete = True
+                rp.can_approve = rp.can_reject = rp.can_export = rp.can_print = True
+                rp.can_import = rp.can_hide = rp.can_disable = True
+                rp.save()
+            self.stdout.write(self.style.SUCCESS(
+                f"✓ Granted all permissions across {module_count} modules."
+            ))
 
         # 3. Auto-create superuser from environment variables if none exists
-        user = User.objects.filter(is_superuser=True).first()
-        if not user:
+        superusers = User.objects.filter(is_superuser=True)
+        if not superusers.exists():
             username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
             email    = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@example.com')
             password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'Admin@1234')
@@ -51,30 +57,24 @@ class Command(BaseCommand):
                 email=email,
                 password=password,
             )
+            superusers = User.objects.filter(is_superuser=True)
             self.stdout.write(self.style.SUCCESS(
-                f"Superuser '{username}' created automatically."
+                f"✓ Superuser '{username}' created automatically from environment variables."
             ))
         else:
             self.stdout.write(self.style.SUCCESS(
-                f"Superuser '{user.username}' already exists — skipping creation."
+                f"✓ {superusers.count()} superuser(s) already exist — skipping creation."
             ))
 
-        if user:
+        # 4. Link ALL superusers to Super Admin role + group
+        group, _ = Group.objects.get_or_create(name='Super Admin')
+        for user in superusers:
             profile, _ = UserProfile.objects.get_or_create(user=user)
             profile.role = role
             profile.save()
-
-            group, _ = Group.objects.get_or_create(name='Super Admin')
             group.user_set.add(user)
-
             self.stdout.write(self.style.SUCCESS(
-                f"Successfully linked superuser '{user.username}' to 'Super Admin' role and system group."
+                f"✓ Linked '{user.username}' → Super Admin role & group."
             ))
-        else:
-            self.stdout.write(self.style.WARNING(
-                "No django superuser found. Please create one with 'python manage.py createsuperuser' then re-run this."
-            ))
-        
-        self.stdout.write(self.style.SUCCESS(
-            "Successfully seeded Super Admin role and granted all permissions."
-        ))
+
+        self.stdout.write(self.style.HTTP_INFO('=== seed_super_admin complete ==='))
