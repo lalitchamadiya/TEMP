@@ -183,12 +183,14 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # WhiteNoise: serve compressed static files efficiently (Django 5+ STORAGES format)
+# Using CompressedStaticFilesStorage (not Manifest) to avoid MissingFileError
+# for source map references in third-party CSS like bootstrap.min.css.map
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
 
