@@ -57,27 +57,36 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.02em;
 }
 
-/* Top Navigation - Glassmorphic */
+/* Top Navigation - Glassmorphic Dark */
 .top-nav {
-    background: rgba(255, 255, 255, 0.8) !important;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--surface-border);
-    box-shadow: var(--shadow-sm);
+    background: rgba(10, 15, 24, 0.85) !important;
+    backdrop-filter: blur(30px) saturate(200%);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     padding: 0.6rem 1rem;
     transition: all 0.3s ease;
 }
 
 .navbar-brand {
     font-weight: 800;
-    color: var(--primary) !important;
+    color: #ffffff !important;
     font-size: 1.35rem;
     letter-spacing: -0.03em;
+    transition: color 0.2s ease;
+}
+
+.navbar-brand:hover {
+    color: var(--primary) !important;
 }
 
 .top-nav .nav-link {
-    color: var(--text-main) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
     font-weight: 600;
+}
+
+.top-nav .nav-link:hover {
+    color: #ffffff !important;
 }
 
 /* --- PREMIUM SAAS SIDEBAR ARCHITECTURE (EXPANDED BY DEFAULT) --- */
@@ -492,15 +501,15 @@ td {
 .sidebar-toggle-btn {
     background: transparent;
     border: none;
-    color: var(--text-main);
+    color: rgba(255, 255, 255, 0.85) !important;
     padding: 0.35rem 0.6rem;
     border-radius: var(--radius-sm);
     transition: background 0.2s ease, color 0.2s ease;
     line-height: 1;
 }
 .sidebar-toggle-btn:hover {
-    background: rgba(37, 99, 235, 0.08);
-    color: var(--primary);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff !important;
 }
 
 /* Sidebar transitions — !important overrides Bootstrap's col-md-3/col-lg-2 fluid width */
