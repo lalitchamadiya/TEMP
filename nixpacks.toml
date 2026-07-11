@@ -1,0 +1,10 @@
+# nixpacks.toml — Controls Railway's Nixpacks build pipeline
+# Prevents Nixpacks from auto-detecting requirements.txt (which has heavy ML/dev packages)
+# and forces it to use only requirements-prod.txt
+
+[phases.install]
+cmds = [
+    "python -m venv --copies /opt/venv",
+    ". /opt/venv/bin/activate && pip install --upgrade pip",
+    ". /opt/venv/bin/activate && pip install -r requirements-prod.txt"
+]

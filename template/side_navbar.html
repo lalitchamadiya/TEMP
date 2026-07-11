@@ -2,12 +2,12 @@
 {% load rbac_tags %}
 
 {% block content %}
-<div class="col-md-3 col-lg-2 d-md-block p-0 sidebar-wrapper collapse z-2">
+<div class="d-none d-md-block p-0 sidebar-wrapper z-2">
     <nav id="sidebarMenu" class="sidebar-pro">
         
         <!-- Premium Brand Header -->
-        <div class="sidebar-brand px-4 py-2 mb-2 d-flex align-items-center">
-            <div class="brand-icon me-3 rounded-3 bg-gradient-primary d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
+        <div class="sidebar-brand d-flex align-items-center">
+            <div class="brand-icon rounded-3 bg-gradient-primary d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
                 <span class="material-symbols-outlined text-white fs-5">diamond</span>
             </div>
             <div class="d-flex flex-column">
@@ -21,7 +21,7 @@
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'superadmin_dashboard' %}active{% endif %}" aria-current="page" href="{% url 'superadmin_dashboard' %}">
                     <span class="material-symbols-outlined">speed</span>
-                    Dashboard
+                    <span class="sidebar-label">Dashboard</span>
                 </a>
             </li>
             {% endif %}
@@ -30,7 +30,7 @@
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'warden_dashboard' %}active{% endif %}" href="{% url 'warden_dashboard' %}">
                     <span class="material-symbols-outlined">dashboard</span>
-                    Warden Dashboard
+                    <span class="sidebar-label">Warden Dashboard</span>
                 </a>
             </li>
             {% endif %}
@@ -39,13 +39,13 @@
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}" href="{% url 'student_app:student_dashboard' %}">
                     <span class="material-symbols-outlined">person_pin</span>
-                    My Dashboard
+                    <span class="sidebar-label">My Dashboard</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'my_gate_passes' %}active{% endif %}" href="{% url 'student_app:my_gate_passes' %}">
                     <span class="material-symbols-outlined">qr_code</span>
-                    My Gate Passes
+                    <span class="sidebar-label">My Gate Passes</span>
                 </a>
             </li>
             {% endif %}
@@ -58,13 +58,13 @@
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'student_app:student_profile' %}">
                     <span class="material-symbols-outlined">person</span>
-                    My Profile
+                    <span class="sidebar-label">My Profile</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'student_app:change_password' %}">
                     <span class="material-symbols-outlined">lock</span>
-                    Change Password
+                    <span class="sidebar-label">Change Password</span>
                 </a>
             </li>
             <li class="nav-section">
@@ -73,25 +73,25 @@
             <li class="nav-item">
                 <a class="nav-link" href="#">
                     <span class="material-symbols-outlined">bed</span>
-                    My Room
+                    <span class="sidebar-label">My Room</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'student_app:student_leave_details' %}">
                     <span class="material-symbols-outlined">event_note</span>
-                    My Leave Requests
+                    <span class="sidebar-label">My Leave Requests</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'student_app:food_schedule' %}">
                     <span class="material-symbols-outlined">restaurant</span>
-                    Food Schedule
+                    <span class="sidebar-label">Food Schedule</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'student_app:student_fee_details' %}">
                     <span class="material-symbols-outlined">receipt_long</span>
-                    Fee Details
+                    <span class="sidebar-label">Fee Details</span>
                 </a>
             </li>
             {% else %}
@@ -104,9 +104,9 @@
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% url module.url_name %}" title="{{ module.menu_label }}">
                     {% if "bi-" in module.icon %}
-                    <i class="bi {{ module.icon }} me-3 opacity-75 fs-5"></i>
+                    <i class="bi {{ module.icon }} opacity-75 fs-5"></i>
                     {% else %}
-                    <span class="material-symbols-outlined me-3">{{ module.icon }}</span>
+                    <span class="material-symbols-outlined">{{ module.icon }}</span>
                     {% endif %}
                     <span class="sidebar-label">{{ module.menu_label }}</span>
                 </a>
@@ -118,7 +118,7 @@
         </ul>
         
         <!-- Bottom Role Badge -->
-        <div class="user-role-card mt-5 mb-4">
+        <div class="user-role-card">
             <div class="user-role-icon shadow-sm border border-secondary border-opacity-25">
                 <span class="material-symbols-outlined text-primary fs-5">shield_person</span>
             </div>

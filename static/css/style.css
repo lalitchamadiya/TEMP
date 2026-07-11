@@ -28,6 +28,13 @@ body {
     position: relative;
     z-index: 0;
     overflow-x: hidden;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 
 body::before {
@@ -73,59 +80,119 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
 }
 
-/* --- PREMIUM SAAS SIDEBAR ARCHITECTURE --- */
+/* --- PREMIUM SAAS SIDEBAR ARCHITECTURE (EXPANDED BY DEFAULT) --- */
 .sidebar-wrapper {
-    padding: 0 !important; /* Flush to edges */
-    height: calc(100vh - 61px); /* Account for top nav */
+    padding: 16px 0 !important;
+    height: calc(100vh - 61px);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(10, 15, 24, 0.85) !important; /* Deepest aesthetic slate */
+    background: rgba(10, 15, 24, 0.85) !important;
     backdrop-filter: blur(30px) saturate(200%);
     -webkit-backdrop-filter: blur(30px) saturate(200%);
     box-shadow: 1px 0 20px rgba(0,0,0,0.2);
     position: sticky;
     top: 61px;
     z-index: 1020;
+    width: 250px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    overflow: hidden;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Collapsed Mode State */
+.sidebar-wrapper.sidebar-collapsed {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    align-items: center !important;
 }
 
 .sidebar-pro {
     height: 100%;
+    width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 3rem; /* Increased from 2rem to ensure space for bottom items */
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+    padding-bottom: 2rem;
+    transition: align-items 0.3s ease;
+}
+
+.sidebar-wrapper.sidebar-collapsed .sidebar-pro {
+    align-items: center;
 }
 
 /* Beautiful custom scrollbar */
 .sidebar-pro::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
 }
 .sidebar-pro::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 10px;
-}
-.sidebar-pro::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.25);
 }
 
 /* Brand Area */
 .sidebar-brand {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(0,0,0,0.1);
-    min-height: 70px;
     display: flex;
     align-items: center;
+    width: 100%;
+    padding: 0 20px 1.25rem 20px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 1.25rem;
+    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.sidebar-brand .d-flex.flex-column {
+    opacity: 1;
+    width: auto;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.brand-icon {
+    flex-shrink: 0;
+    margin-right: 12px !important;
+    transition: margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Collapsed Logo spacing resets */
+.sidebar-wrapper.sidebar-collapsed .sidebar-brand {
+    padding: 0 0 1.25rem 0 !important;
+    justify-content: center;
+}
+.sidebar-wrapper.sidebar-collapsed .sidebar-brand .d-flex.flex-column {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+}
+.sidebar-wrapper.sidebar-collapsed .brand-icon {
+    margin-right: 0 !important;
+}
+
 .bg-gradient-primary {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
 
-/* Section Titles */
+/* Hide or display header categories properly in states */
 .nav-section {
-    padding: 0 1rem;
-    margin-top: 1.5rem;
+    padding: 0 20px;
+    margin-top: 1rem;
     margin-bottom: 0.5rem;
+    transition: opacity 0.2s ease, max-height 0.2s ease;
+    opacity: 1;
+    max-height: 40px;
 }
 .section-title {
     font-size: 0.65rem;
@@ -136,70 +203,163 @@ h1, h2, h3, h4, h5, h6 {
     display: block;
 }
 
-/* Links */
+.sidebar-wrapper.sidebar-collapsed .nav-section {
+    opacity: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden;
+}
+
+/* Navigation List */
+.sidebar-pro ul.nav {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100%;
+    align-items: stretch;
+    padding-left: 0 !important;
+    transition: align-items 0.3s ease;
+}
+
+.sidebar-wrapper.sidebar-collapsed ul.nav {
+    align-items: center;
+}
+
+/* Links & Menu items geometry styling */
 .sidebar-pro .nav-link {
+    height: 42px; /* Smaller menu item height */
     display: flex;
     align-items: center;
+    border-radius: 12px;
     color: rgba(255, 255, 255, 0.55) !important;
-    font-size: 0.875rem;
-    font-weight: 500;
-    padding: 0.65rem 0.85rem !important; /* Slightly reduced horizontal padding */
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-    margin: 0.15rem 0.75rem; /* Reduced horizontal margin from 1rem to 0.75rem */
-    white-space: nowrap; /* Prevent wrapping */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0 12px !important;
+    padding: 0 14px !important;
+    width: calc(100% - 24px);
     overflow: hidden;
-    text-overflow: ellipsis; /* Handle overflow gracefully */
+    white-space: nowrap;
 }
 
-.sidebar-pro .nav-link .material-symbols-outlined {
-    font-size: 1.25rem;
-    margin-right: 0.8rem;
-    color: rgba(255, 255, 255, 0.4);
-    transition: all 0.2s ease;
+.sidebar-pro .nav-link .material-symbols-outlined,
+.sidebar-pro .nav-link .bi {
+    font-size: 20px !important; /* Smaller icon sizes */
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    margin-right: 14px !important;
+    flex-shrink: 0;
+    transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.sidebar-pro .sidebar-label {
+    display: inline-block !important;
+    opacity: 1;
+    transition: opacity 0.2s ease, width 0.2s ease;
+}
+
+/* Hover effect */
 .sidebar-pro .nav-link:hover {
     color: #ffffff !important;
     background: rgba(255, 255, 255, 0.06);
-    transform: translateX(3px);
 }
-.sidebar-pro .nav-link:hover .material-symbols-outlined {
+.sidebar-pro .nav-link:hover .material-symbols-outlined,
+.sidebar-pro .nav-link:hover .bi {
     color: #ffffff;
-    transform: scale(1.1);
+    transform: scale(1.06);
 }
 
+/* Active State styling */
 .sidebar-pro .nav-link.active {
     color: #ffffff !important;
-    background: rgba(37, 99, 235, 0.15) !important;
-    box-shadow: inset 3px 0 0 #3b82f6;
+    background: #2563eb !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 }
-.sidebar-pro .nav-link.active .material-symbols-outlined {
-    color: #3b82f6;
-    text-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+.sidebar-pro .nav-link.active .material-symbols-outlined,
+.sidebar-pro .nav-link.active .bi {
+    color: #ffffff !important;
+    text-shadow: none;
+}
+
+/* Collapsed Links Adjustments */
+.sidebar-wrapper.sidebar-collapsed .nav-link {
+    width: 44px !important;
+    height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    justify-content: center;
+    border-radius: 12px;
+}
+.sidebar-wrapper.sidebar-collapsed .nav-link .material-symbols-outlined,
+.sidebar-wrapper.sidebar-collapsed .nav-link .bi {
+    margin-right: 0 !important;
+}
+.sidebar-wrapper.sidebar-collapsed .sidebar-label {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    display: inline-block !important;
+    pointer-events: none;
 }
 
 /* Bottom Profile / Role Card */
 .user-role-card {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 0.6rem;
-    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin: auto 12px 0 12px;
     display: flex;
     align-items: center;
-    margin: 2rem 1rem 1rem 1rem; /* Replaced auto with fixed margin to avoid squeezing list */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.user-role-card .d-flex.flex-column {
+    opacity: 1;
+    width: auto;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .user-role-icon {
     width: 36px;
     height: 36px;
-    border-radius: 0.4rem;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 0.75rem;
-    background: rgba(255,255,255,0.05);
+    margin-right: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+    transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                height 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-/* --------------------------------- */
+
+/* Collapsed Role card styling */
+.sidebar-wrapper.sidebar-collapsed .user-role-card {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: auto auto 0 auto;
+}
+.sidebar-wrapper.sidebar-collapsed .user-role-card .d-flex.flex-column {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+}
+.sidebar-wrapper.sidebar-collapsed .user-role-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    margin-right: 0 !important;
+}
+/* ------------------------------------ */
 
 /* Master Card Styles (Ultra-Premium Glass) */
 .card, .pro-card {
@@ -343,66 +503,18 @@ td {
     color: var(--primary);
 }
 
-/* Sidebar transitions */
-.sidebar-wrapper {
-    transition: width 0.28s cubic-bezier(0.4,0,0.2,1), min-width 0.28s cubic-bezier(0.4,0,0.2,1);
-    width: 220px;
-    min-width: 220px;
-    overflow: hidden;
+/* Sidebar transitions — !important overrides Bootstrap's col-md-3/col-lg-2 fluid width */
+/* Main content stretches to fill remaining viewport width */
+main[role="main"] {
+    flex: 1 1 0;
+    min-width: 0;
 }
 
-/* Collapsed state — icon strip only */
-.sidebar-wrapper.sidebar-collapsed {
-    width: 56px !important;
-    min-width: 56px !important;
-}
 
-/* Hide text labels when collapsed */
-.sidebar-wrapper.sidebar-collapsed .sidebar-label,
-.sidebar-wrapper.sidebar-collapsed .section-title,
-.sidebar-wrapper.sidebar-collapsed .sidebar-brand .d-flex.flex-column,
-.sidebar-wrapper.sidebar-collapsed .user-role-card .d-flex.flex-column {
-    display: none !important;
-}
-
-/* Centre icons when collapsed */
-.sidebar-wrapper.sidebar-collapsed .nav-link {
-    justify-content: center;
-    padding: 0.65rem 0.4rem !important;
-    margin: 0.15rem 0.25rem;
-}
-.sidebar-wrapper.sidebar-collapsed .nav-link .material-symbols-outlined,
-.sidebar-wrapper.sidebar-collapsed .nav-link .bi {
-    margin-right: 0 !important;
-}
-.sidebar-wrapper.sidebar-collapsed .sidebar-brand {
-    justify-content: center;
-    padding: 0.5rem !important;
-}
-.sidebar-wrapper.sidebar-collapsed .user-role-card {
-    justify-content: center;
-    padding: 0.5rem 0.25rem;
-    margin: 1rem 0.25rem;
-}
-.sidebar-wrapper.sidebar-collapsed .user-role-icon {
-    margin-right: 0;
-}
-
-/* Tooltip on collapsed icons — native browser title attr used */
-.sidebar-wrapper.sidebar-collapsed .nav-link {
-    position: relative;
-}
-
-/* Main content stretches when sidebar collapses */
-.sidebar-wrapper.sidebar-collapsed + main,
-.sidebar-wrapper.sidebar-collapsed ~ main {
-    flex: 1 1 auto !important;
-    max-width: 100% !important;
-}
-
-/* Mobile: hidden by default, slide in on toggle */
+/* Mobile: hidden by default (d-none handles it), slide in on toggle */
 @media (max-width: 767.98px) {
     .sidebar-wrapper {
+        display: block !important; /* Override d-none so JS toggle works */
         position: fixed !important;
         top: 61px;
         left: 0;

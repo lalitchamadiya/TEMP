@@ -36,10 +36,10 @@
 </header>
 
 <div class="container-fluid">
-  <div class="row">
+  <div class="d-flex" style="align-items: stretch; min-height: calc(100vh - 61px);">
     {% include 'side_navbar.html'%}
 
-    <main role="main" class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+    <main role="main" class="px-md-4 py-3" style="flex: 1 1 0; min-width: 0; overflow-x: hidden;">
       {% include '_messages.html' %}
       {% block content %}
       {% endblock %}

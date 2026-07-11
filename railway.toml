@@ -1,7 +1,7 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pip install -r requirements-prod.txt && python manage.py collectstatic --no-input"
+buildCommand = "pip install -r requirements-prod.txt"
 
 [deploy]
-releaseCommand = "python manage.py migrate && python manage.py seed_modules && python manage.py seed_super_admin"
+releaseCommand = "python manage.py collectstatic --no-input && python manage.py migrate && python manage.py seed_modules && python manage.py seed_super_admin"
 startCommand = "gunicorn Hostel_Management_System.wsgi --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --preload --log-file -"

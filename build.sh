@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# build.sh – Runs during Railway BUILD phase (no DB access here)
-# All DB operations (migrate, seed) are in railway.toml [deploy] releaseCommand
+# build.sh – Railway BUILD phase (no DATABASE_URL available here)
+# collectstatic, migrate, and seeding all run in railway.toml [deploy] releaseCommand
 set -o errexit
 
 pip install -r requirements-prod.txt
