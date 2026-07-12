@@ -59,7 +59,9 @@
 
 <div class="container-fluid">
   <div class="d-flex" style="align-items: stretch; min-height: calc(100vh - 61px);">
-    {% include 'side_navbar.html'%}
+    {% if not no_sidebar %}
+      {% include 'side_navbar.html'%}
+    {% endif %}
 
     <main role="main" class="px-md-4 py-3" style="flex: 1 1 0; min-width: 0; overflow-x: hidden;">
       {% include '_messages.html' %}

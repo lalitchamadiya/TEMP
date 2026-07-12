@@ -73,7 +73,10 @@ class OrganizationFeatureTests(TestCase):
             'language': 'en',
             'primary_color': '#6366f1',
             'secondary_color': '#0d6efd',
-            'is_active': 'on',
+            'plan': self.plan.pk,
+            'admin_username': 'orgadmin_beta',
+            'admin_email': 'admin@beta.edu',
+            'admin_password': 'Password123!',
         }
         response = self.client.post(reverse('org_create'), data=data)
         self.assertRedirects(response, reverse('org_list'))
@@ -220,3 +223,70 @@ class OrganizationFeatureTests(TestCase):
         self.assertEqual(ticket.priority, 'medium')
         self.assertEqual(ticket.assigned_to, self.superadmin_user)
         self.assertIsNotNone(ticket.resolved_at)
+
+    def test_org_user_create_view_get(self):
+        self.client.login(username='superadmin', password='Password123')
+        response = self.client.get(reverse('org_user_create', args=[self.org.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Add Organization User")
+
+    def test_org_user_create_view_post_success(self):
+        self.client.login(username='superadmin', password='Password123')
+        data = {
+            'first_name': 'Test',
+            'last_name': 'Warden',
+            'phone': '1234567890',
+            'username': 'testwarden',
+            'email': 'testwarden@alpha.edu',
+            'role': self.normal_role.pk,
+            'password': 'Password123!',
+            'confirm_password': 'Password123!',
+            'is_active': 'on',
+        }
+        response = self.client.post(reverse('org_user_create', args=[self.org.pk]), data=data)
+        self.assertRedirects(response, reverse('org_detail', args=[self.org.pk]))
+        
+        # Verify user & profile created & linked
+        self.assertTrue(User.objects.filter(username='testwarden').exists())
+        user = User.objects.get(username='testwarden')
+        self.assertEqual(user.profile.organization, self.org)
+        self.assertEqual(user.profile.role, self.normal_role)
+
+    def test_pending_subscription_middleware_redirect(self):
+        # Create user belonging to newly created inactive org
+        org = Organization.objects.create(name="Gamma Inst", is_active=False)
+        sub = OrganizationSubscription.objects.create(organization=org, plan=self.plan, is_active=False, payment_status='pending')
+        
+        user = User.objects.create_user(username='gammaadmin', password='Password123')
+        profile = UserProfile.objects.create(user=user, role=self.normal_role, organization=org)
+        
+        self.client.login(username='gammaadmin', password='Password123')
+        
+        # Try to access a normal route, e.g. org_list
+        response = self.client.get(reverse('org_list'))
+        
+        # It should redirect to subscription payment page
+        self.assertRedirects(response, reverse('org_subscription_pay'))
+
+    def test_payment_simulation_activation(self):
+        org = Organization.objects.create(name="Delta Inst", is_active=False)
+        sub = OrganizationSubscription.objects.create(organization=org, plan=self.plan, is_active=False, payment_status='pending')
+        
+        user = User.objects.create_user(username='deltaadmin', password='Password123')
+        profile = UserProfile.objects.create(user=user, role=self.normal_role, organization=org)
+        
+        self.client.login(username='deltaadmin', password='Password123')
+        
+        # Trigger simulated payment POST
+        response = self.client.post(reverse('org_subscription_pay'))
+        
+        # Should redirect to index '/'
+        self.assertEqual(response.status_code, 302)
+        
+        # Verify active states
+        org.refresh_from_db()
+        sub.refresh_from_db()
+        self.assertTrue(org.is_active)
+        self.assertTrue(sub.is_active)
+        self.assertEqual(sub.payment_status, 'active')
+

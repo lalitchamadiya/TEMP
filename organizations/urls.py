@@ -9,6 +9,7 @@ urlpatterns = [
     path('<int:pk>/delete/', views.org_delete, name='org_delete'),
     path('<int:pk>/toggle/', views.org_toggle_status, name='org_toggle_status'),
     path('<int:pk>/detail/', views.org_detail, name='org_detail'),
+    path('<int:org_pk>/users/create/', views.org_user_create, name='org_user_create'),
 
     # ── Subscription Plans ─────────────────────────────────────────────────────
     path('plans/', views.plan_list, name='plan_list'),
@@ -20,6 +21,7 @@ urlpatterns = [
     path('subscriptions/', views.subscription_list, name='subscription_list'),
     path('subscriptions/assign/', views.assign_subscription, name='assign_subscription'),
     path('subscriptions/<int:pk>/cancel/', views.cancel_subscription, name='cancel_subscription'),
+    path('subscription/pay/', views.org_subscription_pay, name='org_subscription_pay'),
 
     # ── White Label ────────────────────────────────────────────────────────────
     path('<int:org_pk>/whitelabel/', views.whitelabel_config, name='whitelabel_config'),

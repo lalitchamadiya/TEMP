@@ -175,7 +175,7 @@ class LogoutView(View):
 @login_required
 @role_required('Super Admin')
 def role_list(request):
-    roles = Role.objects.all().order_by('-created_at')
+    roles = Role.objects.exclude(is_superadmin=True).order_by('-created_at')
     return render(request, 'authentication/rbac/role_list.html', {'roles': roles})
 
 
@@ -216,6 +216,10 @@ def role_create(request):
 @role_required('Super Admin')
 def role_edit(request, pk):
     role = get_object_or_404(Role, pk=pk)
+    if role.is_superadmin:
+        messages.error(request, 'Super Admin role cannot be modified.')
+        return redirect('role_list')
+        
     modules = Module.objects.all()
 
     if request.method == 'POST':
@@ -254,6 +258,10 @@ def role_clone(request, pk):
     """Deep copy of a role's permissions to a new role."""
     if request.method == 'POST':
         source_role = get_object_or_404(Role, pk=pk)
+        if source_role.is_superadmin:
+            messages.error(request, 'Super Admin role cannot be cloned.')
+            return redirect('role_list')
+            
         new_name = request.POST.get('name', f"{source_role.name} (Copy)").strip()
         
         if Role.objects.filter(name=new_name).exists():

@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}| Add User - {{ org.name }}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-2">
+  <a href="{% url 'org_detail' org.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+  <div>
+    <h4 class="fw-bold mb-0"><i class="bi bi-person-plus me-2 text-primary"></i>Add Organization User</h4>
+    <p class="text-muted mb-0 small">Create a new user portal account scoped to <strong>{{ org.name }}</strong></p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Personal Info -->
+      <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-transparent border-0 pt-3 px-4">
+          <h6 class="fw-semibold mb-0"><i class="bi bi-person me-2 text-primary"></i>Personal Information</h6>
+        </div>
+        <div class="card-body px-4 pb-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">First Name</label>
+              <input type="text" name="first_name" class="form-control" value="{{ form_data.first_name|default:'' }}" placeholder="e.g. John">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Last Name</label>
+              <input type="text" name="last_name" class="form-control" value="{{ form_data.last_name|default:'' }}" placeholder="e.g. Doe">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Phone Number</label>
+              <input type="text" name="phone" class="form-control" value="{{ form_data.phone|default:'' }}" placeholder="e.g. +91 9876543210">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Settings -->
+      <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-transparent border-0 pt-3 px-4">
+          <h6 class="fw-semibold mb-0"><i class="bi bi-shield-lock me-2 text-warning"></i>Account Credentials</h6>
+        </div>
+        <div class="card-body px-4 pb-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
+              <input type="text" name="username" class="form-control" value="{{ form_data.username|default:'' }}" required placeholder="e.g. johndoe">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+              <input type="email" name="email" class="form-control" value="{{ form_data.email|default:'' }}" required placeholder="e.g. john@university.edu">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
+              <select name="role" class="form-select" required>
+                <option value="">Select a Role</option>
+                {% for r in roles %}
+                <option value="{{ r.id }}" {% if form_data.role == r.id|stringformat:"s" %}selected{% endif %}>{{ r.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <!-- Empty spacer to align rows -->
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+              <input type="password" name="password" class="form-control" required placeholder="Minimum 6 characters">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
+              <input type="password" name="confirm_password" class="form-control" required placeholder="Re-enter password">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active toggle -->
+      <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body px-4 d-flex align-items-center justify-content-between">
+          <div>
+            <div class="fw-semibold">Account Active</div>
+            <div class="text-muted small">Inactive users cannot log in to the portal</div>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" {% if form_data.is_active != 'off' %}checked{% endif %}>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex flex-column flex-sm-row gap-2">
+        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-person-plus me-1"></i>Create User</button>
+        <a href="{% url 'org_detail' org.pk %}" class="btn btn-outline-secondary px-4 text-center">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

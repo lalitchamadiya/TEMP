@@ -5,6 +5,8 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from django.http import JsonResponse
+from django.contrib.auth.models import User, Group
+from authentication.models import UserProfile, Role
 
 from .models import (
     Organization, SubscriptionPlan, OrganizationSubscription,
@@ -51,25 +53,48 @@ def org_list(request):
 @login_required
 def org_create(request):
     _require_superadmin(request)
+    plans = SubscriptionPlan.objects.filter(is_active=True)
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
-        if not name:
-            messages.error(request, 'Organization name is required.')
-            return render(request, 'organizations/org_form.html', {'action': 'Create'})
+        plan_id = request.POST.get('plan')
+        admin_username = request.POST.get('admin_username', '').strip()
+        admin_email = request.POST.get('admin_email', '').strip()
+        admin_password = request.POST.get('admin_password', '').strip()
 
-        if Organization.objects.filter(name=name).exists():
-            messages.error(request, 'An organization with this name already exists.')
-            return render(request, 'organizations/org_form.html', {
-                'action': 'Create', 'post': request.POST
-            })
+        errors = []
+        if not name:
+            errors.append('Organization name is required.')
+        elif Organization.objects.filter(name=name).exists():
+            errors.append('An organization with this name already exists.')
+
+        if not plan_id:
+            errors.append('Subscription plan selection is compulsory.')
+
+        if not admin_username:
+            errors.append('Administrator username is required.')
+        elif User.objects.filter(username=admin_username).exists():
+            errors.append('Administrator username is already taken.')
+
+        if not admin_email:
+            errors.append('Administrator email is required.')
+        elif User.objects.filter(email=admin_email).exists():
+            errors.append('Administrator email is already taken.')
+
+        if not admin_password:
+            errors.append('Administrator password is required.')
 
         subdomain = request.POST.get('subdomain', '').strip() or None
         if subdomain and Organization.objects.filter(subdomain=subdomain).exists():
-            messages.error(request, 'This subdomain is already taken.')
+            errors.append('This subdomain is already taken.')
+
+        if errors:
+            for err in errors:
+                messages.error(request, err)
             return render(request, 'organizations/org_form.html', {
-                'action': 'Create', 'post': request.POST
+                'action': 'Create', 'plans': plans, 'post': request.POST
             })
 
+        # Create new organization in pending state (is_active=False)
         org = Organization.objects.create(
             name=name,
             org_type=request.POST.get('org_type', 'university'),
@@ -84,13 +109,13 @@ def org_create(request):
             language=request.POST.get('language', 'en'),
             primary_color=request.POST.get('primary_color', '#6366f1'),
             secondary_color=request.POST.get('secondary_color', '#0d6efd'),
-            is_active=request.POST.get('is_active') == 'on',
+            is_active=False,
         )
         if 'logo' in request.FILES:
             org.logo = request.FILES['logo']
             org.save()
 
-        # Auto-create linked settings and white-label config
+        # Auto-create settings & white-label branding
         OrganizationSettings.objects.get_or_create(organization=org)
         WhiteLabelConfig.objects.get_or_create(
             organization=org,
@@ -100,10 +125,35 @@ def org_create(request):
             }
         )
 
-        messages.success(request, f'Organization "{org.name}" created successfully.')
+        # Autoprovision admin account
+        admin_user = User.objects.create_user(
+            username=admin_username,
+            email=admin_email,
+            password=admin_password
+        )
+        admin_role, _ = Role.objects.get_or_create(
+            name='Admin',
+            defaults={'description': 'Organization Administrator'}
+        )
+        UserProfile.objects.create(
+            user=admin_user,
+            role=admin_role,
+            organization=org
+        )
+
+        # Create billing subscription record
+        plan = get_object_or_404(SubscriptionPlan, pk=plan_id)
+        OrganizationSubscription.objects.create(
+            organization=org,
+            plan=plan,
+            is_active=False,
+            payment_status='pending'
+        )
+
+        messages.success(request, f'Organization "{org.name}" created successfully. Credentials generated for administrator account.')
         return redirect('org_list')
 
-    return render(request, 'organizations/org_form.html', {'action': 'Create'})
+    return render(request, 'organizations/org_form.html', {'action': 'Create', 'plans': plans})
 
 
 @login_required
@@ -177,6 +227,7 @@ def org_detail(request, pk):
     org = get_object_or_404(Organization, pk=pk)
     subscription = org.subscriptions.filter(is_active=True).select_related('plan').first()
     settings_obj, _ = OrganizationSettings.objects.get_or_create(organization=org)
+    users = User.objects.filter(profile__organization=org).select_related('profile__role')
 
     try:
         whitelabel = org.whitelabel
@@ -189,6 +240,7 @@ def org_detail(request, pk):
         'settings_obj': settings_obj,
         'whitelabel': whitelabel,
         'hostels': org.hostels.all(),
+        'users': users,
         'ticket_count': org.support_tickets.filter(status__in=['open', 'in_progress']).count(),
         'page_title': f'Organization: {org.name}',
     }
@@ -557,3 +609,107 @@ def org_settings(request, org_pk):
         'settings_obj': settings_obj,
         'page_title': f'Settings — {org.name}',
     })
+
+
+@login_required
+def org_user_create(request, org_pk):
+    _require_superadmin(request)
+    org = get_object_or_404(Organization, pk=org_pk)
+    roles = Role.objects.filter(is_active=True)
+
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        role_id = request.POST.get('role')
+        password = request.POST.get('password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        is_active = request.POST.get('is_active', 'on') == 'on'
+
+        errors = []
+        if not username:
+            errors.append('Username is required.')
+        elif User.objects.filter(username=username).exists():
+            errors.append('Username already exists.')
+        if email and User.objects.filter(email=email).exists():
+            errors.append('Email already in use.')
+        if password != confirm_password:
+            errors.append('Passwords do not match.')
+        if len(password) < 6:
+            errors.append('Password must be at least 6 characters.')
+
+        if errors:
+            for err in errors:
+                messages.error(request, err)
+            return render(request, 'organizations/org_user_form.html', {
+                'org': org, 'roles': roles, 'form_data': request.POST
+            })
+
+        user = User.objects.create_user(
+            username=username, email=email,
+            first_name=first_name, last_name=last_name,
+        )
+        user.set_password(password)
+        user.is_active = is_active
+        user.save()
+
+        # Build profile and link organization
+        profile = UserProfile.objects.create(user=user, phone=phone, organization=org)
+        if role_id:
+            try:
+                role_obj = Role.objects.get(id=role_id)
+                profile.role = role_obj
+                group, _ = Group.objects.get_or_create(name=role_obj.name)
+                group.user_set.add(user)
+            except Role.DoesNotExist:
+                pass
+        profile.save()
+
+        from authentication.views import log_action
+        log_action(request.user, 'create', user, f'Created user {username} for organization {org.name}', request)
+        messages.success(request, f"User '{username}' created successfully for {org.name}.")
+        return redirect('org_detail', pk=org_pk)
+
+    return render(request, 'organizations/org_user_form.html', {
+        'org': org, 'roles': roles, 'page_title': f'Add User — {org.name}'
+    })
+
+
+@login_required
+def org_subscription_pay(request):
+    profile = getattr(request.user, 'profile', None)
+    if not profile or not profile.organization:
+        return redirect('login')
+        
+    org = profile.organization
+    sub = org.subscriptions.filter(is_active=False, payment_status='pending').first()
+    
+    if not sub:
+        if org.subscriptions.filter(is_active=True, payment_status='active').exists():
+            messages.info(request, 'Your subscription is already active!')
+            return redirect('/')
+        messages.error(request, 'No pending subscription found for your organization.')
+        return redirect('logout')
+
+    if request.method == 'POST':
+        # Simulate payment verification
+        sub.is_active = True
+        sub.payment_status = 'active'
+        sub.save()
+        
+        org.is_active = True
+        org.save()
+        
+        messages.success(request, f'Payment successful! Your subscription for "{org.name}" is now active.')
+        return redirect('/')
+
+    return render(request, 'organizations/subscription_pay.html', {
+        'org': org,
+        'sub': sub,
+        'no_sidebar': True,
+        'page_title': 'Subscription Payment'
+    })
+
+
