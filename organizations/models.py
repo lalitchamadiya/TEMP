@@ -21,6 +21,7 @@ class Organization(models.Model):
 
     name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(max_length=200, unique=True, blank=True)
+    unique_code = models.CharField(max_length=50, unique=True, null=True, blank=True, help_text="Unique Organization ID / Code")
     org_type = models.CharField(max_length=30, choices=ORG_TYPES, default='university')
 
     # Branding / Identity
@@ -67,6 +68,9 @@ class Organization(models.Model):
                 slug = f"{base_slug}-{n}"
                 n += 1
             self.slug = slug
+        if not self.unique_code:
+            import uuid
+            self.unique_code = f"ORG-{uuid.uuid4().hex[:6].upper()}"
         super().save(*args, **kwargs)
 
     def __str__(self):

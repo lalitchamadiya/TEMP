@@ -1,0 +1,850 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}| Organization Admin Dashboard{% endblock %}
+
+{% block content %}
+<style>
+:root {
+  --glass-bg: rgba(255,255,255,0.06);
+  --glass-border: rgba(255,255,255,0.12);
+  --accent-blue: #4f9cf9;
+  --accent-green: #22c55e;
+  --accent-purple: #a855f7;
+  --accent-orange: #f97316;
+  --accent-red: #ef4444;
+  --accent-cyan: #06b6d4;
+  --accent-yellow: #eab308;
+  --card-bg: #161b22;
+  
+  --sa-header-bg: linear-gradient(135deg, #1a1f35 0%, #131825 50%, #0f1420 100%);
+  --sa-title-color: #f0f6ff;
+  --sa-sub-color: rgba(255,255,255,0.5);
+  --sa-muted-color: rgba(255,255,255,0.3);
+  --sa-border: rgba(255,255,255,0.04);
+}
+
+html[data-theme="light"] {
+  --glass-bg: rgba(0, 0, 0, 0.03);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --sa-header-bg: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  --sa-title-color: #0f172a;
+  --sa-sub-color: #475569;
+  --sa-muted-color: #64748b;
+  --sa-border: rgba(0, 0, 0, 0.05);
+}
+
+.sa-page { padding: 1.5rem 0; }
+
+/* ── Hero Header ── */
+.sa-header {
+  background: var(--sa-header-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 2rem 2.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.sa-header .text-white {
+  color: var(--sa-title-color) !important;
+  transition: color 0.3s ease;
+}
+.sa-header .btn-outline-light {
+  border-color: var(--sa-title-color) !important;
+  color: var(--sa-title-color) !important;
+  transition: all 0.3s ease;
+}
+.sa-header .btn-outline-light:hover {
+  background-color: var(--sa-title-color) !important;
+  color: var(--card-bg) !important;
+}
+.sa-header::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(79,156,249,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.sa-header .badge-live {
+  background: rgba(34,197,94,0.2);
+  color: var(--accent-green);
+  border: 1px solid rgba(34,197,94,0.4);
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── Section Label ── */
+.sa-section-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sa-sub-color);
+  margin-bottom: 0.75rem;
+  padding-left: 4px;
+}
+
+/* ── KPI Card ── */
+.kpi-card {
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  transition: transform 0.2s, border-color 0.2s, background-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--sa-title-color);
+}
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 0 0 14px 14px;
+}
+.kpi-blue::after  { background: var(--accent-blue); }
+.kpi-green::after { background: var(--accent-green); }
+.kpi-purple::after{ background: var(--accent-purple);}
+.kpi-orange::after{ background: var(--accent-orange);}
+.kpi-red::after   { background: var(--accent-red);  }
+.kpi-cyan::after  { background: var(--accent-cyan);  }
+.kpi-yellow::after{ background: var(--accent-yellow);}
+
+.kpi-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.kpi-icon.blue   { background: rgba(79,156,249,0.15); color: var(--accent-blue); }
+.kpi-icon.green  { background: rgba(34,197,94,0.15);  color: var(--accent-green);}
+.kpi-icon.purple { background: rgba(168,85,247,0.15); color: var(--accent-purple);}
+.kpi-icon.orange { background: rgba(249,115,22,0.15); color: var(--accent-orange);}
+.kpi-icon.red    { background: rgba(239,68,68,0.15);  color: var(--accent-red);  }
+.kpi-icon.cyan   { background: rgba(6,182,212,0.15);  color: var(--accent-cyan); }
+.kpi-icon.yellow { background: rgba(234,179,8,0.15);  color: var(--accent-yellow);}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--sa-title-color);
+  line-height: 1.1;
+  transition: color 0.3s ease;
+}
+.kpi-label {
+  font-size: 0.78rem;
+  color: var(--sa-sub-color);
+  margin-top: 2px;
+  transition: color 0.3s ease;
+}
+.kpi-sub {
+  font-size: 0.72rem;
+  color: var(--sa-muted-color);
+  transition: color 0.3s ease;
+}
+
+/* ── Progress Bars ── */
+.mini-progress {
+  height: 6px;
+  border-radius: 10px;
+  background: var(--glass-bg);
+}
+.mini-progress-bar {
+  height: 6px;
+  border-radius: 10px;
+  transition: width 0.8s ease;
+}
+
+/* ── Panel Card ── */
+.panel-card {
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+.panel-card .text-white {
+  color: var(--sa-title-color) !important;
+  transition: color 0.3s ease;
+}
+.panel-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sa-title-color);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.3s ease;
+}
+.panel-title i { color: var(--accent-blue); }
+
+/* ── Data Table ── */
+.sa-table { color: var(--sa-title-color); font-size: 0.82rem; transition: color 0.3s ease; }
+.sa-table thead th {
+  color: var(--sa-sub-color);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--glass-border);
+  background: transparent;
+  padding: 0.6rem 0.75rem;
+  transition: color 0.3s ease;
+}
+.sa-table tbody td {
+  border-bottom: 1px solid var(--sa-border);
+  padding: 0.6rem 0.75rem;
+  vertical-align: middle;
+}
+.sa-table tbody tr:hover { background: var(--glass-bg); }
+
+/* ── Status Badges ── */
+.badge-status {
+  font-size: 0.68rem;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.s-success  { background: rgba(34,197,94,0.15);  color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.s-warning  { background: rgba(234,179,8,0.15);  color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
+.Sa-danger   { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.s-info     { background: rgba(6,182,212,0.15);  color: #06b6d4; border: 1px solid rgba(6,182,212,0.3); }
+.s-purple   { background: rgba(168,85,247,0.15); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
+
+/* ── Module Shortcut Cards ── */
+.shortcut-card {
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+  color: var(--sa-sub-color);
+}
+.shortcut-card:hover {
+  border-color: var(--accent-blue);
+  background: rgba(79,156,249,0.06);
+  color: var(--sa-title-color);
+  transform: translateY(-2px);
+}
+.shortcut-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* ── Chart ── */
+.chart-wrap {
+  position: relative;
+  height: 220px;
+}
+</style>
+
+<div class="sa-page">
+
+  <!-- ── Header ── -->
+  <div class="sa-header mb-4">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge-live"><i class="bi bi-circle-fill me-1" style="font-size:6px;"></i>Organization Admin</span>
+          <small class="text-white opacity-40">Tenant Scope: <strong>{{ organization.name }}</strong></small>
+        </div>
+        <h1 class="text-white fw-bold mb-1" style="font-size:1.75rem;">
+          <i class="bi bi-diagram-3 me-2 text-primary"></i>Admin Dashboard
+        </h1>
+        <p class="text-white opacity-50 mb-0" style="font-size:0.9rem;">
+          Control panel for {{ organization.name }} hostel facilities
+        </p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'reports_dashboard' %}" class="btn btn-sm btn-outline-light">
+          <i class="bi bi-bar-chart-line me-1"></i> Reports
+        </a>
+        <a href="{% url 'export_report' 'students' %}" class="btn btn-sm btn-outline-light">
+          <i class="bi bi-download me-1"></i> Export
+        </a>
+        <a href="{% url 'staff_create' %}" class="btn btn-sm btn-primary">
+          <i class="bi bi-plus-circle me-1"></i> Add Staff
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 1: Top KPI Cards ── -->
+  <p class="sa-section-label">Key Metrics</p>
+  <div class="row g-3 mb-4">
+    <!-- Students -->
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-blue h-100">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <div class="kpi-icon blue"><i class="bi bi-mortarboard-fill"></i></div>
+          <div>
+            <div class="kpi-value">{{ total_students }}</div>
+            <div class="kpi-label">Students</div>
+          </div>
+        </div>
+        <div class="kpi-sub">{{ active_students }} active · {{ inactive_students }} inactive</div>
+      </div>
+    </div>
+    <!-- Occupied Beds -->
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-green h-100">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <div class="kpi-icon green"><i class="bi bi-bed-fill"></i></div>
+          <div>
+            <div class="kpi-value">{{ occupied_beds }}</div>
+            <div class="kpi-label">Beds Occupied</div>
+          </div>
+        </div>
+        <div class="mini-progress mt-1">
+          <div class="mini-progress-bar" data-width="{{ occupancy_pct }}" style="background: var(--accent-green); width: {{ occupancy_pct }}%"></div>
+        </div>
+        <div class="kpi-sub mt-1">{{ occupancy_pct }}% occupancy · {{ vacant_beds }} vacant</div>
+      </div>
+    </div>
+    <!-- Revenue -->
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-purple h-100">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <div class="kpi-icon purple"><i class="bi bi-currency-rupee"></i></div>
+          <div>
+            <div class="kpi-value">₹{{ monthly_revenue|floatformat:0 }}</div>
+            <div class="kpi-label">Monthly Revenue</div>
+          </div>
+        </div>
+        <div class="kpi-sub">₹{{ today_revenue|floatformat:0 }} today</div>
+      </div>
+    </div>
+    <!-- Complaints -->
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-orange h-100">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <div class="kpi-icon orange"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div>
+            <div class="kpi-value">{{ open_complaints }}</div>
+            <div class="kpi-label">Open Complaints</div>
+          </div>
+        </div>
+        <div class="kpi-sub">{{ resolved_complaints }} resolved total</div>
+      </div>
+    </div>
+    <!-- Visitors -->
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-cyan h-100">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <div class="kpi-icon cyan"><i class="bi bi-person-badge-fill"></i></div>
+          <div>
+            <div class="kpi-value">{{ total_visitors_today }}</div>
+            <div class="kpi-label">Visitors Today</div>
+          </div>
+        </div>
+        <div class="kpi-sub">{{ pending_visitors }} pending approval</div>
+      </div>
+    </div>
+    <!-- Staff -->
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-yellow h-100">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <div class="kpi-icon yellow"><i class="bi bi-people-fill"></i></div>
+          <div>
+            <div class="kpi-value">{{ total_staff }}</div>
+            <div class="kpi-label">Total Staff</div>
+          </div>
+        </div>
+        <div class="kpi-sub">{{ active_staff }} active · {{ total_guards }} guards</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 2: Charts + Org Stats ── -->
+  <div class="row g-3 mb-4">
+    <!-- Revenue Chart -->
+    <div class="col-12 col-lg-8">
+      <div class="panel-card h-100">
+        <div class="panel-title">
+          <i class="bi bi-graph-up-arrow"></i> Monthly Revenue Trend (Last 6 Months)
+          <span class="ms-auto badge s-success">₹{{ total_revenue|floatformat:0 }} Total</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Organization Users & Stats -->
+    <div class="col-12 col-lg-4">
+      <div class="panel-card h-100">
+        <div class="panel-title"><i class="bi bi-shield-lock-fill"></i> Organization Details</div>
+
+        <div class="health-row">
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Tenant Name</span>
+          <span class="badge s-purple">{{ organization.name }}</span>
+        </div>
+        <div class="health-row">
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Unique Code</span>
+          <span class="badge s-info">{{ organization.unique_code }}</span>
+        </div>
+        <div class="health-row">
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Subscription Type</span>
+          <span class="badge s-warning" style="text-transform: capitalize;">{{ organization.plan }} Package</span>
+        </div>
+        <div class="health-row">
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Status</span>
+          <span class="badge s-success">ACTIVE</span>
+        </div>
+
+        <hr style="border-color: var(--glass-border);">
+
+        <div class="row g-2 text-center mt-1">
+          <div class="col-6">
+            <div class="kpi-value" style="font-size:1.5rem; color: var(--accent-blue);">{{ total_users }}</div>
+            <div class="kpi-sub">Org Users</div>
+          </div>
+          <div class="col-6">
+            <div class="kpi-value" style="font-size:1.5rem; color: var(--accent-green);">{{ active_users }}</div>
+            <div class="kpi-sub">Active Accounts</div>
+          </div>
+          <div class="col-6">
+            <div class="kpi-value" style="font-size:1.5rem; color: var(--accent-orange);">{{ pending_leaves }}</div>
+            <div class="kpi-sub">Pending Leaves</div>
+          </div>
+          <div class="col-6">
+            <div class="kpi-value" style="font-size:1.5rem; color: var(--accent-purple);">{{ pending_payments }}</div>
+            <div class="kpi-sub">Unpaid Dues</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 3: Infrastructure Overview ── -->
+  <p class="sa-section-label">Infrastructure Summary</p>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-blue text-center">
+        <div class="kpi-value text-center" style="color: var(--accent-blue);">{{ total_blocks }}</div>
+        <div class="kpi-label text-center">Hostel Blocks</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-cyan text-center">
+        <div class="kpi-value text-center" style="color: var(--accent-cyan);">{{ total_floors }}</div>
+        <div class="kpi-label text-center">Floors</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-green text-center">
+        <div class="kpi-value text-center" style="color: var(--accent-green);">{{ total_rooms }}</div>
+        <div class="kpi-label text-center">Rooms</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kpi-card kpi-purple text-center">
+        <div class="kpi-value text-center" style="color: var(--accent-purple);">Total Beds</div>
+        <div class="kpi-label text-center">{{ total_beds }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 4: Charts + Financial Summary ── -->
+  <div class="row g-3 mb-4">
+    <!-- Student Gender Chart -->
+    <div class="col-12 col-md-4">
+      <div class="panel-card h-100">
+        <div class="panel-title"><i class="bi bi-gender-ambiguous"></i> Student Gender Split</div>
+        <div class="chart-wrap" style="height:180px;">
+          <canvas id="genderChart"></canvas>
+        </div>
+        <div class="d-flex justify-content-center gap-4 mt-2" style="font-size:0.78rem; color:rgba(255,255,255,0.6);">
+          <span><span style="color:var(--accent-blue);">&#9632;</span> Male: {{ gender_male }}</span>
+          <span><span style="color:var(--accent-purple);">&#9632;</span> Female: {{ gender_female }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bed Occupancy -->
+    <div class="col-12 col-md-4">
+      <div class="panel-card h-100">
+        <div class="panel-title"><i class="bi bi-house-fill"></i> Bed Occupancy</div>
+        <div class="chart-wrap" style="height:180px;">
+          <canvas id="bedChart"></canvas>
+        </div>
+        <div class="d-flex justify-content-center gap-4 mt-2" style="font-size:0.78rem; color:rgba(255,255,255,0.6);">
+          <span><span style="color:var(--accent-green);">&#9632;</span> Occupied: {{ occupied_beds }}</span>
+          <span><span style="color:rgba(255,255,255,0.2);">&#9632;</span> Vacant: {{ vacant_beds }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financial Summary -->
+    <div class="col-12 col-md-4">
+      <div class="panel-card h-100">
+        <div class="panel-title"><i class="bi bi-wallet2"></i> Financial Summary</div>
+        <div class="health-row">
+          <i class="bi bi-arrow-up-circle-fill me-2" style="color:var(--accent-green);"></i>
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Total Revenue</span>
+          <span class="fw-bold" style="color:var(--accent-green);">₹{{ total_revenue|floatformat:0 }}</span>
+        </div>
+        <div class="health-row">
+          <i class="bi bi-calendar-check me-2" style="color:var(--accent-blue);"></i>
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">This Month</span>
+          <span class="fw-bold" style="color:var(--accent-blue);">₹{{ monthly_revenue|floatformat:0 }}</span>
+        </div>
+        <div class="health-row">
+          <i class="bi bi-sun me-2" style="color:var(--accent-yellow);"></i>
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Today's Collection</span>
+          <span class="fw-bold" style="color:var(--accent-yellow);">₹{{ today_revenue|floatformat:0 }}</span>
+        </div>
+        <div class="health-row">
+          <i class="bi bi-clock-history me-2" style="color:var(--accent-orange);"></i>
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Pending Payments</span>
+          <span class="fw-bold" style="color:var(--accent-orange);">{{ pending_payments }}</span>
+        </div>
+        <div class="health-row">
+          <i class="bi bi-exclamation-circle me-2" style="color:var(--accent-red);"></i>
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Outstanding Dues</span>
+          <span class="fw-bold" style="color:var(--accent-red);">₹{{ total_outstanding|floatformat:0 }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 5: Module Quick Access ── -->
+  <p class="sa-section-label">Quick Actions</p>
+  <div class="row g-2 mb-4">
+    <div class="col-6 col-md-4 col-lg-3">
+      <a href="{% url 'staff_list' %}" class="shortcut-card">
+        <div class="shortcut-icon" style="background:rgba(234,179,8,0.15); color:var(--accent-yellow);">
+          <i class="bi bi-person-vcard-fill"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600;">Staff</div>
+          <div class="kpi-sub">{{ total_staff }} members</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <a href="{% url 'visitor_list' %}" class="shortcut-card">
+        <div class="shortcut-icon" style="background:rgba(6,182,212,0.15); color:var(--accent-cyan);">
+          <i class="bi bi-person-badge-fill"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600;">Visitors</div>
+          <div class="kpi-sub">{{ pending_visitors }} pending</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <a href="{% url 'complaint_list' %}" class="shortcut-card">
+        <div class="shortcut-icon" style="background:rgba(249,115,22,0.15); color:var(--accent-orange);">
+          <i class="bi bi-ticket-perforated-fill"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600;">Complaints</div>
+          <div class="kpi-sub">{{ open_complaints }} open</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <a href="{% url 'security_list' %}" class="shortcut-card">
+        <div class="shortcut-icon" style="background:rgba(239,68,68,0.15); color:var(--accent-red);">
+          <i class="bi bi-shield-fill-check"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600;">Security</div>
+          <div class="kpi-sub">{{ total_guards }} active guards</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <a href="{% url 'hostel_management_list' %}" class="shortcut-card">
+        <div class="shortcut-icon" style="background:rgba(79,156,249,0.15); color:var(--accent-blue);">
+          <i class="bi bi-building-fill"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600;">Hostels config</div>
+          <div class="kpi-sub">Manage organization properties</div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-6 col-md-4 col-lg-3">
+      <a href="{% url 'fee_manager' %}" class="shortcut-card">
+        <div class="shortcut-icon" style="background:rgba(34,197,94,0.15); color:var(--accent-green);">
+          <i class="bi bi-cash-stack"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600;">Fees</div>
+          <div class="kpi-sub">₹{{ monthly_revenue|floatformat:0 }} this month</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <a href="{% url 'reports_dashboard' %}" class="shortcut-card">
+        <div class="shortcut-icon" style="background:rgba(168,85,247,0.12); color:var(--accent-purple);">
+          <i class="bi bi-bar-chart-fill"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600;">Reports</div>
+          <div class="kpi-sub">Export CSV & Data</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <a href="{% url 'system_settings_view' %}" class="shortcut-card">
+        <div class="shortcut-icon" style="background:rgba(239,68,68,0.12); color:var(--accent-red);">
+          <i class="bi bi-gear-fill"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600;">Branding</div>
+          <div class="kpi-sub">Configure and white-label</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Row 6: Recent Activity Tables ── -->
+  <div class="row g-3 mb-4">
+    <!-- Recent Payments -->
+    <div class="col-12 col-lg-6">
+      <div class="panel-card">
+        <div class="panel-title">
+          <i class="bi bi-credit-card-fill"></i> Recent Payments
+          <a href="{% url 'fee_manager' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table sa-table mb-0">
+            <thead>
+              <tr>
+                <th>Student</th><th>Amount</th><th>Type</th><th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in recent_payments %}
+              <tr>
+                <td>{{ p.user_name|truncatechars:18 }}</td>
+                <td class="fw-bold" style="color:var(--accent-green);">₹{{ p.amount|floatformat:0 }}</td>
+                <td>{{ p.payment_type }}</td>
+                <td class="text-muted">{{ p.created_at|date:"d M" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center text-muted py-3">No payments yet</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Complaints -->
+    <div class="col-12 col-lg-6">
+      <div class="panel-card">
+        <div class="panel-title">
+          <i class="bi bi-chat-left-text-fill"></i> Recent Complaints
+          <a href="{% url 'complaint_list' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table sa-table mb-0">
+            <thead>
+              <tr><th>Title</th><th>Category</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {% for c in recent_complaints %}
+              <tr>
+                <td>{{ c.title|truncatechars:22 }}</td>
+                <td>{{ c.get_category_display }}</td>
+                <td>
+                  <span class="badge-status {% if c.status == 'resolved' %}s-success{% elif c.status == 'pending' %}s-warning{% else %}s-info{% endif %}">
+                    {{ c.get_status_display }}
+                  </span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="text-center text-muted py-3">No complaints yet</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 7: Visitors + Incidents ── -->
+  <div class="row g-3 mb-4">
+    <!-- Recent Visitors -->
+    <div class="col-12 col-lg-6">
+      <div class="panel-card">
+        <div class="panel-title">
+          <i class="bi bi-person-lines-fill"></i> Recent Visitors
+          <a href="{% url 'visitor_list' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table sa-table mb-0">
+            <thead>
+              <tr><th>Visitor</th><th>Student</th><th>Date</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {% for v in recent_visitors %}
+              <tr>
+                <td>{{ v.name }}</td>
+                <td>{{ v.student.name|truncatechars:16 }}</td>
+                <td>{{ v.visit_date|date:"d M" }}</td>
+                <td>
+                  <span class="badge-status {% if v.status == 'approved' %}s-success{% elif v.status == 'pending' %}s-warning{% elif v.status == 'denied' %}s-danger{% else %}s-info{% endif %}">
+                    {{ v.get_status_display }}
+                  </span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center text-muted py-3">No visitors today</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Incidents -->
+    <div class="col-12 col-lg-6">
+      <div class="panel-card">
+        <div class="panel-title">
+          <i class="bi bi-exclamation-octagon-fill" style="color:var(--accent-red);"></i> Security Incidents
+          <a href="{% url 'security_list' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
+        </div>
+        {% if recent_incidents %}
+        {% for incident in recent_incidents %}
+        <div class="health-row">
+          <span class="badge-status {% if incident.severity == 'high' %}Sa-danger{% elif incident.severity == 'medium' %}s-warning{% else %}s-info{% endif %} me-2">{{ incident.severity|upper }}</span>
+          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">{{ incident.get_title_display }}</span>
+          <small class="text-muted">{{ incident.date|date:"d M" }}</small>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center text-muted py-3" style="font-size:0.85rem;">
+          <i class="bi bi-shield-check fs-3 d-block mb-2" style="color:var(--accent-green); opacity:0.5;"></i>
+          No recent incidents
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Chart.js Scripts ── -->
+<script id="chart-monthly-labels" type="application/json">{{ monthly_labels|safe }}</script>
+<script id="chart-monthly-data" type="application/json">{{ monthly_data|safe }}</script>
+<script id="chart-gender-data" type="application/json">[{{ gender_male }}, {{ gender_female }}]</script>
+<script id="chart-bed-data" type="application/json">[{{ occupied_beds }}, {{ vacant_beds }}]</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+const monthlyLabels = JSON.parse(document.getElementById('chart-monthly-labels').textContent);
+const monthlyData = JSON.parse(document.getElementById('chart-monthly-data').textContent);
+const genderData = JSON.parse(document.getElementById('chart-gender-data').textContent);
+const bedData = JSON.parse(document.getElementById('chart-bed-data').textContent);
+const chartDefaults = {
+  color: isLight ? '#475569' : 'rgba(255,255,255,0.6)',
+  borderColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
+};
+const chartTextMuted = isLight ? '#64748b' : 'rgba(255,255,255,0.45)';
+const chartGridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+const chartVacantBg = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+const chartVacantBorder = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)';
+
+// Revenue Bar Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+new Chart(revenueCtx, {
+  type: 'bar',
+  data: {
+    labels: monthlyLabels,
+    datasets: [{
+      label: 'Revenue (₹)',
+      data: monthlyData,
+      backgroundColor: 'rgba(79,156,249,0.25)',
+      borderColor: 'rgba(79,156,249,0.8)',
+      borderWidth: 2,
+      borderRadius: 8,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { color: chartTextMuted, font: { size: 11 } },
+        grid: { color: chartGridColor }
+      },
+      y: {
+        ticks: { color: chartTextMuted, font: { size: 11 },
+          callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v)
+        },
+        grid: { color: chartGridColor }
+      }
+    }
+  }
+});
+
+// Gender Donut Chart
+const gCtx = document.getElementById('genderChart').getContext('2d');
+new Chart(gCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Male', 'Female'],
+    datasets: [{
+      data: genderData,
+      backgroundColor: ['rgba(79,156,249,0.8)', 'rgba(168,85,247,0.8)'],
+      borderColor: ['#4f9cf9', '#a855f7'],
+      borderWidth: 2,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { display: false }
+    }
+  }
+});
+
+// Bed Occupancy Donut
+const bCtx = document.getElementById('bedChart').getContext('2d');
+new Chart(bCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Occupied', 'Vacant'],
+    datasets: [{
+      data: bedData,
+      backgroundColor: ['rgba(34,197,94,0.8)', chartVacantBg],
+      borderColor: ['#22c55e', chartVacantBorder],
+      borderWidth: 2,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: { legend: { display: false } }
+  }
+});
+</script>
+{% endblock %}

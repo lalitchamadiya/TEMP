@@ -62,11 +62,16 @@ def student_details_list(request):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'view')
 def room_manage(request):
-    buildings = HostelBuilding.objects.filter(is_active=True)
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin':
+        buildings = HostelBuilding.objects.filter(is_active=True, organization=profile.organization)
+        rooms = Room.objects.filter(building__organization=profile.organization).select_related('building', 'floor').order_by('room_number')
+    else:
+        buildings = HostelBuilding.objects.filter(is_active=True)
+        rooms = Room.objects.select_related('building', 'floor').order_by('room_number')
+        
     selected_building_id = request.GET.get('building', '')
     q = request.GET.get('q', '').strip()
-
-    rooms = Room.objects.select_related('building', 'floor').order_by('room_number')
 
     if selected_building_id:
         rooms = rooms.filter(building_id=selected_building_id)
@@ -127,7 +132,11 @@ def rooms_by_building(request):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'view')
 def building_list(request):
-    buildings = HostelBuilding.objects.annotate(room_count=Count('rooms')).order_by('name')
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin':
+        buildings = HostelBuilding.objects.filter(organization=profile.organization).annotate(room_count=Count('rooms')).order_by('name')
+    else:
+        buildings = HostelBuilding.objects.annotate(room_count=Count('rooms')).order_by('name')
     return render(request, 'room/building_list.html', {'buildings': buildings})
 
 
@@ -135,16 +144,25 @@ def building_list(request):
 @permission_required('room', 'add')
 def building_create(request):
     from .forms import HostelBuildingForm
+    profile = request.user.profile
+    is_org_admin = profile.role and profile.role.name == 'Admin'
+    
     if request.method == 'POST':
         form = HostelBuildingForm(request.POST)
         if form.is_valid():
-            building = form.save()
+            building = form.save(commit=False)
+            if is_org_admin:
+                building.organization = profile.organization
+            building.save()
             # Auto-create floors based on total_floors
             total = building.total_floors or 0
             for fn in range(1, total + 1):
-                # Use first HostelBlock or skip (block FK is legacy)
                 from .models import HostelBlock
-                block, _ = HostelBlock.objects.get_or_create(name=building.name)
+                block, _ = HostelBlock.objects.get_or_create(
+                    building=building,
+                    name='Main Block',
+                    defaults={'organization': building.organization}
+                )
                 Floor.objects.get_or_create(building=building, block=block, floor_number=fn)
             messages.success(request, f'Building "{building.name}" created with {total} floor(s).')
             return redirect('building_list')
@@ -159,6 +177,10 @@ def building_create(request):
 def building_edit(request, pk):
     from .forms import HostelBuildingForm
     building = get_object_or_404(HostelBuilding, pk=pk)
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin' and building.organization != profile.organization:
+        raise PermissionDenied
+        
     if request.method == 'POST':
         form = HostelBuildingForm(request.POST, instance=building)
         if form.is_valid():
@@ -175,6 +197,10 @@ def building_edit(request, pk):
 @permission_required('room', 'delete')
 def building_delete(request, pk):
     building = get_object_or_404(HostelBuilding, pk=pk)
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin' and building.organization != profile.organization:
+        raise PermissionDenied
+        
     if request.method == 'POST':
         if Room.objects.filter(building=building).exists():
             messages.error(request, 'Cannot delete: rooms are assigned to this building.')
@@ -188,6 +214,10 @@ def building_delete(request, pk):
 @permission_required('room', 'add')
 def building_toggle(request, pk):
     building = get_object_or_404(HostelBuilding, pk=pk)
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin' and building.organization != profile.organization:
+        raise PermissionDenied
+        
     building.is_active = not building.is_active
     building.save()
     state = 'activated' if building.is_active else 'deactivated'
@@ -455,13 +485,21 @@ def get_students_by_gender(request):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'add')
 def create_room(request):
-    buildings = HostelBuilding.objects.filter(is_active=True)
+    profile = request.user.profile
+    is_org_admin = profile.role and profile.role.name == 'Admin'
+    if is_org_admin:
+        buildings = HostelBuilding.objects.filter(is_active=True, organization=profile.organization)
+    else:
+        buildings = HostelBuilding.objects.filter(is_active=True)
     capacity_map = CAPACITY_MAP
 
     if request.method == 'POST':
-        form = CreateRoomForm(request.POST)
+        form = CreateRoomForm(request.POST, user=request.user)
         if form.is_valid():
-            room = form.save()
+            room = form.save(commit=False)
+            if room.building and is_org_admin and room.building.organization != profile.organization:
+                raise PermissionDenied
+            room.save()
             # Auto-create beds based on capacity
             cap = room.capacity
             for i in range(1, cap + 1):
@@ -480,7 +518,7 @@ def create_room(request):
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = CreateRoomForm()
+        form = CreateRoomForm(user=request.user)
 
     return render(request, 'room/create_room.html', {
         'form': form,
@@ -493,13 +531,22 @@ def create_room(request):
 @permission_required('room', 'change')
 def edit_room(request, pk):
     room = get_object_or_404(Room, pk=pk)
-    buildings = HostelBuilding.objects.filter(is_active=True)
+    profile = request.user.profile
+    is_org_admin = profile.role and profile.role.name == 'Admin'
+    
+    if is_org_admin and room.building and room.building.organization != profile.organization:
+        raise PermissionDenied
+        
+    if is_org_admin:
+        buildings = HostelBuilding.objects.filter(is_active=True, organization=profile.organization)
+    else:
+        buildings = HostelBuilding.objects.filter(is_active=True)
     capacity_map = CAPACITY_MAP
 
     if request.method == 'POST':
         old_capacity = room.capacity
         old_rent = room.monthly_rent
-        form = CreateRoomForm(request.POST, instance=room)
+        form = CreateRoomForm(request.POST, instance=room, user=request.user)
         if form.is_valid():
             new_capacity = form.cleaned_data['capacity']
 
@@ -554,7 +601,7 @@ def edit_room(request, pk):
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = CreateRoomForm(instance=room)
+        form = CreateRoomForm(instance=room, user=request.user)
 
     return render(request, 'room/create_room.html', {
         'form': form,
@@ -573,6 +620,10 @@ def delete_room(request, pk):
     except Room.DoesNotExist:
         messages.error(request, 'Room does not exist.')
         return redirect('room_manage')
+        
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin' and room.building and room.building.organization != profile.organization:
+        raise PermissionDenied
 
     allocated_beds = room.bed_set.filter(student__isnull=False).exists()
     if allocated_beds:
@@ -689,12 +740,19 @@ def allocate_bed_ajax(request):
 
 def get_active_hostel(request):
     from authentication.models import Hostel
+    profile = getattr(request.user, 'profile', None) if request.user.is_authenticated else None
+    
+    if profile and profile.role and profile.role.name == 'Admin':
+        hostels = Hostel.objects.filter(organization=profile.organization)
+    else:
+        hostels = Hostel.objects.all()
+
     active_hostel_id = request.session.get('active_hostel_id')
     if active_hostel_id:
-        hostel = Hostel.objects.filter(id=active_hostel_id).first()
+        hostel = hostels.filter(id=active_hostel_id).first()
         if hostel:
             return hostel
-    hostel = Hostel.objects.first()
+    hostel = hostels.first()
     if hostel and request.user.is_authenticated:
         request.session['active_hostel_id'] = hostel.id
     return hostel

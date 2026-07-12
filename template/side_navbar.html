@@ -69,7 +69,11 @@
         <ul class="nav flex-column mb-auto">
             {% if is_superadmin or user.profile.role.name == 'Admin' or user.profile.role.name == 'Staff' %}
             <li class="nav-item">
+                {% if user.profile.role.name == 'Admin' %}
+                <a class="nav-link {% if request.resolver_match.url_name == 'org_admin_dashboard' %}active{% endif %}" aria-current="page" href="{% url 'org_admin_dashboard' %}">
+                {% else %}
                 <a class="nav-link {% if request.resolver_match.url_name == 'superadmin_dashboard' %}active{% endif %}" aria-current="page" href="{% url 'superadmin_dashboard' %}">
+                {% endif %}
                     <span class="material-symbols-outlined">speed</span>
                     <span class="sidebar-label">Dashboard</span>
                 </a>

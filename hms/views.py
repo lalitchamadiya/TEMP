@@ -50,6 +50,8 @@ def dashboard(request):
         return redirect('student_app:student_dashboard')
     if role_name == 'Warden':
         return redirect('warden_dashboard')
+    if role_name == 'Admin':
+        return redirect('org_admin_dashboard')
     return redirect('superadmin_dashboard')
 
 
@@ -1430,3 +1432,146 @@ def cross_hostel_report_csv(request):
         ])
         
     return response
+
+
+@login_required(login_url='/authentication/login')
+def org_admin_dashboard(request):
+    profile = getattr(request.user, 'profile', None)
+    if not profile or not profile.role or profile.role.name != 'Admin':
+        return redirect('dashboard')
+        
+    org = profile.organization
+    today = timezone.now().date()
+    now = timezone.now()
+
+    # ── Students ──
+    total_students = Student.objects.filter(hostel__organization=org).count()
+    active_students = Student.objects.filter(status='Active', hostel__organization=org).count()
+    inactive_students = total_students - active_students
+    gender_male = Student.objects.filter(gender='Male', hostel__organization=org).count()
+    gender_female = Student.objects.filter(gender='Female', hostel__organization=org).count()
+
+    # ── Rooms & Beds ──
+    total_rooms = Room.objects.filter(building__organization=org).count()
+    total_beds = Bed.objects.filter(room__building__organization=org).count()
+    occupied_beds = Bed.objects.filter(student__isnull=False, room__building__organization=org).count()
+    vacant_beds = total_beds - occupied_beds
+    occupancy_pct = round((occupied_beds / total_beds * 100) if total_beds else 0)
+    total_blocks = HostelBlock.objects.filter(organization=org).count()
+    total_floors = Floor.objects.filter(building__organization=org).count()
+
+    # ── Financials ──
+    today_revenue = Payment.objects.filter(
+        transaction_status='SUCCESSFUL', created_at__date=today, hostel__organization=org
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    month_start = today.replace(day=1)
+    monthly_revenue = Payment.objects.filter(
+        transaction_status='SUCCESSFUL', created_at__date__gte=month_start, hostel__organization=org
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    total_revenue = Payment.objects.filter(
+        transaction_status='SUCCESSFUL', hostel__organization=org
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    pending_payments = Payment.objects.filter(transaction_status='PENDING', hostel__organization=org).count()
+
+    # Total expected (beds total_amount)
+    total_expected = Bed.objects.filter(room__building__organization=org).aggregate(total=Sum('total_amount'))['total'] or 0
+    total_paid = Bed.objects.filter(room__building__organization=org).aggregate(total=Sum('paid_amount'))['total'] or 0
+    total_outstanding = total_expected - total_paid
+
+    # ── Leaves ──
+    pending_leaves = HostelLeave.objects.filter(status='pending', student__hostel__organization=org).count()
+    approved_leaves_today = HostelLeave.objects.filter(status='approved', leave_date=today, student__hostel__organization=org).count()
+
+    # ── HMS Models ──
+    total_staff = StaffProfile.objects.filter(hostel__organization=org).count()
+    active_staff = StaffProfile.objects.filter(status='active', hostel__organization=org).count()
+    total_visitors_today = Visitor.objects.filter(visit_date=today, student__hostel__organization=org).count()
+    pending_visitors = Visitor.objects.filter(status='pending', student__hostel__organization=org).count()
+    open_complaints = ComplaintTicket.objects.filter(status__in=['pending', 'assigned', 'in_progress'], student__hostel__organization=org).count()
+    resolved_complaints = ComplaintTicket.objects.filter(status='resolved', student__hostel__organization=org).count()
+    total_guards = SecurityGuard.objects.filter(status='active', hostel__organization=org).count()
+    recent_incidents = IncidentReport.objects.filter(guard__hostel__organization=org).order_by('-date')[:5]
+
+    # ── Users & Roles ──
+    total_users = UserProfile.objects.filter(organization=org).count()
+    active_users = UserProfile.objects.filter(organization=org, user__is_active=True).count()
+
+    # ── Chart Data ──
+    from datetime import timedelta
+    monthly_labels = []
+    monthly_data = []
+    for i in range(5, -1, -1):
+        d = (today.replace(day=1) - timedelta(days=1) * (i * 30)).replace(day=1)
+        label = d.strftime('%b %Y')
+        amt = Payment.objects.filter(
+            transaction_status='SUCCESSFUL',
+            hostel__organization=org,
+            created_at__year=d.year, created_at__month=d.month
+        ).aggregate(t=Sum('amount'))['t'] or 0
+        monthly_labels.append(label)
+        monthly_data.append(float(amt))
+
+    # Recent payments
+    recent_payments = Payment.objects.filter(
+        transaction_status='SUCCESSFUL', hostel__organization=org
+    ).order_by('-created_at')[:8]
+
+    # Recent complaints
+    recent_complaints = ComplaintTicket.objects.filter(
+        student__hostel__organization=org
+    ).order_by('-created_at')[:6]
+
+    # Recent visitors
+    recent_visitors = Visitor.objects.filter(
+        student__hostel__organization=org
+    ).order_by('-visit_date', '-id')[:6]
+
+    context = {
+        'page_title': 'Admin Dashboard',
+        'organization': org,
+        # Students
+        'total_students': total_students,
+        'active_students': active_students,
+        'inactive_students': inactive_students,
+        'gender_male': gender_male,
+        'gender_female': gender_female,
+        # Rooms
+        'total_blocks': total_blocks,
+        'total_floors': total_floors,
+        'total_rooms': total_rooms,
+        'total_beds': total_beds,
+        'occupied_beds': occupied_beds,
+        'vacant_beds': vacant_beds,
+        'occupancy_pct': occupancy_pct,
+        # Financials
+        'today_revenue': today_revenue,
+        'monthly_revenue': monthly_revenue,
+        'total_revenue': total_revenue,
+        'pending_payments': pending_payments,
+        'total_outstanding': total_outstanding,
+        # Leaves
+        'pending_leaves': pending_leaves,
+        'approved_leaves_today': approved_leaves_today,
+        # HMS
+        'total_staff': total_staff,
+        'active_staff': active_staff,
+        'total_visitors_today': total_visitors_today,
+        'pending_visitors': pending_visitors,
+        'open_complaints': open_complaints,
+        'resolved_complaints': resolved_complaints,
+        'total_guards': total_guards,
+        'recent_incidents': recent_incidents,
+        # Users
+        'total_users': total_users,
+        'active_users': active_users,
+        # Charts
+        'monthly_labels': monthly_labels,
+        'monthly_data': monthly_data,
+        'recent_payments': recent_payments,
+        'recent_complaints': recent_complaints,
+        'recent_visitors': recent_visitors,
+    }
+    return render(request, 'hms/org_admin_dashboard.html', context)

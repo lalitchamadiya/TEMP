@@ -36,7 +36,11 @@ def student_list(request):
     course = request.GET.get('course')
     status = request.GET.get('status')
     
-    students = Student.objects.select_related('user').all()
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin':
+        students = Student.objects.filter(organization=profile.organization).select_related('user')
+    else:
+        students = Student.objects.select_related('user').all()
     
     if query:
         students = students.filter(
@@ -78,6 +82,9 @@ def create_student(request):
         form = StudentForm(request.POST, request.FILES)
         if form.is_valid():
             student = form.save(commit=False)
+            profile = request.user.profile
+            if profile.role and profile.role.name == 'Admin':
+                student.organization = profile.organization
             roll = form.cleaned_data['roll']
             email = form.cleaned_data['email']
             try:
@@ -108,6 +115,9 @@ def create_student(request):
 @permission_required('student', 'edit')
 def update_student(request, pk):
     student = get_object_or_404(Student, pk=pk)
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin' and student.organization != profile.organization:
+        raise PermissionDenied
     if request.method == 'POST':
         form = StudentForm(request.POST, request.FILES, instance=student)
         if form.is_valid():
@@ -169,6 +179,9 @@ def check_roll_number(request):
 @permission_required('student', 'view')
 def view_student(request, pk):
     student = get_object_or_404(Student, pk=pk)
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin' and student.organization != profile.organization:
+        raise PermissionDenied
     
     # Student role isolation: Can only view their own record
     if hasattr(request.user, 'profile') and request.user.profile.role.name == 'Student':
@@ -182,6 +195,9 @@ def view_student(request, pk):
 @permission_required('student', 'delete')
 def delete_student(request, pk):
     student = get_object_or_404(Student, pk=pk)
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin' and student.organization != profile.organization:
+        raise PermissionDenied
     if request.method == 'POST':
         # deleting the user cascades to the Student record
         if student.user:

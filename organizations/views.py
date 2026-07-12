@@ -131,10 +131,17 @@ def org_create(request):
             email=admin_email,
             password=admin_password
         )
-        admin_role, _ = Role.objects.get_or_create(
-            name='Admin',
-            defaults={'description': 'Organization Administrator'}
-        )
+        
+        # Seed core roles
+        for rname, desc in [
+            ('Admin', 'Organization Administrator'),
+            ('Warden', 'Hostel Warden / Manager'),
+            ('Student', 'Hostel Resident / Student'),
+            ('Staff', 'Hostel Support Staff'),
+        ]:
+            Role.objects.get_or_create(name=rname, defaults={'description': desc})
+            
+        admin_role = Role.objects.get(name='Admin')
         UserProfile.objects.create(
             user=admin_user,
             role=admin_role,
@@ -203,8 +210,23 @@ def org_delete(request, pk):
 
     if request.method == 'POST':
         name = org.name
+        
+        # 1. Clean up associated Django Users of this organization
+        users_to_delete = User.objects.filter(profile__organization=org)
+        users_to_delete.delete()
+        
+        # 2. Clean up hotels and cascaded data
+        from authentication.models import Hostel
+        Hostel.objects.filter(organization=org).delete()
+        
+        # 3. Clean up any remaining block/building/floor structures
+        from room.models import HostelBuilding, HostelBlock
+        HostelBuilding.objects.filter(organization=org).delete()
+        HostelBlock.objects.filter(organization=org).delete()
+        
+        # 4. Delete the organization itself
         org.delete()
-        messages.success(request, f'Organization "{name}" deleted.')
+        messages.success(request, f'Organization "{name}" and all associated data deleted successfully.')
         return redirect('org_list')
 
     return render(request, 'organizations/org_confirm_delete.html', {'org': org})

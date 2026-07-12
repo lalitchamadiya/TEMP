@@ -860,16 +860,26 @@ def module_delete(request, pk):
 
 
 class HostelForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            profile = getattr(user, 'profile', None)
+            if profile and profile.role and profile.role.name == 'Admin':
+                if 'organization' in self.fields:
+                    del self.fields['organization']
+
     class Meta:
         model = Hostel
         fields = [
-            'name', 'code', 'hostel_type', 'address', 'phone_number', 'email',
+            'organization', 'name', 'code', 'hostel_type', 'address', 'phone_number', 'email',
             'branding_logo', 'hostel_image', 'description', 'theme_color', 'capacity', 'is_active',
             'separate_academic_year', 'separate_fee_structure', 'separate_staff_assignment',
             'separate_inventory', 'separate_notifications', 'separate_visitor_policy',
             'separate_leave_policy', 'separate_attendance_rules'
         ]
         widgets = {
+            'organization': forms.Select(attrs={'class': 'form-select'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Boys Hostel A'}),
             'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. BH-A'}),
             'hostel_type': forms.Select(attrs={'class': 'form-select'}),
@@ -895,25 +905,35 @@ class HostelForm(forms.ModelForm):
 
 
 @login_required
-@role_required('Super Admin')
+@role_required('Super Admin', 'Admin')
 def hostel_management_list(request):
-    hostels = Hostel.objects.all().order_by('-created_at')
+    profile = request.user.profile
+    if profile.role and profile.role.name == 'Admin':
+        hostels = Hostel.objects.filter(organization=profile.organization).order_by('-created_at')
+    else:
+        hostels = Hostel.objects.all().order_by('-created_at')
     return render(request, 'authentication/hostel_list.html', {
         'hostels': hostels,
     })
 
 
 @login_required
-@role_required('Super Admin')
+@role_required('Super Admin', 'Admin')
 def hostel_management_create(request):
+    profile = request.user.profile
+    is_org_admin = profile.role and profile.role.name == 'Admin'
+    
     if request.method == 'POST':
-        form = HostelForm(request.POST, request.FILES)
+        form = HostelForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            form.save()
+            hostel = form.save(commit=False)
+            if is_org_admin:
+                hostel.organization = profile.organization
+            hostel.save()
             messages.success(request, "Hostel registered successfully!")
             return redirect('hostel_management_list')
     else:
-        form = HostelForm()
+        form = HostelForm(user=request.user)
     return render(request, 'authentication/hostel_form.html', {
         'form': form,
         'title': 'Register New Hostel'
@@ -921,17 +941,24 @@ def hostel_management_create(request):
 
 
 @login_required
-@role_required('Super Admin')
+@role_required('Super Admin', 'Admin')
 def hostel_management_edit(request, pk):
     hostel = get_object_or_404(Hostel, pk=pk)
+    profile = request.user.profile
+    
+    # Isolation guard
+    if profile.role and profile.role.name == 'Admin':
+        if hostel.organization != profile.organization:
+            raise PermissionDenied
+            
     if request.method == 'POST':
-        form = HostelForm(request.POST, request.FILES, instance=hostel)
+        form = HostelForm(request.POST, request.FILES, instance=hostel, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Hostel settings updated successfully!")
             return redirect('hostel_management_list')
     else:
-        form = HostelForm(instance=hostel)
+        form = HostelForm(instance=hostel, user=request.user)
     return render(request, 'authentication/hostel_form.html', {
         'form': form,
         'title': 'Edit Hostel Configuration',
@@ -940,9 +967,16 @@ def hostel_management_edit(request, pk):
 
 
 @login_required
-@role_required('Super Admin')
+@role_required('Super Admin', 'Admin')
 def hostel_management_delete(request, pk):
     hostel = get_object_or_404(Hostel, pk=pk)
+    profile = request.user.profile
+    
+    # Isolation guard
+    if profile.role and profile.role.name == 'Admin':
+        if hostel.organization != profile.organization:
+            raise PermissionDenied
+            
     if Hostel.objects.count() <= 1:
         messages.error(request, "Cannot delete the only remaining hostel. At least one hostel is required.")
         return redirect('hostel_management_list')
