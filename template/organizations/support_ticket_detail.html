@@ -4,7 +4,7 @@
 <div class="d-flex align-items-center mb-4 gap-2">
   <a href="{% url 'support_ticket_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
   <div>
-    <h4 class="fw-bold mb-0">Ticket #{{ ticket.id }}: {{ ticket.title }}</h4>
+    <h4 class="fw-bold mb-0 text-break">Ticket #{{ ticket.id }}: {{ ticket.title }}</h4>
     <p class="text-muted mb-0 small">Raised by {% if ticket.raised_by %}{{ ticket.raised_by.get_full_name|default:ticket.raised_by.username }}{% else %}System{% endif %} of {{ ticket.organization.name }}</p>
   </div>
 </div>

@@ -1,14 +1,16 @@
 {% extends 'base.html' %}
 {% block title %}| Organization Management{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-column gap-3 flex-sm-row justify-content-sm-between align-items-sm-center mb-4">
   <div>
     <h4 class="fw-bold mb-1"><i class="bi bi-building me-2 text-primary"></i>Organizations</h4>
     <p class="text-muted mb-0">Manage all client organizations on this platform</p>
   </div>
-  <a href="{% url 'org_create' %}" class="btn btn-primary px-4">
-    <i class="bi bi-plus-circle me-1"></i> New Organization
-  </a>
+  <div>
+    <a href="{% url 'org_create' %}" class="btn btn-primary px-4 w-100 text-nowrap">
+      <i class="bi bi-plus-circle me-1"></i> New Organization
+    </a>
+  </div>
 </div>
 
 <!-- Stats Row -->
@@ -49,12 +51,12 @@
 
 <!-- Organizations Table -->
 <div class="card border-0 shadow-sm rounded-3">
-  <div class="card-header d-flex justify-content-between align-items-center bg-transparent border-0 pt-3 px-4">
+  <div class="card-header d-flex flex-column gap-2 flex-md-row justify-content-md-between align-items-md-center bg-transparent border-0 pt-3 px-4">
     <h6 class="mb-0 fw-semibold">All Organizations</h6>
-    <div class="d-flex gap-2">
-      <a href="{% url 'plan_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-card-list me-1"></i>Plans</a>
-      <a href="{% url 'subscription_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-receipt me-1"></i>Subscriptions</a>
-      <a href="{% url 'revenue_dashboard' %}" class="btn btn-sm btn-outline-warning"><i class="bi bi-currency-dollar me-1"></i>Revenue</a>
+    <div class="d-flex flex-wrap gap-2 w-100 w-md-auto">
+      <a href="{% url 'plan_list' %}" class="btn btn-sm btn-outline-secondary flex-grow-1 flex-md-grow-0"><i class="bi bi-card-list me-1"></i>Plans</a>
+      <a href="{% url 'subscription_list' %}" class="btn btn-sm btn-outline-secondary flex-grow-1 flex-md-grow-0"><i class="bi bi-receipt me-1"></i>Subscriptions</a>
+      <a href="{% url 'revenue_dashboard' %}" class="btn btn-sm btn-outline-warning flex-grow-1 flex-md-grow-0"><i class="bi bi-currency-dollar me-1"></i>Revenue</a>
     </div>
   </div>
   <div class="card-body px-4 pb-4">
@@ -83,7 +85,7 @@
                   <img src="{{ org.logo.url }}" alt="{{ org.name }}" class="rounded" width="32" height="32" style="object-fit:cover;">
                 {% else %}
                   <div class="rounded d-flex align-items-center justify-content-center text-white fw-bold"
-                    style="width:32px;height:32px;background:{{ org.primary_color }};font-size:13px;">
+                    style="width:32px;height:32px;font-size:13px;" data-bg-style="{{ org.primary_color }}">
                     {{ org.name|first|upper }}
                   </div>
                 {% endif %}

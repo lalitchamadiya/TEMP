@@ -331,7 +331,7 @@ html[data-theme="light"] {
           </div>
         </div>
         <div class="mini-progress mt-1">
-          <div class="mini-progress-bar" style="width:{{ occupancy_pct }}%; background: var(--accent-green);"></div>
+          <div class="mini-progress-bar" data-width="{{ occupancy_pct }}" style="background: var(--accent-green);"></div>
         </div>
         <div class="kpi-sub mt-1">{{ occupancy_pct }}% occupancy · {{ vacant_beds }} vacant</div>
       </div>
@@ -464,7 +464,7 @@ html[data-theme="light"] {
             <span>{{ disk_pct }}%</span>
           </div>
           <div class="mini-progress">
-            <div class="mini-progress-bar" style="width:{{ disk_pct }}%; background: {% if disk_pct > 90 %}var(--accent-red){% elif disk_pct > 75 %}var(--accent-yellow){% else %}var(--accent-green){% endif %};"></div>
+            <div class="mini-progress-bar" data-width="{{ disk_pct }}" data-bg="{% if disk_pct > 90 %}var(--accent-red){% elif disk_pct > 75 %}var(--accent-yellow){% else %}var(--accent-green){% endif %}"></div>
           </div>
         </div>
       </div>
@@ -799,9 +799,17 @@ html[data-theme="light"] {
 </div>
 
 <!-- ── Chart.js Scripts ── -->
+<script id="chart-monthly-labels" type="application/json">{{ monthly_labels|safe }}</script>
+<script id="chart-monthly-data" type="application/json">{{ monthly_data|safe }}</script>
+<script id="chart-gender-data" type="application/json">[{{ gender_male }}, {{ gender_female }}]</script>
+<script id="chart-bed-data" type="application/json">[{{ occupied_beds }}, {{ vacant_beds }}]</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+const monthlyLabels = JSON.parse(document.getElementById('chart-monthly-labels').textContent);
+const monthlyData = JSON.parse(document.getElementById('chart-monthly-data').textContent);
+const genderData = JSON.parse(document.getElementById('chart-gender-data').textContent);
+const bedData = JSON.parse(document.getElementById('chart-bed-data').textContent);
 const chartDefaults = {
   color: isLight ? '#475569' : 'rgba(255,255,255,0.6)',
   borderColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
@@ -816,10 +824,10 @@ const revenueCtx = document.getElementById('revenueChart').getContext('2d');
 new Chart(revenueCtx, {
   type: 'bar',
   data: {
-    labels: {{ monthly_labels|safe }},
+    labels: monthlyLabels,
     datasets: [{
       label: 'Revenue (₹)',
-      data: {{ monthly_data|safe }},
+      data: monthlyData,
       backgroundColor: 'rgba(79,156,249,0.25)',
       borderColor: 'rgba(79,156,249,0.8)',
       borderWidth: 2,
@@ -852,7 +860,7 @@ new Chart(gCtx, {
   data: {
     labels: ['Male', 'Female'],
     datasets: [{
-      data: [{{ gender_male }}, {{ gender_female }}],
+      data: genderData,
       backgroundColor: ['rgba(79,156,249,0.8)', 'rgba(168,85,247,0.8)'],
       borderColor: ['#4f9cf9', '#a855f7'],
       borderWidth: 2,
@@ -875,7 +883,7 @@ new Chart(bCtx, {
   data: {
     labels: ['Occupied', 'Vacant'],
     datasets: [{
-      data: [{{ occupied_beds }}, {{ vacant_beds }}],
+      data: bedData,
       backgroundColor: ['rgba(34,197,94,0.8)', chartVacantBg],
       borderColor: ['#22c55e', chartVacantBorder],
       borderWidth: 2,

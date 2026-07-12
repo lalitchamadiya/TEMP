@@ -62,11 +62,17 @@
         box-shadow: 0 3px 8px rgba(99,102,241,0.25);
     }
     .building-pill-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+    .room-nav-rounded-top {
+        border-radius: 1rem 1rem 0 0 !important;
+    }
+    .room-nav-rounded-all {
+        border-radius: 1rem !important;
+    }
 </style>
 
 <div class="mb-4">
     <!-- Primary Nav Row -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-2 glass-card" style="border-radius: 1rem 1rem {% if buildings %}0 0{% else %}1rem 1rem{% endif %};">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-2 glass-card {% if buildings %}room-nav-rounded-top{% else %}room-nav-rounded-all{% endif %}">
         <div class="room-nav-pills d-flex gap-1 flex-wrap">
             <a href="{% url 'room_manage' %}" class="nav-link {% if request.resolver_match.url_name == 'room_manage' %}active{% endif %}">
                 <i class="bi bi-grid-3x3-gap me-1"></i>Overview

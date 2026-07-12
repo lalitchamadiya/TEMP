@@ -237,7 +237,8 @@
           <label class="toggle-switch" title="{% if h.is_active %}Deactivate{% else %}Activate{% endif %} Hostel">
             <input type="checkbox"
               {% if h.is_active %}checked{% endif %}
-              onchange="toggleHostel({{ h.pk }}, this)"
+              class="hostel-toggle-chk"
+              data-hostel-id="{{ h.pk }}"
               id="toggle-hostel-{{ h.pk }}">
             <span class="toggle-track"></span>
           </label>
@@ -268,7 +269,7 @@
           <span>Occupancy</span><span>{{ item.occupancy_pct }}%</span>
         </div>
         <div class="occ-bar">
-          <div class="occ-fill" style="width:{{ item.occupancy_pct }}%;"></div>
+          <div class="occ-fill" data-width="{{ item.occupancy_pct }}"></div>
         </div>
 
         <!-- Footer -->
@@ -411,7 +412,7 @@
             <td>
               <div class="d-flex align-items-center gap-2">
                 <div class="occ-bar flex-grow-1" style="min-width:60px;">
-                  <div class="occ-fill" style="width:{{ item.occupancy_pct }}%;"></div>
+                  <div class="occ-fill" data-width="{{ item.occupancy_pct }}"></div>
                 </div>
                 <small>{{ item.occupancy_pct }}%</small>
               </div>
@@ -452,6 +453,14 @@
 
 <!-- AJAX Toggle Script -->
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.hostel-toggle-chk').forEach(function(chk) {
+    chk.addEventListener('change', function() {
+      toggleHostel(this.dataset.hostelId, this);
+    });
+  });
+});
+
 function toggleHostel(hostelId, checkbox) {
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
     || '{{ csrf_token }}';

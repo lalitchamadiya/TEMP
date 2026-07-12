@@ -17,6 +17,7 @@
     </div>
 </div>
 
+<script id="chart-data" type="application/json">{{ chart_data|safe }}</script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript">
   google.charts.load('current', {'packages':['corechart']});
@@ -24,7 +25,7 @@
 
   function drawCharts() {
       // Data from Django view
-      var data = google.visualization.arrayToDataTable({{ chart_data|safe }});
+      var data = google.visualization.arrayToDataTable(JSON.parse(document.getElementById('chart-data').textContent));
 
       var isLight = document.documentElement.getAttribute('data-theme') === 'light';
       var chartBg = isLight ? '#ffffff' : '#161b22';

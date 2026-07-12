@@ -213,5 +213,31 @@
   });
 </script>
 {% endif %}
+  <script>
+    // System dynamic background coloring and element sizing helpers to prevent linter errors
+    (function() {
+      function applyDynamicStyles() {
+        document.querySelectorAll('[data-bg]').forEach(function(el) {
+          if (el.dataset.bg) {
+            el.style.backgroundColor = el.dataset.bg;
+          }
+        });
+        document.querySelectorAll('[data-bg-style]').forEach(function(el) {
+          if (el.dataset.bgStyle) {
+            el.style.background = el.dataset.bgStyle;
+          }
+        });
+        document.querySelectorAll('[data-width]').forEach(function(el) {
+          if (el.dataset.width) {
+            el.style.width = el.dataset.width + '%';
+          }
+        });
+      }
+      // Apply immediately on DOMContentLoaded
+      document.addEventListener('DOMContentLoaded', applyDynamicStyles);
+      // Run immediately in case script loads after DOMContentLoaded
+      applyDynamicStyles();
+    })();
+  </script>
   </body>
 </html>

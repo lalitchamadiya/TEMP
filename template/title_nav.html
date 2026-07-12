@@ -21,7 +21,7 @@
       {% for hostel in available_hostels %}
       <li>
         <a class="dropdown-item d-flex align-items-center py-2 {% if hostel.id == active_hostel.id %}active bg-primary{% endif %}" href="{% url 'select_hostel' hostel.id %}">
-          <span class="me-2" style="width: 8px; height: 8px; border-radius: 50%; background-color: {{ hostel.theme_color|default:'#0d6efd' }}; display: inline-block;"></span>
+          <span class="me-2" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block;" data-bg="{{ hostel.theme_color|default:'#0d6efd' }}"></span>
           <span style="font-size: 0.85rem;">{{ hostel.name }}</span>
         </a>
       </li>

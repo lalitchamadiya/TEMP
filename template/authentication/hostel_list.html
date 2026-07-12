@@ -90,7 +90,7 @@
                                 {% if hostel.branding_logo %}
                                     <img src="{{ hostel.branding_logo.url }}" alt="Logo" class="rounded object-fit-cover shadow-sm bg-light" style="width:36px; height:36px;">
                                 {% else %}
-                                    <div class="d-flex align-items-center justify-content-center text-white bg-gradient-primary rounded shadow-sm fw-bold" style="width:36px; height:36px; background-color: {{ hostel.theme_color }};">
+                                    <div class="d-flex align-items-center justify-content-center text-white bg-gradient-primary rounded shadow-sm fw-bold" style="width:36px; height:36px;" data-bg="{{ hostel.theme_color }}">
                                         {{ hostel.code|slice:":2" }}
                                     </div>
                                 {% endif %}
