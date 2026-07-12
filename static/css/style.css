@@ -796,14 +796,12 @@ main[role="main"] {
     .sidebar-wrapper.sidebar-mobile-open {
         transform: translateX(0);
     }
-    /* Overlay for mobile: modern glassmorphic blur */
+    /* Overlay for mobile: clear translucent overlay */
     .sidebar-overlay {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.45) !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
+        background: rgba(0, 0, 0, 0.35) !important;
         z-index: 1038 !important;
         transition: all 0.3s ease;
     }
