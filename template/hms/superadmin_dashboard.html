@@ -15,23 +15,50 @@
   --accent-red: #ef4444;
   --accent-cyan: #06b6d4;
   --accent-yellow: #eab308;
-  --dark-bg: #0d1117;
   --card-bg: #161b22;
+  
+  --sa-header-bg: linear-gradient(135deg, #1a1f35 0%, #131825 50%, #0f1420 100%);
+  --sa-title-color: #f0f6ff;
+  --sa-sub-color: rgba(255,255,255,0.5);
+  --sa-muted-color: rgba(255,255,255,0.3);
+  --sa-border: rgba(255,255,255,0.04);
 }
 
-body { background: var(--dark-bg) !important; }
+html[data-theme="light"] {
+  --glass-bg: rgba(0, 0, 0, 0.03);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --sa-header-bg: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  --sa-title-color: #0f172a;
+  --sa-sub-color: #475569;
+  --sa-muted-color: #64748b;
+  --sa-border: rgba(0, 0, 0, 0.05);
+}
 
 .sa-page { padding: 1.5rem 0; }
 
 /* ── Hero Header ── */
 .sa-header {
-  background: linear-gradient(135deg, #1a1f35 0%, #131825 50%, #0f1420 100%);
+  background: var(--sa-header-bg);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 2rem 2.5rem;
   margin-bottom: 2rem;
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+.sa-header .text-white {
+  color: var(--sa-title-color) !important;
+  transition: color 0.3s ease;
+}
+.sa-header .btn-outline-light {
+  border-color: var(--sa-title-color) !important;
+  color: var(--sa-title-color) !important;
+  transition: all 0.3s ease;
+}
+.sa-header .btn-outline-light:hover {
+  background-color: var(--sa-title-color) !important;
+  color: var(--card-bg) !important;
 }
 .sa-header::before {
   content: '';
@@ -60,7 +87,7 @@ body { background: var(--dark-bg) !important; }
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
+  color: var(--sa-sub-color);
   margin-bottom: 0.75rem;
   padding-left: 4px;
 }
@@ -71,13 +98,13 @@ body { background: var(--dark-bg) !important; }
   border: 1px solid var(--glass-border);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
-  transition: transform 0.2s, border-color 0.2s;
+  transition: transform 0.2s, border-color 0.2s, background-color 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 .kpi-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(255,255,255,0.22);
+  border-color: var(--sa-title-color);
 }
 .kpi-card::after {
   content: '';
@@ -112,24 +139,27 @@ body { background: var(--dark-bg) !important; }
 .kpi-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #f0f6ff;
+  color: var(--sa-title-color);
   line-height: 1.1;
+  transition: color 0.3s ease;
 }
 .kpi-label {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.5);
+  color: var(--sa-sub-color);
   margin-top: 2px;
+  transition: color 0.3s ease;
 }
 .kpi-sub {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--sa-muted-color);
+  transition: color 0.3s ease;
 }
 
 /* ── Progress Bars ── */
 .mini-progress {
   height: 6px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.08);
+  background: var(--glass-bg);
 }
 .mini-progress-bar {
   height: 6px;
@@ -143,35 +173,42 @@ body { background: var(--dark-bg) !important; }
   border: 1px solid var(--glass-border);
   border-radius: 14px;
   padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+.panel-card .text-white {
+  color: var(--sa-title-color) !important;
+  transition: color 0.3s ease;
 }
 .panel-title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: var(--sa-title-color);
   margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: color 0.3s ease;
 }
 .panel-title i { color: var(--accent-blue); }
 
 /* ── Data Table ── */
-.sa-table { color: rgba(255,255,255,0.8); font-size: 0.82rem; }
+.sa-table { color: var(--sa-title-color); font-size: 0.82rem; transition: color 0.3s ease; }
 .sa-table thead th {
-  color: rgba(255,255,255,0.4);
+  color: var(--sa-sub-color);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border-bottom: 1px solid var(--glass-border);
   background: transparent;
   padding: 0.6rem 0.75rem;
+  transition: color 0.3s ease;
 }
 .sa-table tbody td {
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--sa-border);
   padding: 0.6rem 0.75rem;
   vertical-align: middle;
 }
-.sa-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.sa-table tbody tr:hover { background: var(--glass-bg); }
 
 /* ── Status Badges ── */
 .badge-status {
@@ -191,7 +228,7 @@ body { background: var(--dark-bg) !important; }
 .health-row {
   display: flex; align-items: center;
   padding: 0.6rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--sa-border);
 }
 .health-row:last-child { border-bottom: none; }
 .health-dot {
@@ -213,12 +250,12 @@ body { background: var(--dark-bg) !important; }
   display: flex; align-items: center; gap: 12px;
   text-decoration: none;
   transition: all 0.2s;
-  color: rgba(255,255,255,0.8);
+  color: var(--sa-sub-color);
 }
 .shortcut-card:hover {
   border-color: var(--accent-blue);
   background: rgba(79,156,249,0.06);
-  color: #fff;
+  color: var(--sa-title-color);
   transform: translateY(-2px);
 }
 .shortcut-icon {
@@ -753,10 +790,15 @@ body { background: var(--dark-bg) !important; }
 <!-- ── Chart.js Scripts ── -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+const isLight = document.documentElement.getAttribute('data-theme') === 'light';
 const chartDefaults = {
-  color: 'rgba(255,255,255,0.6)',
-  borderColor: 'rgba(255,255,255,0.08)',
+  color: isLight ? '#475569' : 'rgba(255,255,255,0.6)',
+  borderColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
 };
+const chartTextMuted = isLight ? '#64748b' : 'rgba(255,255,255,0.45)';
+const chartGridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+const chartVacantBg = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+const chartVacantBorder = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)';
 
 // Revenue Bar Chart
 const revenueCtx = document.getElementById('revenueChart').getContext('2d');
@@ -779,14 +821,14 @@ new Chart(revenueCtx, {
     plugins: { legend: { display: false } },
     scales: {
       x: {
-        ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 11 } },
-        grid: { color: 'rgba(255,255,255,0.05)' }
+        ticks: { color: chartTextMuted, font: { size: 11 } },
+        grid: { color: chartGridColor }
       },
       y: {
-        ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 11 },
+        ticks: { color: chartTextMuted, font: { size: 11 },
           callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v)
         },
-        grid: { color: 'rgba(255,255,255,0.05)' }
+        grid: { color: chartGridColor }
       }
     }
   }
@@ -823,8 +865,8 @@ new Chart(bCtx, {
     labels: ['Occupied', 'Vacant'],
     datasets: [{
       data: [{{ occupied_beds }}, {{ vacant_beds }}],
-      backgroundColor: ['rgba(34,197,94,0.8)', 'rgba(255,255,255,0.08)'],
-      borderColor: ['#22c55e', 'rgba(255,255,255,0.15)'],
+      backgroundColor: ['rgba(34,197,94,0.8)', chartVacantBg],
+      borderColor: ['#22c55e', chartVacantBorder],
       borderWidth: 2,
       hoverOffset: 6,
     }]

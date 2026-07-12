@@ -331,8 +331,96 @@ def role_delete(request, pk):
 @login_required
 @role_required('Super Admin')
 def user_list(request):
-    """Redirect User Management to Staff Management list."""
-    return redirect('staff_list')
+    """View, search, filter and perform bulk actions on all system users."""
+    qs = User.objects.select_related('profile', 'profile__role').order_by('-id')
+
+    # ── Filters ──
+    search = request.GET.get('q', '').strip()
+    role_filter = request.GET.get('role', '')
+    status_filter = request.GET.get('status', '')
+
+    if search:
+        qs = qs.filter(
+            Q(username__icontains=search) |
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search)
+        )
+    if role_filter:
+        qs = qs.filter(profile__role_id=role_filter)
+    if status_filter:
+        if status_filter == 'active':
+            qs = qs.filter(is_active=True)
+        elif status_filter == 'inactive':
+            qs = qs.filter(is_active=False)
+        elif status_filter == 'locked':
+            qs = qs.filter(profile__is_locked=True)
+
+    # ── Bulk Actions ──
+    if request.method == 'POST':
+        action = request.POST.get('bulk_action')
+        selected_ids = request.POST.getlist('selected_users')
+        if selected_ids and action:
+            selected_users = User.objects.filter(id__in=selected_ids)
+            
+            if action == 'activate':
+                selected_users.update(is_active=True)
+                for u in selected_users:
+                    log_action(request.user, 'activate', u, 'Bulk activated', request)
+                messages.success(request, f'Activated {selected_users.count()} user(s).')
+                
+            elif action == 'deactivate':
+                deactivatable = selected_users.exclude(id=request.user.id)
+                deactivatable.update(is_active=False)
+                for u in deactivatable:
+                    log_action(request.user, 'deactivate', u, 'Bulk deactivated', request)
+                messages.success(request, f'Deactivated {deactivatable.count()} user(s).')
+                if deactivatable.count() < selected_users.count():
+                    messages.warning(request, 'You cannot deactivate your own account.')
+                    
+            elif action == 'delete':
+                deletable = selected_users.exclude(id=request.user.id)
+                u_count = deletable.count()
+                for u in deletable:
+                    log_action(request.user, 'delete', None, f'Bulk deleted user {u.username}', request)
+                    u.delete()
+                messages.success(request, f'Deleted {u_count} user(s).')
+                if u_count < selected_users.count():
+                    messages.warning(request, 'You cannot delete your own account.')
+                    
+            elif action == 'export':
+                return _export_users_csv(selected_users)
+        
+        qs_str = request.META.get('QUERY_STRING', '')
+        return redirect(request.path + ('?' + qs_str if qs_str else ''))
+
+    # ── Stats ──
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    seven_days_ago = timezone.now() - timezone.timedelta(days=7)
+    stats = {
+        'total': User.objects.count(),
+        'active': User.objects.filter(is_active=True).count(),
+        'inactive': User.objects.filter(is_active=False).count(),
+        'roles': Role.objects.filter(is_active=True).count(),
+        'logged_in_today': User.objects.filter(last_login__gte=today_start).count(),
+        'new_this_week': User.objects.filter(date_joined__gte=seven_days_ago).count(),
+    }
+
+    # ── Pagination ──
+    paginator = Paginator(qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    roles = Role.objects.filter(is_active=True)
+
+    context = {
+        'page_obj': page_obj,
+        'stats': stats,
+        'roles': roles,
+        'search': search,
+        'role_filter': role_filter,
+        'status_filter': status_filter,
+        'page_title': 'User Management',
+    }
+    return render(request, 'authentication/rbac/user_list.html', context)
 
 
 @login_required

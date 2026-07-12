@@ -1,22 +1,179 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-:root {
+/* ============================================================
+   CSS CUSTOM PROPERTIES — Theme-aware design tokens
+   html[data-theme="dark"]  → dark values  (default)
+   html[data-theme="light"] → light values
+   ============================================================ */
+
+/* --- DARK THEME (default) --- */
+:root,
+html[data-theme="dark"] {
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
   --primary-glow: rgba(37, 99, 235, 0.4);
-  --secondary: #8b5cf6; /* Added purple for vibrant mesh background */
-  --bg-color: #f8fafc;
-  --surface: rgba(255, 255, 255, 0.75); /* Highly translucent white for true glassmorphism */
-  --surface-border: rgba(255, 255, 255, 0.85); /* Frosty border */
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border-light: rgba(226, 232, 240, 0.6);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 8px 16px -4px rgba(0, 0, 0, 0.05), 0 4px 8px -4px rgba(0, 0, 0, 0.05); /* Softer, broader float shadow */
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --secondary: #8b5cf6;
+
+  /* Backgrounds */
+  --bg-color: #0d1117;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --surface-border: rgba(255, 255, 255, 0.1);
+
+  /* Text */
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-inverse: #0f172a;
+
+  /* Sidebar / Navbar */
+  --sidebar-bg: rgba(10, 15, 24, 0.92);
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --nav-link-color: rgba(255, 255, 255, 0.55);
+  --nav-link-hover-bg: rgba(255, 255, 255, 0.07);
+  --nav-link-hover-color: #ffffff;
+  --section-title-color: rgba(255, 255, 255, 0.35);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.08);
+
+  /* Cards / Tables */
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --card-header-bg: rgba(255, 255, 255, 0.06);
+  --table-header-bg: rgba(255, 255, 255, 0.04);
+  --table-row-alt: rgba(255, 255, 255, 0.02);
+  --border-light: rgba(255, 255, 255, 0.08);
+
+  /* Forms */
+  --input-bg: rgba(255, 255, 255, 0.07);
+  --input-bg-focus: rgba(255, 255, 255, 0.12);
+  --input-border: rgba(255, 255, 255, 0.12);
+
+  /* Misc */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 16px -4px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  --mesh-color-1: rgba(37, 99, 235, 0.16);
+  --mesh-color-2: rgba(139, 92, 246, 0.18);
+  --mesh-color-3: rgba(16, 185, 129, 0.08);
+
+  /* User role card */
+  --role-card-bg: rgba(255, 255, 255, 0.02);
+  --role-card-border: rgba(255, 255, 255, 0.06);
+  --role-icon-bg: rgba(255, 255, 255, 0.05);
+  --role-icon-border: rgba(255, 255, 255, 0.08);
+  --role-text: #ffffff;
+
+  /* Theme toggle button */
+  --toggle-color: rgba(255, 255, 255, 0.85);
+  --toggle-hover-bg: rgba(255, 255, 255, 0.1);
+
+  /* Dynamic Header */
+  --header-bg: rgba(10, 15, 24, 0.92);
+  --header-border: rgba(255, 255, 255, 0.08);
+  --header-glow: rgba(0, 0, 0, 0.2);
+  --header-brand: #ffffff;
+  --header-link: rgba(255, 255, 255, 0.8);
+  --header-link-hover: #ffffff;
+  --header-btn-border: rgba(255, 255, 255, 0.4);
+  --header-btn-color: #ffffff;
+  --header-btn-hover-bg: rgba(255, 255, 255, 0.1);
+
   --radius-sm: 0.375rem;
   --radius-md: 0.6rem;
-  --radius-lg: 1rem; /* More rounded premium feel */
+  --radius-lg: 1rem;
+}
+
+/* --- LIGHT THEME --- */
+html[data-theme="light"] {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-glow: rgba(37, 99, 235, 0.25);
+  --secondary: #8b5cf6;
+
+  /* Backgrounds */
+  --bg-color: #f1f5f9;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-hover: rgba(255, 255, 255, 1);
+  --surface-border: rgba(255, 255, 255, 0.95);
+
+  /* Text */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  /* Sidebar / Navbar */
+  --sidebar-bg: rgba(255, 255, 255, 0.95);
+  --sidebar-border: rgba(0, 0, 0, 0.06);
+  --nav-link-color: rgba(15, 23, 42, 0.7);
+  --nav-link-hover-bg: rgba(0, 0, 0, 0.05);
+  --nav-link-hover-color: var(--primary);
+  --section-title-color: rgba(15, 23, 42, 0.4);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.1);
+
+  /* Cards / Tables */
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --card-header-bg: rgba(248, 250, 252, 0.95);
+  --table-header-bg: rgba(241, 245, 249, 0.9);
+  --table-row-alt: rgba(241, 245, 249, 0.5);
+  --border-light: rgba(226, 232, 240, 0.7);
+
+  /* Forms */
+  --input-bg: rgba(255, 255, 255, 0.95);
+  --input-bg-focus: #ffffff;
+  --input-border: rgba(203, 213, 225, 0.8);
+
+  /* Misc */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 16px -4px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --mesh-color-1: rgba(37, 99, 235, 0.12);
+  --mesh-color-2: rgba(139, 92, 246, 0.14);
+  --mesh-color-3: rgba(16, 185, 129, 0.08);
+
+  /* User role card */
+  --role-card-bg: rgba(0, 0, 0, 0.03);
+  --role-card-border: rgba(0, 0, 0, 0.05);
+  --role-icon-bg: rgba(0, 0, 0, 0.04);
+  --role-icon-border: rgba(0, 0, 0, 0.08);
+  --role-text: #0f172a;
+
+  /* Theme toggle button */
+  --toggle-color: rgba(15, 23, 42, 0.75);
+  --toggle-hover-bg: rgba(0, 0, 0, 0.05);
+
+  /* Dynamic Header */
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --header-border: rgba(0, 0, 0, 0.08);
+  --header-glow: rgba(0, 0, 0, 0.05);
+  --header-brand: #0f172a;
+  --header-link: rgba(15, 23, 42, 0.7);
+  --header-link-hover: var(--primary);
+  --header-btn-border: var(--primary);
+  --header-btn-color: var(--primary);
+  --header-btn-hover-bg: var(--primary);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.6rem;
+  --radius-lg: 1rem;
+}
+
+/* Smooth theme switching — no flash */
+html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Prevent Chromium automatic autofill overlay background from breaking dark mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: var(--text-main) !important;
+    transition: background-color 5000s ease-in-out 0s;
+    box-shadow: 0 0 0 1000px var(--input-bg) inset !important;
+}
+
+/* Force Bootstrap .text-muted utilities to respect custom theme variables */
+.text-muted {
+    color: var(--text-muted) !important;
 }
 
 /* Animated Ambient Mesh Background */
@@ -30,6 +187,7 @@ body {
     overflow-x: hidden;
     margin: 0 !important;
     padding: 0 !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container-fluid {
@@ -40,14 +198,28 @@ body {
 body::before {
     content: '';
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    width: 100vw; height: 100vh;
+    top: -10%; left: -10%; right: -10%; bottom: -10%;
+    width: 120vw; height: 120vh;
     z-index: -1;
     background: 
-        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.06), transparent 35%),
-        radial-gradient(circle at 85% 35%, rgba(139, 92, 246, 0.07), transparent 35%),
-        radial-gradient(circle at 45% 85%, rgba(16, 185, 129, 0.04), transparent 45%);
+        radial-gradient(circle at 15% 15%, var(--mesh-color-1), transparent 50%),
+        radial-gradient(circle at 85% 25%, var(--mesh-color-2), transparent 55%),
+        radial-gradient(circle at 45% 85%, var(--mesh-color-3), transparent 60%);
     pointer-events: none;
+    transition: background 0.3s ease;
+    animation: ambientShift 30s ease infinite alternate;
+}
+
+@keyframes ambientShift {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(-3%, 3%) rotate(1.5deg);
+    }
+    100% {
+        transform: translate(2%, -2%) scale(1.03);
+    }
 }
 
 /* Base Typography */
@@ -57,23 +229,23 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.02em;
 }
 
-/* Top Navigation - Glassmorphic Dark */
+/* Top Navigation - Glassmorphic (Theme-aware header) */
 .top-nav {
-    background: rgba(10, 15, 24, 0.85) !important;
+    background: var(--header-bg) !important;
     backdrop-filter: blur(30px) saturate(200%);
     -webkit-backdrop-filter: blur(30px) saturate(200%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--header-border);
+    box-shadow: 0 4px 20px var(--header-glow);
     padding: 0.6rem 1rem;
-    transition: all 0.3s ease;
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .navbar-brand {
     font-weight: 800;
-    color: #ffffff !important;
+    color: var(--header-brand) !important;
     font-size: 1.35rem;
     letter-spacing: -0.03em;
-    transition: color 0.2s ease;
+    transition: color 0.3s ease;
 }
 
 .navbar-brand:hover {
@@ -81,20 +253,50 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .top-nav .nav-link {
-    color: rgba(255, 255, 255, 0.8) !important;
+    color: var(--header-link) !important;
     font-weight: 600;
+    transition: color 0.3s ease;
 }
 
 .top-nav .nav-link:hover {
-    color: #ffffff !important;
+    color: var(--header-link-hover) !important;
+}
+
+.top-nav .btn-outline-light {
+    border-color: var(--header-btn-border) !important;
+    color: var(--header-btn-color) !important;
+    background-color: transparent !important;
+    transition: all 0.3s ease;
+}
+
+.top-nav .btn-outline-light:hover {
+    background-color: var(--header-btn-hover-bg) !important;
+    border-color: var(--header-btn-hover-bg) !important;
+    color: var(--text-inverse) !important;
+}
+
+/* Theme toggle button (in top navbar) */
+.theme-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--toggle-color) !important;
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius-sm);
+    transition: background 0.3s ease, color 0.3s ease;
+    line-height: 1;
+    font-size: 1rem;
+}
+.theme-toggle-btn:hover {
+    background: var(--toggle-hover-bg) !important;
+    color: var(--toggle-color) !important;
 }
 
 /* --- PREMIUM SAAS SIDEBAR ARCHITECTURE (EXPANDED BY DEFAULT) --- */
 .sidebar-wrapper {
     padding: 16px 0 !important;
     height: calc(100vh - 61px);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(10, 15, 24, 0.85) !important;
+    border-right: 1px solid var(--sidebar-border);
+    background: var(--sidebar-bg) !important;
     backdrop-filter: blur(30px) saturate(200%);
     -webkit-backdrop-filter: blur(30px) saturate(200%);
     box-shadow: 1px 0 20px rgba(0,0,0,0.2);
@@ -143,7 +345,7 @@ h1, h2, h3, h4, h5, h6 {
     width: 3px;
 }
 .sidebar-pro::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--scrollbar-thumb);
     border-radius: 10px;
 }
 
@@ -153,7 +355,7 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     width: 100%;
     padding: 0 20px 1.25rem 20px !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--sidebar-border);
     margin-bottom: 1.25rem;
     transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
                 justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -208,7 +410,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--section-title-color);
     display: block;
 }
 
@@ -237,11 +439,11 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Links & Menu items geometry styling */
 .sidebar-pro .nav-link {
-    height: 42px; /* Smaller menu item height */
+    height: 42px;
     display: flex;
     align-items: center;
     border-radius: 12px;
-    color: rgba(255, 255, 255, 0.55) !important;
+    color: var(--nav-link-color) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     margin: 0 12px !important;
     padding: 0 14px !important;
@@ -271,12 +473,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Hover effect */
 .sidebar-pro .nav-link:hover {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.06);
+    color: var(--nav-link-hover-color) !important;
+    background: var(--nav-link-hover-bg);
 }
 .sidebar-pro .nav-link:hover .material-symbols-outlined,
 .sidebar-pro .nav-link:hover .bi {
-    color: #ffffff;
+    color: var(--nav-link-hover-color) !important;
     transform: scale(1.06);
 }
 
@@ -290,6 +492,30 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-pro .nav-link.active .bi {
     color: #ffffff !important;
     text-shadow: none;
+}
+
+/* Force light-theme text labels inside sidebar wrapper to be dark-slate (prevents white-on-white) */
+html[data-theme="light"] .sidebar-wrapper .text-white {
+    color: var(--text-main) !important;
+}
+
+/* Re-allow icons inside solid dark background blocks to remain white */
+html[data-theme="light"] .sidebar-wrapper .brand-icon .text-white,
+html[data-theme="light"] .sidebar-wrapper .brand-icon span,
+html[data-theme="light"] .sidebar-wrapper .btn .text-white {
+    color: #ffffff !important;
+}
+
+/* Fix bottom role card text colors in light mode */
+html[data-theme="light"] .sidebar-wrapper .user-role-card span,
+html[data-theme="light"] .sidebar-wrapper .user-role-card div {
+    color: var(--text-main) !important;
+}
+
+/* Retain primary/success color indicators for shield and check badges */
+html[data-theme="light"] .sidebar-wrapper .user-role-card .user-role-icon .text-success,
+html[data-theme="light"] .sidebar-wrapper .user-role-card .user-role-icon .text-primary {
+    color: inherit !important;
 }
 
 /* Collapsed Links Adjustments */
@@ -315,8 +541,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Bottom Profile / Role Card */
 .user-role-card {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--role-card-bg);
+    border: 1px solid var(--role-card-border);
     border-radius: 12px;
     padding: 10px 12px;
     margin: auto 12px 0 12px;
@@ -340,8 +566,8 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     justify-content: center;
     margin-right: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--role-icon-bg);
+    border: 1px solid var(--role-icon-border);
     flex-shrink: 0;
     transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
                 width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
@@ -370,49 +596,63 @@ h1, h2, h3, h4, h5, h6 {
 }
 /* ------------------------------------ */
 
-/* Master Card Styles (Ultra-Premium Glass) */
+/* Master Card Styles (Theme-aware Glass) */
 .card, .pro-card {
-    background: var(--surface) !important;
+    background: var(--card-bg) !important;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--surface-border) !important;
+    border: 1px solid var(--border-light) !important;
     border-radius: var(--radius-lg) !important;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.02) !important;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+    box-shadow: var(--shadow-sm) !important;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, background 0.3s ease;
+    color: var(--text-main);
 }
 
 .card:hover, .pro-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: var(--shadow-lg) !important;
 }
 
 .card-header {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--card-header-bg);
     border-bottom: 1px solid var(--border-light);
     font-weight: 700;
     padding: 1.25rem 1.5rem;
     border-top-left-radius: var(--radius-lg) !important;
     border-top-right-radius: var(--radius-lg) !important;
+    color: var(--text-main);
 }
 
-/* Inputs & Forms (Premium Tactile Feel) */
+/* Inputs & Forms (Theme-aware) */
 .form-control, .form-select {
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    border: 1px solid var(--border-light);
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--input-border);
     border-radius: var(--radius-sm);
     padding: 0.6rem 1rem;
     font-size: 0.95rem;
     font-weight: 500;
     color: var(--text-main);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
     transition: all 0.25s ease;
 }
 
 .form-control:focus, .form-select:focus {
-    background-color: #ffffff !important;
+    background-color: var(--input-bg-focus) !important;
     border-color: var(--primary);
     box-shadow: 0 0 0 4px var(--primary-glow), inset 0 1px 2px rgba(0,0,0,0.02);
     outline: none;
+    color: var(--text-main);
+}
+
+.form-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.input-group-text {
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--primary) !important;
 }
 
 .form-label {
@@ -461,30 +701,48 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(-3px) scale(1.02);
 }
 
-/* Table Enhancements inside .pro-card */
+/* Table Enhancements (Theme-aware) */
 .table {
     margin-bottom: 0;
+    color: var(--text-main);
 }
 
 .table-light {
-    background: rgba(248, 250, 252, 0.8) !important;
+    background: var(--table-header-bg) !important;
     backdrop-filter: blur(8px);
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-main);
 }
 
 .table-light th {
     font-weight: 700;
     text-transform: uppercase;
-    font-size: 0.82rem; /* Increased from 0.75rem */
+    font-size: 0.82rem;
     letter-spacing: 0.06em;
     color: var(--text-muted) !important;
     background: transparent !important;
     border-bottom: 2px solid var(--border-light);
-    padding: 1.25rem 1rem !important; /* Increased padding for airiness */
+    padding: 1.25rem 1rem !important;
 }
 
 td {
     border-bottom: 1px solid var(--border-light);
     padding: 1rem !important;
+    color: var(--text-main);
+}
+
+/* Bootstrap table dark mode overrides */
+html[data-theme="dark"] .table {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: var(--table-row-alt);
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: var(--border-light);
+}
+html[data-theme="light"] .table {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: var(--table-row-alt);
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: var(--border-light);
 }
 
 
@@ -501,15 +759,15 @@ td {
 .sidebar-toggle-btn {
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.85) !important;
+    color: var(--header-link) !important;
     padding: 0.35rem 0.6rem;
     border-radius: var(--radius-sm);
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: background 0.3s ease, color 0.3s ease;
     line-height: 1;
 }
 .sidebar-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff !important;
+    background: var(--toggle-hover-bg) !important;
+    color: var(--header-link-hover) !important;
 }
 
 /* Sidebar transitions — !important overrides Bootstrap's col-md-3/col-lg-2 fluid width */
@@ -549,5 +807,33 @@ main[role="main"] {
     .sidebar-overlay.active {
         display: block;
     }
+}
+
+/* ---- GLOBAL DASHBOARD CONTRAST OVERRIDES ---- */
+.pro-card {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-light) !important;
+    color: var(--text-main) !important;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.pro-card.bg-white {
+    background-color: var(--card-bg) !important;
+}
+
+.pro-card .text-slate-800,
+.text-slate-800 {
+    color: var(--text-main) !important;
+}
+
+.pro-card .text-muted,
+.pro-card .opacity-75 {
+    color: var(--text-muted) !important;
+}
+
+.table thead.bg-light tr th {
+    background-color: var(--table-header-bg) !important;
+    color: var(--text-muted) !important;
+    border-bottom: 2px solid var(--border-light) !important;
 }
 

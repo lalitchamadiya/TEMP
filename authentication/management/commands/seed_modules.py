@@ -9,6 +9,15 @@ class Command(BaseCommand):
         # Module list matching code and names in the existing DB
         modules_data = [
             {
+                'code': 'user_management',
+                'name': 'User Management',
+                'menu_label': 'User Management',
+                'icon': 'bi-people',
+                'url_name': 'user_management',
+                'order': 10,
+                'parent_code': ''
+            },
+            {
                 'code': 'rbac',
                 'name': 'Role Management',
                 'menu_label': 'Role Management',
