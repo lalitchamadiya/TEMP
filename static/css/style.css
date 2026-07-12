@@ -796,16 +796,68 @@ main[role="main"] {
     .sidebar-wrapper.sidebar-mobile-open {
         transform: translateX(0);
     }
-    /* Overlay for mobile */
+    /* Overlay for mobile: modern glassmorphic blur */
     .sidebar-overlay {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.45);
-        z-index: 1039;
+        background: rgba(15, 23, 42, 0.45) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        z-index: 1038 !important;
+        transition: all 0.3s ease;
     }
     .sidebar-overlay.active {
         display: block;
+    }
+    /* Top Nav mobile flex hardening, preventing row wrap */
+    .top-nav {
+        flex-wrap: nowrap !important;
+        padding: 0.4rem 0.6rem !important;
+        justify-content: space-between !important;
+    }
+    .top-nav .navbar-brand {
+        font-size: 1.05rem !important;
+        margin-right: 0.5rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
+    }
+    .top-nav .sidebar-toggle-btn,
+    .top-nav .theme-toggle-btn {
+        padding: 0.25rem 0.4rem !important;
+    }
+    /* Compact the mobile select hostel dropdown */
+    .top-nav #hostelSelectDropdown {
+        padding: 0.2rem 0.4rem !important;
+        font-size: 0.75rem !important;
+    }
+    .top-nav #hostelSelectDropdown i {
+        margin-right: 0.25rem !important;
+    }
+    /* Compact user logout form on mobile */
+    .top-nav form.nav-item {
+        margin: 0 !important;
+        gap: 2px;
+    }
+    .top-nav form.nav-item img {
+        width: 26px !important;
+        height: 26px !important;
+        border-width: 1px !important;
+    }
+    .top-nav form.nav-item a.nav-link {
+        font-size: 0.8rem !important;
+        margin: 0 0.3rem !important;
+        max-width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .top-nav form.nav-item input[type="submit"] {
+        padding: 0.2rem 0.4rem !important;
+        font-size: 0.75rem !important;
+        margin: 0 0.1rem !important;
     }
 }
 
