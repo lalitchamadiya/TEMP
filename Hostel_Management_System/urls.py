@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path , include
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('' , include('hms.urls')),
@@ -13,6 +14,8 @@ urlpatterns = [
     
     path('admin/', admin.site.urls),
     path('organization/', include('organizations.urls')),
+    path('manifest.json', TemplateView.as_view(template_name='manifest.json', content_type='application/json'), name='manifest_json'),
+    path('service-worker.js', TemplateView.as_view(template_name='service-worker.js', content_type='application/javascript'), name='service_worker_js'),
 ]
 
 from django.conf import settings
