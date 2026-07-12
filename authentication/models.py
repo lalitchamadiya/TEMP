@@ -59,6 +59,15 @@ class RolePermission(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+    organization = models.ForeignKey(
+        'organizations.Organization', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='user_profiles'
+    )
+    hostel = models.ForeignKey(
+        'authentication.Hostel', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='user_profiles',
+        help_text='Hostel scope for non-super-admin users'
+    )
 
     # Extended fields for User Management
     phone = models.CharField(max_length=20, blank=True)
@@ -109,6 +118,14 @@ class AuditLog(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='audit_records', verbose_name='Affected User'
     )
+    organization = models.ForeignKey(
+        'organizations.Organization', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='audit_logs'
+    )
+    hostel = models.ForeignKey(
+        'authentication.Hostel', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='audit_logs'
+    )
     action = models.CharField(max_length=30, choices=ACTION_CHOICES)
     details = models.TextField(blank=True)
     timestamp = models.DateTimeField(default=timezone.now)
@@ -131,3 +148,78 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.message[:20]}"
+
+
+class Hostel(models.Model):
+    HOSTEL_TYPES = [
+        ('Boys', 'Boys'),
+        ('Girls', 'Girls'),
+        ('Mixed', 'Mixed'),
+    ]
+
+    # Organization link (Level 2 → Level 3)
+    organization = models.ForeignKey(
+        'organizations.Organization', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='hostels'
+    )
+
+    name = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=20, unique=True, default='H01')
+    hostel_type = models.CharField(max_length=10, choices=HOSTEL_TYPES, default='Mixed')
+    address = models.TextField(blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    email = models.EmailField(blank=True)
+    branding_logo = models.ImageField(upload_to='hostel_logos/', blank=True, null=True)
+    hostel_image = models.ImageField(upload_to='hostel_images/', blank=True, null=True)
+    description = models.TextField(blank=True)
+    theme_color = models.CharField(max_length=7, default='#0d6efd', help_text="Hex color code")
+    capacity = models.IntegerField(default=100)
+    is_active = models.BooleanField(default=True)
+    
+    # Configurations
+    separate_academic_year = models.BooleanField(default=False)
+    separate_fee_structure = models.BooleanField(default=False)
+    separate_staff_assignment = models.BooleanField(default=False)
+    separate_inventory = models.BooleanField(default=False)
+    separate_notifications = models.BooleanField(default=False)
+    separate_visitor_policy = models.BooleanField(default=False)
+    separate_leave_policy = models.BooleanField(default=False)
+    separate_attendance_rules = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class SystemSettings(models.Model):
+    system_name = models.CharField(max_length=100, default='Noble Hostel')
+    organization_name = models.CharField(max_length=150, default='Noble Education Group')
+    logo = models.ImageField(upload_to='system_logos/', blank=True, null=True)
+    favicon = models.ImageField(upload_to='system_favicons/', blank=True, null=True)
+    theme_color = models.CharField(max_length=7, default='#6366f1', help_text="Hex color code")
+    dark_mode_default = models.BooleanField(default=True)
+    timezone = models.CharField(max_length=100, default='Asia/Kolkata')
+    date_format = models.CharField(max_length=50, default='Y-m-d')
+    time_format = models.CharField(max_length=50, default='H:i:s')
+    currency = models.CharField(max_length=10, default='USD')
+    language = models.CharField(max_length=10, default='en')
+    maintenance_mode = models.BooleanField(default=False)
+    system_version = models.CharField(max_length=20, default='1.0.0')
+    license_key = models.TextField(blank=True)
+    license_expiry = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Global System Settings"
+        verbose_name_plural = "Global System Settings"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_settings(cls):
+        settings, created = cls.objects.get_or_create(pk=1)
+        return settings
+
+

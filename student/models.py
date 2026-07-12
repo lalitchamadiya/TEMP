@@ -194,6 +194,11 @@ class Student(models.Model):
     STATUS_CHOICES = STATUS_CHOICES
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='students', null=True, blank=True)
+    organization = models.ForeignKey(
+        'organizations.Organization', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='students'
+    )
     student_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     roll = models.CharField(max_length=50, blank=True)

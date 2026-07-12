@@ -56,4 +56,11 @@ urlpatterns = [
     # Reports
     path("reports/", views.reports_dashboard, name='reports_dashboard'),
     path("reports/export/<str:module>/", views.export_report, name='export_report'),
+
+    # Multi-Hostel Control Center
+    path("control-center/", views.superadmin_control_center, name='superadmin_control_center'),
+    path("control-center/hostel/<int:pk>/toggle/", views.hostel_toggle_status_ajax, name='hostel_toggle_status_ajax'),
+    path("control-center/transfer/student/", views.transfer_student, name='transfer_student'),
+    path("control-center/transfer/staff/", views.transfer_staff, name='transfer_staff'),
+    path("control-center/report/csv/", views.cross_hostel_report_csv, name='cross_hostel_report_csv'),
 ]

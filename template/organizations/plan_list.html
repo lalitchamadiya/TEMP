@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}| Subscription Plans{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="bi bi-card-list me-2 text-primary"></i>Subscription Plans</h4>
+    <p class="text-muted mb-0">Manage SaaS plans and feature limits</p>
+  </div>
+  <a href="{% url 'plan_create' %}" class="btn btn-primary px-4">
+    <i class="bi bi-plus-circle me-1"></i> New Plan
+  </a>
+</div>
+
+<div class="row g-4">
+  {% for plan in plans %}
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm rounded-3 h-100 position-relative {% if not plan.is_active %}opacity-75{% endif %}">
+      <div class="card-body p-4 d-flex flex-column h-100">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="fw-bold mb-0 text-white">{{ plan.name }}</h5>
+            <span class="badge bg-secondary bg-opacity-25 text-secondary mt-1 small">{{ plan.get_tier_display }}</span>
+          </div>
+          {% if not plan.is_active %}<span class="badge bg-danger">Disabled</span>{% endif %}
+        </div>
+        <div class="mb-4">
+          <span class="fs-1 fw-bold text-primary">{{ org_branding.currency|default:'INR' }} {{ plan.monthly_price }}</span>
+          <span class="text-muted">/ month</span>
+        </div>
+        <p class="text-muted small mb-4">{{ plan.description }}</p>
+        
+        <h6 class="fw-bold text-white small mb-3">Limits & Capacities:</h6>
+        <ul class="list-unstyled mb-4 flex-grow-1">
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Max Hostels: {% if plan.max_hostels == 0 %}Unlimited{% else %}{{ plan.max_hostels }}{% endif %}</li>
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Max Students: {% if plan.max_students == 0 %}Unlimited{% else %}{{ plan.max_students }}{% endif %}</li>
+          <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Storage: {{ plan.storage_gb }} GB</li>
+          
+          {% if plan.has_white_label %}
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>White Label Branding</li>
+          {% else %}
+            <li class="mb-2 text-muted"><i class="bi bi-x-circle text-muted me-2"></i>No White Label</li>
+          {% endif %}
+          {% if plan.has_api_access %}
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>API & Integrations</li>
+          {% endif %}
+          {% if plan.has_ai_features %}
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>AI Analytics</li>
+          {% endif %}
+        </ul>
+        
+        <div class="d-flex justify-content-between mt-auto">
+          <div class="small text-muted">{{ plan.subscriber_count }} active subscribers</div>
+          <div class="d-flex gap-1">
+            <a href="{% url 'plan_edit' plan.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+            <a href="{% url 'plan_delete' plan.pk %}" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center py-5">
+    <i class="bi bi-card-list fs-1 text-muted"></i>
+    <p class="text-muted mt-3">No plans defined. <a href="{% url 'plan_create' %}">Create one now</a>.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

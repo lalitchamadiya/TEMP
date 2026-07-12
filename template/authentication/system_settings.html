@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Global System Settings{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.85rem;
+    }
+
+    .theme-primary-grad {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    }
+</style>
+
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
+    
+    <!-- Title / Breadcrumbs -->
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-0" style="letter-spacing: -0.02em;">Global System Configuration</h2>
+            <p class="text-muted small mb-0">System defaults, white-label options, branding, regional formats and licenses (Super Admin only)</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Configuration Form Card -->
+        <div class="col-lg-8">
+            <div class="glass-card p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-lock me-2 text-primary"></i>Identity & Branding</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">System Name</label>
+                            {{ form.system_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Organization Name</label>
+                            {{ form.organization_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">System Logo</label>
+                            {{ form.logo }}
+                            {% if settings.logo %}
+                            <div class="mt-2">
+                                <img src="{{ settings.logo.url }}" alt="Logo" class="img-thumbnail" style="max-height: 50px;">
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Favicon Icon (ICO/PNG)</label>
+                            {{ form.favicon }}
+                            {% if settings.favicon %}
+                            <div class="mt-2">
+                                <img src="{{ settings.favicon.url }}" alt="Favicon" class="img-thumbnail" style="max-height: 30px;">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-palette me-2 text-purple"></i>Theme & Styling</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Theme Color Override</label>
+                            {{ form.theme_color }}
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center mt-4">
+                            <div class="form-check form-switch ps-5">
+                                {{ form.dark_mode_default }}
+                                <label class="form-check-label fw-bold text-secondary" style="font-size:0.85rem;">Enforce Dark Mode as Default</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-globe me-2 text-success"></i>Regional Defaults</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Default System Timezone</label>
+                            {{ form.timezone }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Currency Symbol</label>
+                            {{ form.currency }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date Format Pattern</label>
+                            {{ form.date_format }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Time Format Pattern</label>
+                            {{ form.time_format }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Core Language</label>
+                            {{ form.language }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-activity-card me-2 text-danger"></i>System Control & Version</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Software Version (Read-only)</label>
+                            {{ form.system_version }}
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center mt-4">
+                            <div class="form-check form-switch ps-5">
+                                {{ form.maintenance_mode }}
+                                <label class="form-check-label fw-bold text-danger" style="font-size:0.85rem;">Enable System Maintenance Mode</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-key me-2 text-warning"></i>Licensing</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">License Agreement Activation Key</label>
+                            {{ form.license_key }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">License Expiration Date</label>
+                            {{ form.license_expiry }}
+                        </div>
+                    </div>
+
+                    <div class="text-end pt-3">
+                        <button type="submit" class="btn btn-primary px-5 border-0 theme-primary-grad py-2 fw-semibold" style="border-radius:8px;">
+                            <i class="bi bi-save me-1"></i>Commit & Apply Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="col-lg-4">
+            <div class="glass-card p-4 mb-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle me-2 text-info"></i>System Overview</h5>
+                <p class="text-secondary small">This form configures settings applied globally to all tenants/hostels. Changing these variables changes logos, system titles, and default formatting configurations across every portal.</p>
+                <div class="alert alert-info border-0 rounded-3 small mb-0">
+                    <i class="bi bi-info-circle-fill me-2"></i><strong>Theme Hex Code:</strong> Theme accents will automatically map in templates using standard CSS variables or inline attributes.
+                </div>
+            </div>
+
+            {% if settings.license_expiry %}
+            <div class="glass-card p-4 text-center">
+                <i class="bi bi-file-earmark-lock-fill text-muted display-4"></i>
+                <h6 class="fw-bold text-dark mt-2">License Expiry Monitor</h6>
+                <div class="badge bg-warning bg-opacity-10 text-warning px-3 py-1.5 fw-bold mt-1" style="font-size:0.85rem;">
+                    {{ settings.license_expiry }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

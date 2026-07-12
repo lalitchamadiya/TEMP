@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.views import View
 
 from .decorators import role_required, permission_required
-from .models import AuditLog, Module, Role, RolePermission, UserProfile
+from .models import AuditLog, Module, Role, RolePermission, UserProfile, Hostel
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -702,3 +702,249 @@ def user_audit(request, pk):
 def user_update_role(request, user_id):
     """Legacy endpoint — delegates to user_change_role."""
     return user_change_role(request, pk=user_id)
+
+
+@login_required
+def select_hostel(request, pk):
+    from .models import Hostel
+    hostel = get_object_or_404(Hostel, pk=pk)
+    request.session['active_hostel_id'] = hostel.id
+    messages.success(request, f"Switched to hostel '{hostel.name}'")
+    
+    # Safely redirect back to referer or dashboard
+    next_url = request.GET.get('next') or request.META.get('HTTP_REFERER') or 'superadmin_dashboard'
+    # Simple check to avoid open redirect vulnerabilities
+    if not next_url.startswith('/') and 'http' not in next_url:
+        next_url = 'superadmin_dashboard'
+    return redirect(next_url)
+
+
+from django import forms
+from .models import SystemSettings
+
+TIMEZONE_CHOICES = [
+    ('UTC', 'UTC'),
+    ('Asia/Kolkata', 'Asia/Kolkata (IST)'),
+    ('America/New_York', 'America/New_York (EST/EDT)'),
+    ('Europe/London', 'Europe/London (GMT/BST)'),
+    ('Asia/Dubai', 'Asia/Dubai'),
+    ('Asia/Singapore', 'Asia/Singapore'),
+]
+
+class SystemSettingsForm(forms.ModelForm):
+    class Meta:
+        model = SystemSettings
+        fields = [
+            'system_name', 'organization_name', 'logo', 'favicon', 
+            'theme_color', 'dark_mode_default', 'timezone', 
+            'date_format', 'time_format', 'currency', 'language', 
+            'maintenance_mode', 'system_version', 'license_key', 'license_expiry'
+        ]
+        widgets = {
+            'system_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'organization_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'favicon': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'theme_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'dark_mode_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'timezone': forms.Select(choices=TIMEZONE_CHOICES, attrs={'class': 'form-select'}),
+            'date_format': forms.TextInput(attrs={'class': 'form-control'}),
+            'time_format': forms.TextInput(attrs={'class': 'form-control'}),
+            'currency': forms.TextInput(attrs={'class': 'form-control'}),
+            'language': forms.TextInput(attrs={'class': 'form-control'}),
+            'maintenance_mode': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'system_version': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+            'license_key': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'license_expiry': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+
+
+@login_required
+@role_required('Super Admin')
+def system_settings_view(request):
+    settings = SystemSettings.get_settings()
+    if request.method == 'POST':
+        form = SystemSettingsForm(request.POST, request.FILES, instance=settings)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Global system settings updated successfully!")
+            return redirect('system_settings_view')
+    else:
+        form = SystemSettingsForm(instance=settings)
+
+    return render(request, 'authentication/system_settings.html', {
+        'form': form,
+        'settings': settings,
+    })
+
+
+class ModuleForm(forms.ModelForm):
+    class Meta:
+        model = Module
+        fields = ['name', 'code', 'menu_label', 'icon', 'url_name', 'order', 'parent_code']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'code': forms.TextInput(attrs={'class': 'form-control'}),
+            'menu_label': forms.TextInput(attrs={'class': 'form-control'}),
+            'icon': forms.TextInput(attrs={'class': 'form-control'}),
+            'url_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control'}),
+            'parent_code': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+@login_required
+@role_required('Super Admin')
+def module_list(request):
+    modules = Module.objects.all().order_by('order', 'name')
+    return render(request, 'authentication/module_list.html', {
+        'modules': modules,
+    })
+
+
+@login_required
+@role_required('Super Admin')
+def module_create(request):
+    if request.method == 'POST':
+        form = ModuleForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Module registered successfully!")
+            return redirect('module_list')
+    else:
+        form = ModuleForm()
+    return render(request, 'authentication/module_form.html', {
+        'form': form,
+        'title': 'Create Module'
+    })
+
+
+@login_required
+@role_required('Super Admin')
+def module_edit(request, pk):
+    module = get_object_or_404(Module, pk=pk)
+    if request.method == 'POST':
+        form = ModuleForm(request.POST, instance=module)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Module updated successfully!")
+            return redirect('module_list')
+    else:
+        form = ModuleForm(instance=module)
+    return render(request, 'authentication/module_form.html', {
+        'form': form,
+        'title': 'Edit Module',
+        'module': module
+    })
+
+
+@login_required
+@role_required('Super Admin')
+def module_delete(request, pk):
+    module = get_object_or_404(Module, pk=pk)
+    if request.method == 'POST':
+        module.delete()
+        messages.success(request, "Module deleted successfully!")
+        return redirect('module_list')
+    return render(request, 'authentication/module_confirm_delete.html', {
+        'module': module
+    })
+
+
+class HostelForm(forms.ModelForm):
+    class Meta:
+        model = Hostel
+        fields = [
+            'name', 'code', 'hostel_type', 'address', 'phone_number', 'email',
+            'branding_logo', 'hostel_image', 'description', 'theme_color', 'capacity', 'is_active',
+            'separate_academic_year', 'separate_fee_structure', 'separate_staff_assignment',
+            'separate_inventory', 'separate_notifications', 'separate_visitor_policy',
+            'separate_leave_policy', 'separate_attendance_rules'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Boys Hostel A'}),
+            'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. BH-A'}),
+            'hostel_type': forms.Select(attrs={'class': 'form-select'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Full address...'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number...'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Contact email...'}),
+            'branding_logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'hostel_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Brief description...'}),
+            'theme_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'capacity': forms.NumberInput(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            # Configs
+            'separate_academic_year': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'separate_fee_structure': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'separate_staff_assignment': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'separate_inventory': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'separate_notifications': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'separate_visitor_policy': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'separate_leave_policy': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'separate_attendance_rules': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+@login_required
+@role_required('Super Admin')
+def hostel_management_list(request):
+    hostels = Hostel.objects.all().order_by('-created_at')
+    return render(request, 'authentication/hostel_list.html', {
+        'hostels': hostels,
+    })
+
+
+@login_required
+@role_required('Super Admin')
+def hostel_management_create(request):
+    if request.method == 'POST':
+        form = HostelForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Hostel registered successfully!")
+            return redirect('hostel_management_list')
+    else:
+        form = HostelForm()
+    return render(request, 'authentication/hostel_form.html', {
+        'form': form,
+        'title': 'Register New Hostel'
+    })
+
+
+@login_required
+@role_required('Super Admin')
+def hostel_management_edit(request, pk):
+    hostel = get_object_or_404(Hostel, pk=pk)
+    if request.method == 'POST':
+        form = HostelForm(request.POST, request.FILES, instance=hostel)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Hostel settings updated successfully!")
+            return redirect('hostel_management_list')
+    else:
+        form = HostelForm(instance=hostel)
+    return render(request, 'authentication/hostel_form.html', {
+        'form': form,
+        'title': 'Edit Hostel Configuration',
+        'hostel': hostel
+    })
+
+
+@login_required
+@role_required('Super Admin')
+def hostel_management_delete(request, pk):
+    hostel = get_object_or_404(Hostel, pk=pk)
+    if Hostel.objects.count() <= 1:
+        messages.error(request, "Cannot delete the only remaining hostel. At least one hostel is required.")
+        return redirect('hostel_management_list')
+    if request.method == 'POST':
+        hostel.delete()
+        messages.success(request, "Hostel deleted successfully!")
+        return redirect('hostel_management_list')
+    return render(request, 'authentication/hostel_confirm_delete.html', {
+        'hostel': hostel
+    })
+
+
+

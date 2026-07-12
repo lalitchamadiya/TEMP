@@ -1215,3 +1215,218 @@ def get_floors_for_building(request):
     floors = Floor.objects.filter(building_id=building_id).order_by('floor_number')
     data = [{'id': f.id, 'floor_number': f.floor_number} for f in floors]
     return JsonResponse({'floors': data})
+
+
+# ──────────────────────────────────────────────────────
+# MULTI-HOSTEL CONTROL CENTER
+# ──────────────────────────────────────────────────────
+from authentication.models import Hostel
+
+def _is_super_admin(user):
+    if user.is_superuser:
+        return True
+    try:
+        return user.profile.role.is_superadmin or user.profile.role.name == 'Super Admin'
+    except Exception:
+        return False
+
+@login_required(login_url='/authentication/login')
+def superadmin_control_center(request):
+    if not _is_super_admin(request.user):
+        return redirect('dashboard')
+    
+    # Combined Metrics
+    total_hostels = Hostel.objects.count()
+    active_hostels_count = Hostel.objects.filter(is_active=True).count()
+    
+    total_beds = Bed.objects.count()
+    occupied_beds = Bed.objects.filter(student__isnull=False).count()
+    vacant_beds = total_beds - occupied_beds
+    combined_occupancy = round((occupied_beds / total_beds * 100) if total_beds else 0)
+    
+    total_revenue = Payment.objects.filter(transaction_status='SUCCESSFUL').aggregate(total=Sum('amount'))['total'] or 0
+    total_students = Student.objects.count()
+    total_staff = StaffProfile.objects.count()
+    open_complaints = ComplaintTicket.objects.filter(status__in=['pending', 'assigned', 'in_progress']).count()
+
+    # Hostel-wise Stats
+    hostels = Hostel.objects.all().order_by('name')
+    hostels_data = []
+    for h in hostels:
+        # Beds occupied vs total
+        h_beds = Bed.objects.filter(room__hostel=h)
+        h_total_beds = h_beds.count()
+        h_occupied_beds = h_beds.filter(student__isnull=False).count()
+        h_vacant_beds = h_total_beds - h_occupied_beds
+        h_occupancy_pct = round((h_occupied_beds / h_total_beds * 100) if h_total_beds else 0)
+        
+        h_students = Student.objects.filter(hostel=h).count()
+        h_staff = StaffProfile.objects.filter(hostel=h).count()
+        
+        h_revenue = Payment.objects.filter(
+            Q(hostel=h) | Q(student__hostel=h),
+            transaction_status='SUCCESSFUL'
+        ).distinct().aggregate(total=Sum('amount'))['total'] or 0
+        
+        h_complaints = ComplaintTicket.objects.filter(
+            student__hostel=h,
+            status__in=['pending', 'assigned', 'in_progress']
+        ).count()
+        
+        hostels_data.append({
+            'hostel': h,
+            'total_beds': h_total_beds,
+            'occupied_beds': h_occupied_beds,
+            'vacant_beds': h_vacant_beds,
+            'occupancy_pct': h_occupancy_pct,
+            'students_count': h_students,
+            'staff_count': h_staff,
+            'revenue': h_revenue,
+            'open_complaints': h_complaints,
+        })
+        
+    students = Student.objects.all().order_by('name')
+    staff_members = StaffProfile.objects.all().order_by('name')
+    
+    context = {
+        'page_title': 'Multi-Hostel Control Center',
+        'total_hostels': total_hostels,
+        'active_hostels_count': active_hostels_count,
+        'total_beds': total_beds,
+        'occupied_beds': occupied_beds,
+        'vacant_beds': vacant_beds,
+        'combined_occupancy': combined_occupancy,
+        'total_revenue': total_revenue,
+        'total_students': total_students,
+        'total_staff': total_staff,
+        'open_complaints': open_complaints,
+        'hostels_data': hostels_data,
+        'students': students,
+        'staff_members': staff_members,
+        'hostels': hostels,
+    }
+    return render(request, 'hms/superadmin_control_center.html', context)
+
+
+@login_required(login_url='/authentication/login')
+def hostel_toggle_status_ajax(request, pk):
+    if not _is_super_admin(request.user):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method == 'POST':
+        hostel = get_object_or_404(Hostel, pk=pk)
+        
+        # Do not allow deactivating if it's the last active hostel
+        active_count = Hostel.objects.filter(is_active=True).count()
+        if hostel.is_active and active_count <= 1:
+            return JsonResponse({
+                'success': False,
+                'error': 'Cannot deactivate the only active hostel in the system.'
+            }, status=400)
+            
+        hostel.is_active = not hostel.is_active
+        hostel.save()
+        return JsonResponse({
+            'success': True,
+            'is_active': hostel.is_active
+        })
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@login_required(login_url='/authentication/login')
+def transfer_student(request):
+    if not _is_super_admin(request.user):
+         return redirect('dashboard')
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        target_hostel_id = request.POST.get('target_hostel_id')
+        
+        student = get_object_or_404(Student, pk=student_id)
+        target_hostel = get_object_or_404(Hostel, pk=target_hostel_id)
+        
+        if student.hostel == target_hostel:
+            messages.warning(request, f"{student.name} is already in {target_hostel.name}.")
+            return redirect('superadmin_control_center')
+            
+        # Deallocate current bed assignment
+        Bed.objects.filter(student=student).update(
+            student=None,
+            paid_amount=0,
+            remaining_amount=0,
+            total_amount=0
+        )
+        
+        # Move student to new hostel partition
+        student.hostel = target_hostel
+        student.save()
+        
+        messages.success(request, f"Successfully transferred Student {student.name} to {target_hostel.name}.")
+    return redirect('superadmin_control_center')
+
+
+@login_required(login_url='/authentication/login')
+def transfer_staff(request):
+    if not _is_super_admin(request.user):
+         return redirect('dashboard')
+    if request.method == 'POST':
+        staff_id = request.POST.get('staff_id')
+        target_hostel_id = request.POST.get('target_hostel_id')
+        
+        staff = get_object_or_404(StaffProfile, pk=staff_id)
+        target_hostel = get_object_or_404(Hostel, pk=target_hostel_id)
+        
+        if staff.hostel == target_hostel:
+            messages.warning(request, f"{staff.name} is already assigned to {target_hostel.name}.")
+            return redirect('superadmin_control_center')
+            
+        # Move staff member to new hostel partition
+        staff.hostel = target_hostel
+        staff.save()
+        
+        messages.success(request, f"Successfully transferred Staff {staff.name} to {target_hostel.name}.")
+    return redirect('superadmin_control_center')
+
+
+@login_required(login_url='/authentication/login')
+def cross_hostel_report_csv(request):
+    if not _is_super_admin(request.user):
+         return redirect('dashboard')
+         
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="cross_hostel_report.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        'Hostel Name', 'Hostel Code', 'Type', 'Status', 'Capacity (Beds)', 
+        'Occupied Beds', 'Vacant Beds', 'Occupancy (%)', 'Total Students', 
+        'Active Staff', 'Collected Revenue', 'Open Complaints'
+    ])
+    
+    hostels = Hostel.objects.all().order_by('name')
+    for h in hostels:
+        h_beds = Bed.objects.filter(room__hostel=h)
+        h_total_beds = h_beds.count()
+        h_occupied_beds = h_beds.filter(student__isnull=False).count()
+        h_vacant_beds = h_total_beds - h_occupied_beds
+        h_occupancy_pct = round((h_occupied_beds / h_total_beds * 100) if h_total_beds else 0)
+        
+        h_students = Student.objects.filter(hostel=h).count()
+        h_staff = StaffProfile.objects.filter(hostel=h).count()
+        
+        h_revenue = Payment.objects.filter(
+            Q(hostel=h) | Q(student__hostel=h),
+            transaction_status='SUCCESSFUL'
+        ).distinct().aggregate(total=Sum('amount'))['total'] or 0
+        
+        h_complaints = ComplaintTicket.objects.filter(
+            student__hostel=h,
+            status__in=['pending', 'assigned', 'in_progress']
+        ).count()
+        
+        writer.writerow([
+            h.name, h.code, h.hostel_type, 
+            'Active' if h.is_active else 'Inactive',
+            h_total_beds, h_occupied_beds, h_vacant_beds, 
+            h_occupancy_pct, h_students, h_staff, h_revenue, h_complaints
+        ])
+        
+    return response

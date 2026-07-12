@@ -94,3 +94,44 @@ def rbac_context(request):
     }
     request._rbac_cache = result
     return result
+
+
+def hostel_context(request):
+    """
+    Injects the active hostel and a list of all available hostels into the template context.
+    """
+    from .models import Hostel
+    
+    if not request.user.is_authenticated:
+        return {
+            'active_hostel': None,
+            'available_hostels': [],
+        }
+
+    hostels = list(Hostel.objects.all())
+    active_hostel_id = request.session.get('active_hostel_id')
+    active_hostel = None
+    
+    if active_hostel_id:
+        active_hostel = next((h for h in hostels if h.id == int(active_hostel_id)), None)
+        
+    if not active_hostel and hostels:
+        active_hostel = hostels[0]
+        request.session['active_hostel_id'] = active_hostel.id
+
+    return {
+        'active_hostel': active_hostel,
+        'available_hostels': hostels,
+    }
+
+
+def system_settings_context(request):
+    """
+    Injects global SystemSettings into the template context.
+    """
+    from .models import SystemSettings
+    return {
+        'system_settings': SystemSettings.get_settings(),
+    }
+
+

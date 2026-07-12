@@ -74,6 +74,9 @@
             <a href="{% url 'room_allocate' %}" class="nav-link {% if request.resolver_match.url_name == 'room_allocate' %}active{% endif %}">
                 <i class="bi bi-person-plus me-1"></i>Allocate
             </a>
+            <a href="{% url 'room_auto_allocate' %}" class="nav-link {% if request.resolver_match.url_name == 'room_auto_allocate' %}active{% endif %}">
+                <i class="bi bi-cpu me-1"></i>Auto Allocate
+            </a>
             <a href="{% url 'create_room' %}" class="nav-link {% if request.resolver_match.url_name == 'create_room' %}active{% endif %}">
                 <i class="bi bi-plus-circle me-1"></i>New Room
             </a>

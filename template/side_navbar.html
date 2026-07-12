@@ -2,6 +2,56 @@
 {% load rbac_tags %}
 
 {% block content %}
+<style>
+    .sidebar-pro .nav-link-collapse {
+        position: relative;
+    }
+    .sidebar-pro .collapse-chevron {
+        transition: transform 0.2s ease;
+        margin-right: 0 !important;
+        margin-left: auto;
+    }
+    .sidebar-pro .nav-link-collapse:not(.collapsed) .collapse-chevron {
+        transform: rotate(180deg);
+    }
+    .sidebar-pro .collapse-submenu-list {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        margin: 4px 12px !important;
+        padding: 6px 0 !important;
+        list-style: none;
+    }
+    html[data-theme="light"] .sidebar-pro .collapse-submenu-list {
+        background: rgba(0, 0, 0, 0.03);
+    }
+    .sidebar-pro .collapse-submenu-list .nav-link {
+        margin: 2px 8px !important;
+        height: 36px;
+        font-size: 0.85rem;
+    }
+    
+    /* Collapsed Sidebar Adjustments */
+    .sidebar-wrapper.sidebar-collapsed .collapse-chevron {
+        display: none !important;
+    }
+    .sidebar-wrapper.sidebar-collapsed .collapse-submenu-list {
+        margin: 4px auto !important;
+        width: 52px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 6px 0 !important;
+    }
+    .sidebar-wrapper.sidebar-collapsed .collapse-submenu-list .nav-link {
+        margin: 2px auto !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        justify-content: center;
+    }
+    html[data-theme="light"] .sidebar-wrapper.sidebar-collapsed .collapse-submenu-list {
+        background: rgba(0, 0, 0, 0.05);
+    }
+</style>
+
 <div class="d-none d-md-block p-0 sidebar-wrapper z-2">
     <nav id="sidebarMenu" class="sidebar-pro">
         
@@ -25,6 +75,87 @@
                 </a>
             </li>
             {% endif %}
+
+            {% if is_superadmin %}
+            <li class="nav-section">
+                <span class="section-title">System Controls</span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' %}active{% endif %}" href="{% url 'system_settings_view' %}">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span class="sidebar-label">System Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'hostel_management_list' or request.resolver_match.url_name == 'hostel_management_create' or request.resolver_match.url_name == 'hostel_management_edit' or request.resolver_match.url_name == 'hostel_management_delete' %}active{% endif %}" href="{% url 'hostel_management_list' %}" title="Hostels Configuration">
+                    <span class="material-symbols-outlined">apartment</span>
+                    <span class="sidebar-label">Hostels Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'module_list' or request.resolver_match.url_name == 'module_create' or request.resolver_match.url_name == 'module_edit' or request.resolver_match.url_name == 'module_delete' %}active{% endif %}" href="{% url 'module_list' %}">
+                    <span class="material-symbols-outlined">extension</span>
+                    <span class="sidebar-label">Modules Catalog</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'role_list' or request.resolver_match.url_name == 'role_create' or request.resolver_match.url_name == 'role_edit' or request.resolver_match.url_name == 'role_delete' %}active{% endif %}" href="{% url 'role_list' %}" title="Roles & Permissions">
+                    <span class="material-symbols-outlined">verified_user</span>
+                    <span class="sidebar-label">Roles & Perms</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'user_management' or request.resolver_match.url_name == 'user_create' or request.resolver_match.url_name == 'user_edit' or request.resolver_match.url_name == 'user_delete' %}active{% endif %}" href="{% url 'user_management' %}" title="User Management">
+                    <span class="material-symbols-outlined">manage_accounts</span>
+                    <span class="sidebar-label">User Accounts</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'superadmin_control_center' %}active{% endif %}" href="{% url 'superadmin_control_center' %}" title="Multi-Hostel Control Center">
+                    <span class="material-symbols-outlined">hub</span>
+                    <span class="sidebar-label">Control Center</span>
+                </a>
+            </li>
+            
+            <!-- Platform Admin Collapsible Menu -->
+            <li class="nav-item">
+                <a class="nav-link nav-link-collapse collapsed {% if '/organization/' in request.path %}active{% endif %}" 
+                   data-bs-toggle="collapse" href="#platformAdminCollapse" role="button" aria-expanded="{% if '/organization/' in request.path %}true{% else %}false{% endif %}" aria-controls="platformAdminCollapse">
+                    <span class="material-symbols-outlined">corporate_fare</span>
+                    <span class="sidebar-label">Platform Admin</span>
+                    <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
+                </a>
+                <div class="collapse {% if '/organization/' in request.path %}show{% endif %}" id="platformAdminCollapse">
+                    <ul class="collapse-submenu-list">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'org_list' or request.resolver_match.url_name == 'org_create' or request.resolver_match.url_name == 'org_edit' or request.resolver_match.url_name == 'org_detail' %}active{% endif %}" href="{% url 'org_list' %}">
+                                <span class="material-symbols-outlined fs-6 me-2">domain</span>
+                                <span class="sidebar-label">Organizations</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'plan_list' or request.resolver_match.url_name == 'plan_create' or request.resolver_match.url_name == 'plan_edit' %}active{% endif %}" href="{% url 'plan_list' %}">
+                                <span class="material-symbols-outlined fs-6 me-2">card_membership</span>
+                                <span class="sidebar-label">Subscription Plans</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'subscription_list' or request.resolver_match.url_name == 'assign_subscription' %}active{% endif %}" href="{% url 'subscription_list' %}">
+                                <span class="material-symbols-outlined fs-6 me-2">receipt</span>
+                                <span class="sidebar-label">Subscriptions</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'support_ticket_list' or request.resolver_match.url_name == 'support_ticket_detail' or request.resolver_match.url_name == 'support_ticket_create' or request.resolver_match.url_name == 'support_ticket_update' %}active{% endif %}" href="{% url 'support_ticket_list' %}">
+                                <span class="material-symbols-outlined fs-6 me-2">support_agent</span>
+                                <span class="sidebar-label">Support Tickets</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            {% endif %}
+
 
             {% if user.profile.role.name == 'Warden' %}
             <li class="nav-item">
@@ -97,21 +228,50 @@
             {% else %}
             {# Dynamic Admin Sidebar Gating #}
             {% if visible_modules %}
-            <li class="nav-section">
-                <span class="section-title">HMS Modules</span>
-            </li>
-            {% for module in visible_modules %}
-            <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% url module.url_name %}" title="{{ module.menu_label }}">
-                    {% if "bi-" in module.icon %}
-                    <i class="bi {{ module.icon }} opacity-75 fs-5"></i>
-                    {% else %}
-                    <span class="material-symbols-outlined">{{ module.icon }}</span>
-                    {% endif %}
-                    <span class="sidebar-label">{{ module.menu_label }}</span>
-                </a>
-            </li>
-            {% endfor %}
+                {% if is_superadmin %}
+                <!-- Collapsible Modules for Super User -->
+                <li class="nav-item">
+                    <a class="nav-link nav-link-collapse collapsed {% if '/room/' in request.path or '/student/' in request.path or '/paybill/' in request.path or '/leave/' in request.path or '/staff/' in request.path or '/visitors/' in request.path or '/inventory/' in request.path or '/complaints/' in request.path or '/security/' in request.path or '/reports/' in request.path or '/hostel/' in request.path or '/fees/' in request.path %}active{% endif %}" 
+                       data-bs-toggle="collapse" href="#modulesCollapse" role="button" aria-expanded="{% if '/room/' in request.path or '/student/' in request.path or '/paybill/' in request.path or '/leave/' in request.path or '/staff/' in request.path or '/visitors/' in request.path or '/inventory/' in request.path or '/complaints/' in request.path or '/security/' in request.path or '/reports/' in request.path or '/hostel/' in request.path or '/fees/' in request.path %}true{% else %}false{% endif %}" aria-controls="modulesCollapse">
+                        <span class="material-symbols-outlined">widgets</span>
+                        <span class="sidebar-label">HMS Modules</span>
+                        <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
+                    </a>
+                    <div class="collapse {% if '/room/' in request.path or '/student/' in request.path or '/paybill/' in request.path or '/leave/' in request.path or '/staff/' in request.path or '/visitors/' in request.path or '/inventory/' in request.path or '/complaints/' in request.path or '/security/' in request.path or '/reports/' in request.path or '/hostel/' in request.path or '/fees/' in request.path %}show{% endif %}" id="modulesCollapse">
+                        <ul class="collapse-submenu-list">
+                            {% for module in visible_modules %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% url module.url_name %}" title="{{ module.menu_label }}">
+                                    {% if "bi-" in module.icon %}
+                                    <i class="bi {{ module.icon }} opacity-75 fs-6 me-2"></i>
+                                    {% else %}
+                                    <span class="material-symbols-outlined fs-6 me-2">{{ module.icon }}</span>
+                                    {% endif %}
+                                    <span class="sidebar-label">{{ module.menu_label }}</span>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </li>
+                {% else %}
+                <!-- Regular Flat Modules for other administrative views -->
+                <li class="nav-section">
+                    <span class="section-title">HMS Modules</span>
+                </li>
+                {% for module in visible_modules %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% url module.url_name %}" title="{{ module.menu_label }}">
+                        {% if "bi-" in module.icon %}
+                        <i class="bi {{ module.icon }} opacity-75 fs-5"></i>
+                        {% else %}
+                        <span class="material-symbols-outlined">{{ module.icon }}</span>
+                        {% endif %}
+                        <span class="sidebar-label">{{ module.menu_label }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+                {% endif %}
             {% endif %}
             {% endif %}
 

@@ -10,7 +10,25 @@
   <button id="themeToggleBtn" class="btn btn-sm theme-toggle-btn me-2" type="button" title="Toggle Theme" aria-label="Toggle Light/Dark Theme">
     <i class="bi bi-moon-fill" id="themeIcon"></i>
   </button>
-  <a class="navbar-brand" href="#">Noble Hostel</a>
+  <a class="navbar-brand" href="#">{{ system_settings.system_name|default:"Noble Hostel" }}</a>
+  {% if request.user.is_authenticated and available_hostels %}
+  <div class="dropdown ms-3">
+    <button class="btn btn-sm btn-secondary dropdown-toggle d-flex align-items-center bg-dark border-secondary px-3 py-1.5" type="button" id="hostelSelectDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 6px;">
+      <i class="bi bi-building me-2 text-primary"></i>
+      <span class="fw-medium text-light" style="font-size: 0.85rem;">{{ active_hostel.name|default:"Select Hostel" }}</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-dark shadow border-secondary align-middle" aria-labelledby="hostelSelectDropdown">
+      {% for hostel in available_hostels %}
+      <li>
+        <a class="dropdown-item d-flex align-items-center py-2 {% if hostel.id == active_hostel.id %}active bg-primary{% endif %}" href="{% url 'select_hostel' hostel.id %}">
+          <span class="me-2" style="width: 8px; height: 8px; border-radius: 50%; background-color: {{ hostel.theme_color|default:'#0d6efd' }}; display: inline-block;"></span>
+          <span style="font-size: 0.85rem;">{{ hostel.name }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
 </div>
   <div class="navbar-nav ">
     {% if request.user.is_authenticated %}

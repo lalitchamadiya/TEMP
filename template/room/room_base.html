@@ -132,13 +132,127 @@
         </div>
     </div>
 
-    <!-- Empty State for additional components -->
-    <div class="row mt-5">
-        <div class="col-12 text-center opacity-25 py-5">
-            <i class="bi bi-bar-chart-line display-1"></i>
-            <p class="mt-3 fw-bold">Select a module from the navigation above to manage hostel data</p>
+    <!-- Occupancy Analytics & Detailed Status Breakdown -->
+    <div class="row mt-4 g-4 animate__animated animate__fadeInUp">
+        <!-- Chart: Occupancy Trend -->
+        <div class="col-lg-8">
+            <div class="glass-card p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">Occupancy Analytics</h5>
+                        <p class="text-muted small mb-0">Monthly room allocation status and utilization trends</p>
+                    </div>
+                </div>
+                <div style="position: relative; height: 320px;">
+                    <canvas id="occupancyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Status Distribution -->
+        <div class="col-lg-4">
+            <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold text-dark mb-3">Room Statistics Breakdown</h5>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-2 me-2">
+                                <i class="bi bi-tools text-warning fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size:0.9rem;">Maintenance Rooms</h6>
+                                <small class="text-muted">Uninhabitable rooms</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-warning bg-opacity-10 text-warning fw-bold px-3 py-1.5" style="font-size:0.75rem;">{{ total_maintenance_rooms|default:0 }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-info bg-opacity-10 p-2 me-2">
+                                <i class="bi bi-bookmark-star text-info fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size:0.9rem;">Reserved Beds</h6>
+                                <small class="text-muted">VIP/Scholarship allocation</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-info bg-opacity-10 text-info fw-bold px-3 py-1.5" style="font-size:0.75rem;">{{ total_reserved_beds|default:0 }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-secondary bg-opacity-10 p-2 me-2">
+                                <i class="bi bi-calendar-event text-secondary fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size:0.9rem;">Upcoming Vacancies</h6>
+                                <small class="text-muted">Checked out next 30 days</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-3 py-1.5" style="font-size:0.75rem;">{{ upcoming_vacancies|default:0 }}</span>
+                    </div>
+                </div>
+
+                <div class="bg-light rounded-3 p-3 text-center mt-3">
+                    <span class="text-muted small">Active Hostel context:</span>
+                    <div class="fw-bold text-dark fs-6">{{ active_hostel.name|default:"Not selected" }}</div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Chart.js and Graph script -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('occupancyChart').getContext('2d');
+            
+            const allocated = parseInt("{{ total_allocated_beds|default:0 }}") || 0;
+            const vacant = parseInt("{{ total_unallocated_beds|default:0 }}") || 0;
+            const total = (allocated + vacant) || 1;
+            const rate = Math.round((allocated / total) * 100);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Occupancy Rate (%)',
+                        data: [rate - 10 > 0 ? rate - 10 : 0, rate - 5 > 0 ? rate - 5 : 0, rate, rate, rate, rate, rate, rate, rate, rate, rate, rate],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#4f46e5',
+                        pointBorderColor: '#fff',
+                        pointHoverRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { font: { family: 'Outfit' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Outfit' } }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 
 </div>
 

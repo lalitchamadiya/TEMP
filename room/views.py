@@ -16,12 +16,25 @@ import json
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'view')
 def room_base(request):
-    total_allocated_beds = Bed.objects.filter(student__isnull=False).count()
-    total_unallocated_beds = Bed.objects.filter(student__isnull=True).count()
-    total_boys_rooms = Room.objects.filter(gender='BOY').count()
-    total_girls_rooms = Room.objects.filter(gender='GIRL').count()
-    total_available_rooms = Room.objects.count()
-    total_students = Student.objects.count()
+    hostel = get_active_hostel(request)
+    if not hostel:
+        return render(request, 'room/room_base.html', {
+            'error': 'No active hostel found.'
+        })
+
+    rooms = Room.objects.filter(hostel=hostel)
+    beds = Bed.objects.filter(room__hostel=hostel)
+    
+    total_allocated_beds = beds.filter(student__isnull=False).count()
+    total_unallocated_beds = beds.filter(student__isnull=True, room__status='ACTIVE').count()
+    total_boys_rooms = rooms.filter(gender='BOY').count()
+    total_girls_rooms = rooms.filter(gender='GIRL').count()
+    total_available_rooms = rooms.filter(status='ACTIVE').count()
+    total_maintenance_rooms = rooms.filter(status='MAINTENANCE').count()
+    
+    total_reserved_beds = beds.filter(room__category='RESERVED', student__isnull=True).count()
+    total_students = Student.objects.filter(hostel=hostel).count()
+    upcoming_vacancies = 0 # Placeholder for future logic
 
     return render(request, 'room/room_base.html', {
         'total_allocated_beds': total_allocated_beds,
@@ -29,7 +42,11 @@ def room_base(request):
         'total_boys_rooms': total_boys_rooms,
         'total_girls_rooms': total_girls_rooms,
         'total_availabel_room': total_available_rooms,
+        'total_maintenance_rooms': total_maintenance_rooms,
+        'total_reserved_beds': total_reserved_beds,
+        'upcoming_vacancies': upcoming_vacancies,
         'total_student': total_students,
+        'active_hostel': hostel,
     })
 
 
@@ -668,3 +685,110 @@ def allocate_bed_ajax(request):
         return JsonResponse({'status': 'success', 'message': f'Bed {bed.bed_number} successfully allocated to {student.name}.'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+def get_active_hostel(request):
+    from authentication.models import Hostel
+    active_hostel_id = request.session.get('active_hostel_id')
+    if active_hostel_id:
+        hostel = Hostel.objects.filter(id=active_hostel_id).first()
+        if hostel:
+            return hostel
+    hostel = Hostel.objects.first()
+    if hostel and request.user.is_authenticated:
+        request.session['active_hostel_id'] = hostel.id
+    return hostel
+
+
+@login_required(login_url='/authentication/login')
+@permission_required('room', 'change')
+def room_auto_allocate(request):
+    """
+    Dry-run recommendation list preview prior to bulk allocation.
+    """
+    hostel = get_active_hostel(request)
+    if not hostel:
+        messages.error(request, 'No active hostel found. Please build a hostel entry first.')
+        return redirect('room_base')
+
+    unallocated_students = Student.objects.filter(hostel=hostel, status='Active', bed__isnull=True).order_by('name')
+    vacant_beds = Bed.objects.filter(room__hostel=hostel, student__isnull=True, room__status='ACTIVE').select_related('room', 'room__building')
+
+    recommendations = []
+    assigned_bed_ids = set()
+    
+    boys_beds = [b for b in vacant_beds if b.room.gender == 'BOY']
+    girls_beds = [b for b in vacant_beds if b.room.gender == 'GIRL']
+
+    for student in unallocated_students:
+        allocated = False
+        target_beds = boys_beds if student.gender == 'Male' else girls_beds
+        
+        for bed in target_beds:
+            if bed.id not in assigned_bed_ids:
+                recommendations.append({
+                    'student': student,
+                    'bed': bed,
+                    'room': bed.room,
+                    'building': bed.room.building,
+                })
+                assigned_bed_ids.add(bed.id)
+                allocated = True
+                break
+        if not allocated:
+            recommendations.append({
+                'student': student,
+                'bed': None,
+                'status': 'No matching vacant beds available'
+            })
+
+    return render(request, 'room/auto_allocate.html', {
+        'recommendations': recommendations,
+        'unallocated_count': unallocated_students.count(),
+        'vacant_beds_count': vacant_beds.count(),
+    })
+
+
+@login_required(login_url='/authentication/login')
+@permission_required('room', 'change')
+def room_auto_allocate_execute(request):
+    """
+    Database execute transaction for bulk allocation of matched students.
+    """
+    if request.method != 'POST':
+        return redirect('room_auto_allocate')
+
+    hostel = get_active_hostel(request)
+    if not hostel:
+        messages.error(request, 'No active hostel found.')
+        return redirect('room_base')
+
+    unallocated_students = Student.objects.filter(hostel=hostel, status='Active', bed__isnull=True).order_by('name')
+    vacant_beds = Bed.objects.filter(room__hostel=hostel, student__isnull=True, room__status='ACTIVE').select_related('room')
+
+    boys_beds = list(vacant_beds.filter(room__gender='BOY'))
+    girls_beds = list(vacant_beds.filter(room__gender='GIRL'))
+    
+    allocated_count = 0
+    from django.db import transaction
+
+    with transaction.atomic():
+        for student in unallocated_students:
+            target_beds = boys_beds if student.gender == 'Male' else girls_beds
+            if target_beds:
+                bed = target_beds.pop(0)
+                yearly_amount = (bed.room.monthly_rent or 0) * 12
+                bed.total_amount = yearly_amount
+                bed.remaining_amount = yearly_amount
+                bed.paid_amount = 0
+                bed.student = student
+                bed.save()
+                allocated_count += 1
+
+    if allocated_count > 0:
+        messages.success(request, f'Smart Engine successfully auto-allocated {allocated_count} student(s)!')
+    else:
+        messages.warning(request, 'No auto-allocations were performed.')
+
+    return redirect('room_manage')
+

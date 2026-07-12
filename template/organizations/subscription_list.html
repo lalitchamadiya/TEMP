@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}| Subscriptions{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="bi bi-receipt me-2 text-primary"></i>Organization Subscriptions</h4>
+    <p class="text-muted mb-0">Overview of client licenses and billing statuses</p>
+  </div>
+  <a href="{% url 'assign_subscription' %}" class="btn btn-primary px-4">
+    <i class="bi bi-magic me-1"></i> Assign Subscription
+  </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3">
+  <div class="card-body p-4">
+    {% if subs %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Organization</th>
+            <th>Plan</th>
+            <th>Billing Tier</th>
+            <th>Assigned Date</th>
+            <th>Expiry Date</th>
+            <th>Status</th>
+            <th>Payment Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in subs %}
+          <tr>
+            <td>
+              <a href="{% url 'org_detail' sub.organization.pk %}" class="fw-semibold text-decoration-none">
+                {{ sub.organization.name }}
+              </a>
+            </td>
+            <td><span class="fw-bold">{{ sub.plan.name }}</span></td>
+            <td><span class="badge bg-secondary bg-opacity-25 text-secondary">{{ sub.plan.get_tier_display }}</span></td>
+            <td class="small text-muted">{{ sub.start_date }}</td>
+            <td class="small text-muted">{{ sub.end_date|default:"Never Expires" }}</td>
+            <td>
+              {% if sub.is_active %}
+                <span class="badge bg-success">Active</span>
+              {% else %}
+                <span class="badge bg-danger">Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge {% if sub.payment_status == 'active' %}bg-success{% elif sub.payment_status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                {{ sub.get_payment_status_display }}
+              </span>
+            </td>
+            <td class="text-end">
+              {% if sub.is_active %}
+              <form method="post" action="{% url 'cancel_subscription' sub.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this subscription?')">
+                  <i class="bi bi-x-circle me-1"></i> Cancel
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+      <i class="bi bi-receipt fs-1 text-muted"></i>
+      <p class="text-muted mt-3">No subscriptions found. <a href="{% url 'assign_subscription' %}">Assign a subscription plan now</a>.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

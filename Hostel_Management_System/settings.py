@@ -76,12 +76,14 @@ INSTALLED_APPS = [
     'student_app',
     'warden',
     'hms',
+    'organizations',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'organizations.middleware.WhiteLabelMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -104,6 +106,9 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'authentication.context_processors.rbac_context',
+                'authentication.context_processors.hostel_context',
+                'authentication.context_processors.system_settings_context',
+                'organizations.context_processors.org_branding_context',
             ],
         },
     },
@@ -207,3 +212,6 @@ LOGIN_URL = '/authentication/login/'  # Update this to the correct path for your
 # Media files (User uploaded content)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Forced reload to register newly added module catalog routes.
+

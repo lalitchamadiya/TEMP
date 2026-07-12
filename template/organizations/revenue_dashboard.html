@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}| Revenue Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-1"><i class="bi bi-wallet2 me-2 text-primary"></i>Revenue Dashboard</h4>
+    <p class="text-muted mb-0">Track license sales, platform revenue, and SaaS growth metrics</p>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm rounded-3 py-3 px-4">
+      <div class="d-flex align-items-center gap-3">
+        <div class="rounded-3 p-3 bg-success bg-opacity-10"><i class="bi bi-currency-dollar fs-3 text-success"></i></div>
+        <div>
+          <div class="fs-3 fw-bold text-white">{{ org_branding.currency|default:'INR' }} {{ monthly_revenue }}</div>
+          <div class="text-muted small">Estimated MRR (Monthly Recurring)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm rounded-3 py-3 px-4">
+      <div class="d-flex align-items-center gap-3">
+        <div class="rounded-3 p-3 bg-primary bg-opacity-10"><i class="bi bi-graph-up-arrow fs-3 text-primary"></i></div>
+        <div>
+          <div class="fs-3 fw-bold text-white">{{ org_branding.currency|default:'INR' }} {{ annual_revenue }}</div>
+          <div class="text-muted small">Estimated ARR (Annual Run Rate)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm rounded-3 py-3 px-4">
+      <div class="d-flex align-items-center gap-3">
+        <div class="rounded-3 p-3 bg-warning bg-opacity-10"><i class="bi bi-shield-check fs-3 text-warning"></i></div>
+        <div>
+          <div class="fs-3 fw-bold text-white">{{ total_active }}</div>
+          <div class="text-muted small">Paid Active Subscriptions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Subscriptions Table -->
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-header bg-transparent border-0 pt-3 px-4">
+        <h6 class="fw-semibold mb-0">Active Billing Contracts</h6>
+      </div>
+      <div class="card-body px-4 pb-4">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Organization</th>
+                <th>Plan Name</th>
+                <th>Monthly Rate</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sub in active_subs %}
+              <tr>
+                <td class="fw-semibold text-white">{{ sub.organization.name }}</td>
+                <td>{{ sub.plan.name }}</td>
+                <td>{{ org_branding.currency|default:'INR' }} {{ sub.plan.monthly_price }}</td>
+                <td>
+                  <span class="badge {% if sub.payment_status == 'active' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                    {{ sub.get_payment_status_display }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plan Pricing Overview -->
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-header bg-transparent border-0 pt-3 px-4">
+        <h6 class="fw-semibold mb-0">Subscribed Tiers Value</h6>
+      </div>
+      <div class="card-body px-4 pb-4">
+        <ul class="list-group list-group-flush">
+          {% for plan in by_plan %}
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+            <div>
+              <div class="fw-semibold text-white">{{ plan.name }}</div>
+              <div class="small text-muted">{{ plan.monthly_price }} / mo</div>
+            </div>
+            <span class="badge bg-warning text-dark fs-6 px-3">{{ plan.count }} Orgs</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

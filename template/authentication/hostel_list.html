@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Multi-Hostel Management{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Outfit', sans-serif; }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    
+    html[data-theme="dark"] .glass-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .theme-primary-grad {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    }
+
+    .config-badge {
+        font-size: 0.725rem;
+        font-weight: 600;
+        padding: 0.25rem 0.6rem;
+        border-radius: 8px;
+    }
+</style>
+
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
+    
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-0" style="letter-spacing: -0.02em;">Multi-Hostel Settings</h2>
+            <p class="text-muted small mb-0">Manage registered hostels, contact details, capacity ceilings, and modular policy partitionings (Super Admin only)</p>
+        </div>
+        <div>
+            <a href="{% url 'hostel_management_create' %}" class="btn btn-primary theme-primary-grad px-4 py-2 border-0 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-plus-lg me-1"></i> Register New Hostel
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="row mb-3">
+        <div class="col">
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show border-0 rounded-3 small" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Hostels Table -->
+    <div class="glass-card overflow-hidden">
+        <div class="p-3 bg-light bg-opacity-25 border-bottom d-flex align-items-center">
+            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-buildings me-2 text-primary"></i>All System Hostels</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Hostel Name & Code</th>
+                        <th>Type</th>
+                        <th>Contact info</th>
+                        <th>Capacity</th>
+                        <th>Settings Isolation</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hostel in hostels %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-3">
+                                {% if hostel.branding_logo %}
+                                    <img src="{{ hostel.branding_logo.url }}" alt="Logo" class="rounded object-fit-cover shadow-sm bg-light" style="width:36px; height:36px;">
+                                {% else %}
+                                    <div class="d-flex align-items-center justify-content-center text-white bg-gradient-primary rounded shadow-sm fw-bold" style="width:36px; height:36px; background-color: {{ hostel.theme_color }};">
+                                        {{ hostel.code|slice:":2" }}
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0">{{ hostel.name }}</h6>
+                                    <span class="text-muted small">{{ hostel.code }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge {% if hostel.hostel_type == 'Boys' %}bg-primary{% elif hostel.hostel_type == 'Girls' %}bg-danger{% else %}bg-secondary{% endif %} bg-opacity-10 {% if hostel.hostel_type == 'Boys' %}text-primary{% elif hostel.hostel_type == 'Girls' %}text-danger{% else %}text-secondary{% endif %} px-2.5 py-1.5 fw-bold" style="font-size:0.75rem;">
+                                {{ hostel.hostel_type }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column small">
+                                <span class="text-dark"><i class="bi bi-envelope-fill me-1 text-muted"></i>{{ hostel.email|default:"No email" }}</span>
+                                <span class="text-muted"><i class="bi bi-telephone-fill me-1"></i>{{ hostel.phone_number|default:"No phone" }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-dark">{{ hostel.capacity }} Beds</span>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% if hostel.separate_academic_year %}
+                                <span class="badge bg-info bg-opacity-10 text-info config-badge">Academic Year</span>
+                                {% endif %}
+                                {% if hostel.separate_fee_structure %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary config-badge">Fees</span>
+                                {% endif %}
+                                {% if hostel.separate_staff_assignment %}
+                                <span class="badge bg-dark bg-opacity-10 text-dark config-badge">Staff</span>
+                                {% endif %}
+                                {% if hostel.separate_inventory %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning config-badge">Inventory</span>
+                                {% endif %}
+                                {% if hostel.separate_notifications %}
+                                <span class="badge bg-purple bg-opacity-10 text-purple config-badge">Alerts</span>
+                                {% endif %}
+                                {% if hostel.separate_visitor_policy %}
+                                <span class="badge bg-success bg-opacity-10 text-success config-badge">Visitors</span>
+                                {% endif %}
+                                {% if hostel.separate_leave_policy %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger config-badge">Leave</span>
+                                {% endif %}
+                                {% if hostel.separate_attendance_rules %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary config-badge">Attendance</span>
+                                {% endif %}
+                                {% if not hostel.separate_academic_year and not hostel.separate_fee_structure and not hostel.separate_staff_assignment and not hostel.separate_inventory and not hostel.separate_notifications and not hostel.separate_visitor_policy and not hostel.separate_leave_policy and not hostel.separate_attendance_rules %}
+                                <span class="text-muted small">Global System Shared</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if hostel.is_active %}
+                            <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 fw-bold">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1 fw-bold">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex align-items-center justify-content-end gap-2">
+                                <a href="{% url 'hostel_management_edit' hostel.pk %}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center p-2" title="Edit Hostel">
+                                    <span class="material-symbols-outlined" style="font-size:1.1rem;">edit</span>
+                                </a>
+                                <a href="{% url 'hostel_management_delete' hostel.pk %}" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center p-2" title="Delete Hostel">
+                                    <span class="material-symbols-outlined" style="font-size:1.1rem;">delete</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <span class="material-symbols-outlined display-3 opacity-25 d-block mb-2">apartment</span>
+                            <span class="fw-semibold">No hostels registered in the database yet.</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | {{ title }}{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Outfit', sans-serif; }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    
+    html[data-theme="dark"] .glass-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.85rem;
+    }
+    
+    html[data-theme="dark"] .form-label {
+        color: #94a3b8;
+    }
+
+    .theme-primary-grad {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    }
+</style>
+
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
+    
+    <!-- Title / Breadcrumbs -->
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-0" style="letter-spacing: -0.02em;">{{ title }}</h2>
+            <p class="text-muted small mb-0">Configure master records and policy isolation switches for this hostel partition.</p>
+        </div>
+        <div>
+            <a href="{% url 'hostel_management_list' %}" class="btn btn-outline-secondary px-4 py-2 fw-semibold" style="border-radius: 8px;">
+                <i class="bi bi-arrow-left me-1"></i> Back to Catalog
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row g-4">
+        <div class="col-lg-9 mx-auto">
+            <div class="glass-card p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Section 1: Hostel Master Configurations -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-buildings me-2 text-primary"></i>Hostel Master Configuration</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Hostel Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <div class="text-danger small mt-1">{{ form.name.errors.as_text }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Hostel Code</label>
+                            {{ form.code }}
+                            {% if form.code.errors %}
+                            <div class="text-danger small mt-1">{{ form.code.errors.as_text }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Hostel Type</label>
+                            {{ form.hostel_type }}
+                        </div>
+                    </div>
+
+                    <!-- Contact Details -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-lines-fill me-2 text-secondary"></i>Contact Information</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Email Address</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Phone Number</label>
+                            {{ form.phone_number }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Total Bed Capacity</label>
+                            {{ form.capacity }}
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Physical Address</label>
+                            {{ form.address }}
+                        </div>
+                    </div>
+
+                    <!-- Branding and Design -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-palette me-2 text-warning"></i>Branding & Media</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Hostel Logo (Navbar Branding)</label>
+                            {{ form.branding_logo }}
+                            {% if hostel.branding_logo %}
+                            <div class="mt-2 text-muted small">
+                                <img src="{{ hostel.branding_logo.url }}" class="rounded shadow-sm bg-light" style="max-height: 48px;"><br>
+                                Current Logo File
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Hostel Feature Image</label>
+                            {{ form.hostel_image }}
+                            {% if hostel.hostel_image %}
+                            <div class="mt-2 text-muted small">
+                                <img src="{{ hostel.hostel_image.url }}" class="rounded shadow-sm bg-light" style="max-height: 48px;"><br>
+                                Current Feature Image
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Accent Theme Picker</label>
+                            {{ form.theme_color }}
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center mt-4">
+                            <div class="form-check form-switch ps-5">
+                                {{ form.is_active }}
+                                <label class="form-check-label fw-bold text-success" style="font-size:0.85rem;">Is Active (Allows logins and allocation)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Hostel Description</label>
+                            {{ form.description }}
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Policy Isolation Configurations -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-check me-2 text-success"></i>Modular Policy Partitions</h5>
+                    <p class="text-muted small mb-3">Check configuration buttons to isolate rules and transactions for this hostel. Leaving checkboxes unchecked inherits global organization fallback models.</p>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch card p-3 shadow-none border bg-light bg-opacity-25" style="border-radius:10px;">
+                                <div class="ps-4">
+                                    {{ form.separate_academic_year }}
+                                    <label class="form-check-label fw-bold text-dark block" style="font-size:0.85rem;">Separate Academic Year</label>
+                                    <span class="text-muted small d-block">Manage separate calendars/terms for this hostel.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch card p-3 shadow-none border bg-light bg-opacity-25" style="border-radius:10px;">
+                                <div class="ps-4">
+                                    {{ form.separate_fee_structure }}
+                                    <label class="form-check-label fw-bold text-dark block" style="font-size:0.85rem;">Separate Fee Structures</label>
+                                    <span class="text-muted small d-block">Define hostel-specific prices and bill schedules.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch card p-3 shadow-none border bg-light bg-opacity-25" style="border-radius:10px;">
+                                <div class="ps-4">
+                                    {{ form.separate_staff_assignment }}
+                                    <label class="form-check-label fw-bold text-dark block" style="font-size:0.85rem;">Separate Staff Assignment</label>
+                                    <span class="text-muted small d-block">Isolate staff roster and wardens to this hostel only.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch card p-3 shadow-none border bg-light bg-opacity-25" style="border-radius:10px;">
+                                <div class="ps-4">
+                                    {{ form.separate_inventory }}
+                                    <label class="form-check-label fw-bold text-dark block" style="font-size:0.85rem;">Separate Inventory Stocks</label>
+                                    <span class="text-muted small d-block">Maintain independent assets, logs and utility stocks.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch card p-3 shadow-none border bg-light bg-opacity-25" style="border-radius:10px;">
+                                <div class="ps-4">
+                                    {{ form.separate_notifications }}
+                                    <label class="form-check-label fw-bold text-dark block" style="font-size:0.85rem;">Separate Broadcast Notifications</label>
+                                    <span class="text-muted small d-block">Send alerts strictly targeting this hostel's users.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch card p-3 shadow-none border bg-light bg-opacity-25" style="border-radius:10px;">
+                                <div class="ps-4">
+                                    {{ form.separate_visitor_policy }}
+                                    <label class="form-check-label fw-bold text-dark block" style="font-size:0.85rem;">Separate Visitor Policies</label>
+                                    <span class="text-muted small d-block">Enforce custom check-in gates and verification times.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch card p-3 shadow-none border bg-light bg-opacity-25" style="border-radius:10px;">
+                                <div class="ps-4">
+                                    {{ form.separate_leave_policy }}
+                                    <label class="form-check-label fw-bold text-dark block" style="font-size:0.85rem;">Separate Leave Policies</label>
+                                    <span class="text-muted small d-block">Limit warden leave quota rules and approval tiers.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch card p-3 shadow-none border bg-light bg-opacity-25" style="border-radius:10px;">
+                                <div class="ps-4">
+                                    {{ form.separate_attendance_rules }}
+                                    <label class="form-check-label fw-bold text-dark block" style="font-size:0.85rem;">Separate Attendance Rules</label>
+                                    <span class="text-muted small d-block">Isolate attendance rules and night curfew reports.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end pt-3 border-top mt-4">
+                        <button type="submit" class="btn btn-primary px-5 border-0 theme-primary-grad py-2 fw-semibold" style="border-radius:8px;">
+                            <i class="bi bi-save me-1"></i>Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

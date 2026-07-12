@@ -32,6 +32,7 @@ class StaffProfile(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_profile')
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='staff', null=True, blank=True)
     name = models.CharField(max_length=150)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
@@ -132,6 +133,7 @@ class ComplaintTicket(models.Model):
 
 
 class SecurityGuard(models.Model):
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='guards', null=True, blank=True)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
     gate_no = models.CharField(max_length=50, default='Main Gate 1')

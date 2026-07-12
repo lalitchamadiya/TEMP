@@ -12,6 +12,7 @@ urlpatterns = [
     path('warden/', include('warden.urls')),
     
     path('admin/', admin.site.urls),
+    path('organization/', include('organizations.urls')),
 ]
 
 from django.conf import settings

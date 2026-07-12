@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Multi-Hostel Control Center{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --cc-accent: #6366f1;
+    --cc-accent2: #8b5cf6;
+    --cc-success: #10b981;
+    --cc-danger: #ef4444;
+    --cc-warning: #f59e0b;
+    --cc-info: #3b82f6;
+  }
+
+  .cc-hero {
+    background: linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(139,92,246,0.12) 100%);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 20px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .cc-hero::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(99,102,241,0.20), transparent 70%);
+    border-radius: 50%;
+  }
+  .cc-hero h1 { font-size: 1.8rem; font-weight: 700; margin: 0; }
+  .cc-hero p  { opacity: .7; margin: 0; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+
+  .kpi-card {
+    background: var(--card-bg, rgba(255,255,255,0.05));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 1.4rem 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  .kpi-icon {
+    width: 50px; height: 50px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .kpi-label { font-size: .75rem; opacity: .7; margin-bottom: 2px; }
+  .kpi-value { font-size: 1.65rem; font-weight: 700; line-height: 1; }
+  .kpi-sub   { font-size: .72rem; opacity: .6; margin-top: 2px; }
+
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.2rem;
+  }
+  .section-header h5 { font-weight: 700; font-size: 1.05rem; margin:0; }
+
+  .hostel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+
+  .hostel-card {
+    background: var(--card-bg, rgba(255,255,255,0.05));
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 18px; padding: 1.5rem;
+    transition: transform .2s, border-color .2s;
+  }
+  .hostel-card:hover { transform: translateY(-2px); border-color: rgba(99,102,241,0.4); }
+  .hostel-card.inactive { opacity: .6; border-style: dashed; }
+
+  .hostel-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem; }
+  .hostel-badge {
+    font-size: .65rem; padding: 2px 10px; border-radius: 20px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .badge-boys    { background: rgba(59,130,246,.2);  color: #60a5fa; border: 1px solid rgba(59,130,246,.3); }
+  .badge-girls   { background: rgba(236,72,153,.2);  color: #f472b6; border: 1px solid rgba(236,72,153,.3); }
+  .badge-mixed   { background: rgba(16,185,129,.2); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+  .badge-active  { background: rgba(16,185,129,.2);  color: #34d399; }
+  .badge-inactive{ background: rgba(239,68,68,.2);   color: #f87171; }
+
+  .hostel-stats { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-bottom: 1rem; }
+  .hstat { text-align: center; background: rgba(255,255,255,.04); border-radius: 10px; padding: .5rem; }
+  .hstat-val  { font-weight: 700; font-size: 1.1rem; }
+  .hstat-label{ font-size: .65rem; opacity: .6; }
+
+  .occ-bar { height: 6px; background: rgba(255,255,255,.1); border-radius: 10px; overflow: hidden; margin: .4rem 0; }
+  .occ-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #6366f1, #8b5cf6); transition: width .6s; }
+
+  .form-section {
+    background: var(--card-bg, rgba(255,255,255,0.05));
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 18px; padding: 1.8rem; margin-bottom: 1.5rem;
+  }
+  .form-section h6 { font-weight: 700; margin-bottom: 1.2rem; display: flex; align-items: center; gap: .5rem; }
+
+  .toggle-switch {
+    position: relative; display: inline-flex; align-items: center; cursor: pointer;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    width: 44px; height: 24px; background: rgba(255,255,255,.15);
+    border-radius: 12px; position: relative; transition: background .3s;
+  }
+  .toggle-track::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; background: white;
+    border-radius: 50%; transition: transform .3s;
+  }
+  .toggle-switch input:checked + .toggle-track { background: var(--cc-success); }
+  .toggle-switch input:checked + .toggle-track::after { transform: translateX(20px); }
+
+  .report-table { border-radius: 14px; overflow: hidden; }
+  .report-table thead th { background: rgba(99,102,241,.2); font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
+  .report-table tbody tr { transition: background .15s; }
+  .report-table tbody tr:hover { background: rgba(255,255,255,.04); }
+  .report-table td { font-size: .88rem; }
+
+  .tab-custom { border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 1.5rem; }
+  .tab-custom .nav-link { color: rgba(255,255,255,.55); border: none; padding: .6rem 1.2rem; border-radius: 8px 8px 0 0; font-weight: 500; }
+  .tab-custom .nav-link.active { color: #fff; background: rgba(99,102,241,.3); border-bottom: 2px solid var(--cc-accent); }
+  .tab-custom .nav-link:hover { color: #fff; }
+
+  .transfer-card { max-width: 540px; }
+
+  @media (max-width: 576px) {
+    .cc-hero { padding: 1.2rem; }
+    .kpi-value { font-size: 1.3rem; }
+  }
+</style>
+
+<!-- Hero Header -->
+<div class="cc-hero">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h1><span class="material-symbols-outlined align-middle me-2" style="font-size:1.8rem;color:var(--cc-accent);">hub</span>Multi-Hostel Control Center</h1>
+      <p class="mt-1">Unified view across all {{ total_hostels }} hostel{{ total_hostels|pluralize }}. Manage, transfer, and report from one place.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'cross_hostel_report_csv' %}" class="btn btn-sm" style="background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.3);">
+        <span class="material-symbols-outlined align-middle" style="font-size:1rem;">download</span> Export CSV
+      </a>
+      <a href="{% url 'hostel_management_list' %}" class="btn btn-sm" style="background:rgba(99,102,241,.2);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);">
+        <span class="material-symbols-outlined align-middle" style="font-size:1rem;">apartment</span> Manage Hostels
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Combined KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:rgba(99,102,241,.2);">🏨</div>
+    <div>
+      <div class="kpi-label">Total Hostels</div>
+      <div class="kpi-value">{{ total_hostels }}</div>
+      <div class="kpi-sub">{{ active_hostels_count }} active</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:rgba(16,185,129,.2);">🎓</div>
+    <div>
+      <div class="kpi-label">Total Students</div>
+      <div class="kpi-value">{{ total_students }}</div>
+      <div class="kpi-sub">All hostels combined</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:rgba(139,92,246,.2);">👥</div>
+    <div>
+      <div class="kpi-label">Total Staff</div>
+      <div class="kpi-value">{{ total_staff }}</div>
+      <div class="kpi-sub">All hostels combined</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:rgba(59,130,246,.2);">🛏️</div>
+    <div>
+      <div class="kpi-label">Bed Occupancy</div>
+      <div class="kpi-value">{{ combined_occupancy }}%</div>
+      <div class="kpi-sub">{{ occupied_beds }}/{{ total_beds }} beds</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:rgba(16,185,129,.2);">💰</div>
+    <div>
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">₹{{ total_revenue|floatformat:0 }}</div>
+      <div class="kpi-sub">All payments collected</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:rgba(239,68,68,.2);">🎫</div>
+    <div>
+      <div class="kpi-label">Open Complaints</div>
+      <div class="kpi-value">{{ open_complaints }}</div>
+      <div class="kpi-sub">Across all hostels</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav tab-custom" id="ccTabs">
+  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#hostels-tab">🏨 Hostel Directory</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#transfer-tab">🔄 Transfer Hub</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#report-tab">📊 Analytics Report</a></li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- ── Hostel Directory ── -->
+  <div class="tab-pane fade show active" id="hostels-tab">
+    {% if not hostels_data %}
+      <div class="text-center py-5 opacity-50">
+        <span class="material-symbols-outlined" style="font-size:3rem;">apartment</span>
+        <p class="mt-2">No hostels configured yet. <a href="{% url 'hostel_management_create' %}">Add your first hostel →</a></p>
+      </div>
+    {% else %}
+    <div class="hostel-grid">
+      {% for item in hostels_data %}
+      {% with h=item.hostel %}
+      <div class="hostel-card {% if not h.is_active %}inactive{% endif %}">
+        <!-- Header -->
+        <div class="hostel-header">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="fw-700 fs-6">{{ h.name }}</span>
+              <span class="hostel-badge badge-{% if h.hostel_type == 'Boys' %}boys{% elif h.hostel_type == 'Girls' %}girls{% else %}mixed{% endif %}">{{ h.hostel_type }}</span>
+            </div>
+            <small class="opacity-50">{{ h.code }}</small>
+          </div>
+          <!-- Enable/Disable Toggle -->
+          <label class="toggle-switch" title="{% if h.is_active %}Deactivate{% else %}Activate{% endif %} Hostel">
+            <input type="checkbox"
+              {% if h.is_active %}checked{% endif %}
+              onchange="toggleHostel({{ h.pk }}, this)"
+              id="toggle-hostel-{{ h.pk }}">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="hostel-stats">
+          <div class="hstat">
+            <div class="hstat-val text-primary">{{ item.students_count }}</div>
+            <div class="hstat-label">Students</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val" style="color:#8b5cf6;">{{ item.staff_count }}</div>
+            <div class="hstat-label">Staff</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val text-success">{{ item.occupied_beds }}</div>
+            <div class="hstat-label">Occupied Beds</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val" style="color:#f59e0b;">{{ item.vacant_beds }}</div>
+            <div class="hstat-label">Vacant Beds</div>
+          </div>
+        </div>
+
+        <!-- Occupancy Bar -->
+        <div class="d-flex justify-content-between" style="font-size:.72rem;opacity:.7;margin-bottom:3px;">
+          <span>Occupancy</span><span>{{ item.occupancy_pct }}%</span>
+        </div>
+        <div class="occ-bar">
+          <div class="occ-fill" style="width:{{ item.occupancy_pct }}%;"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <small>
+            <span class="{% if h.is_active %}text-success{% else %}text-danger{% endif %}">● {% if h.is_active %}Active{% else %}Inactive{% endif %}</span>
+            &nbsp;|&nbsp; Rev: ₹{{ item.revenue|floatformat:0 }}
+            {% if item.open_complaints %}
+            &nbsp;|&nbsp; <span class="text-danger">⚠ {{ item.open_complaints }} complaint{{ item.open_complaints|pluralize }}</span>
+            {% endif %}
+          </small>
+          <a href="{% url 'hostel_management_edit' h.pk %}" class="btn btn-sm" style="background:rgba(99,102,241,.15);color:#a5b4fc;border:none;padding:3px 10px;border-radius:8px;">
+            <span class="material-symbols-outlined" style="font-size:.9rem;">edit</span>
+          </a>
+        </div>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Transfer Hub ── -->
+  <div class="tab-pane fade" id="transfer-tab">
+    <div class="row g-4">
+
+      <!-- Transfer Student -->
+      <div class="col-lg-6">
+        <div class="form-section transfer-card">
+          <h6><span class="material-symbols-outlined text-primary">transfer_within_a_station</span> Transfer Student</h6>
+          <form method="post" action="{% url 'transfer_student' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label small opacity-75">Select Student</label>
+              <select name="student_id" class="form-select" required>
+                <option value="">— Choose student —</option>
+                {% for s in students %}
+                <option value="{{ s.student_id }}">{{ s.name }} ({{ s.hostel.name|default:"No Hostel" }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small opacity-75">Transfer To Hostel</label>
+              <select name="target_hostel_id" class="form-select" required>
+                <option value="">— Choose target hostel —</option>
+                {% for h in hostels %}
+                <option value="{{ h.pk }}">{{ h.name }} ({{ h.code }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="alert alert-warning" style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);border-radius:10px;font-size:.82rem;">
+              ⚠ This will <strong>clear the student's current bed allocation</strong> and move them to the target hostel. They will need to be re-assigned a room.
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+              <span class="material-symbols-outlined align-middle" style="font-size:1rem;">send</span> Transfer Student
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Transfer Staff -->
+      <div class="col-lg-6">
+        <div class="form-section transfer-card">
+          <h6><span class="material-symbols-outlined" style="color:#8b5cf6;">badge</span> Transfer Staff Member</h6>
+          <form method="post" action="{% url 'transfer_staff' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label small opacity-75">Select Staff Member</label>
+              <select name="staff_id" class="form-select" required>
+                <option value="">— Choose staff member —</option>
+                {% for s in staff_members %}
+                <option value="{{ s.pk }}">{{ s.name }} – {{ s.get_designation_display }} ({{ s.hostel.name|default:"No Hostel" }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small opacity-75">Transfer To Hostel</label>
+              <select name="target_hostel_id" class="form-select" required>
+                <option value="">— Choose target hostel —</option>
+                {% for h in hostels %}
+                <option value="{{ h.pk }}">{{ h.name }} ({{ h.code }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="alert" style="background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.3);border-radius:10px;font-size:.82rem;">
+              ℹ Staff duty assignments will remain unchanged; only the hostel association will be updated.
+            </div>
+            <button type="submit" class="btn w-100" style="background: linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;border:none;">
+              <span class="material-symbols-outlined align-middle" style="font-size:1rem;">send</span> Transfer Staff
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Analytics Report ── -->
+  <div class="tab-pane fade" id="report-tab">
+    <div class="d-flex justify-content-end mb-3">
+      <a href="{% url 'cross_hostel_report_csv' %}" class="btn btn-sm" style="background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.3);">
+        <span class="material-symbols-outlined align-middle" style="font-size:1rem;">download</span> Download CSV
+      </a>
+    </div>
+    {% if hostels_data %}
+    <div class="table-responsive">
+      <table class="table report-table align-middle text-nowrap">
+        <thead>
+          <tr>
+            <th>Hostel</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Students</th>
+            <th>Staff</th>
+            <th>Beds (Occ/Total)</th>
+            <th>Occupancy</th>
+            <th>Revenue</th>
+            <th>Complaints</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in hostels_data %}
+          {% with h=item.hostel %}
+          <tr>
+            <td>
+              <div class="fw-600">{{ h.name }}</div>
+              <small class="opacity-50">{{ h.code }}</small>
+            </td>
+            <td><span class="hostel-badge badge-{% if h.hostel_type == 'Boys' %}boys{% elif h.hostel_type == 'Girls' %}girls{% else %}mixed{% endif %}">{{ h.hostel_type }}</span></td>
+            <td>
+              {% if h.is_active %}
+              <span class="badge bg-success">Active</span>
+              {% else %}
+              <span class="badge bg-danger">Inactive</span>
+              {% endif %}
+            </td>
+            <td>{{ item.students_count }}</td>
+            <td>{{ item.staff_count }}</td>
+            <td>{{ item.occupied_beds }} / {{ item.total_beds }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="occ-bar flex-grow-1" style="min-width:60px;">
+                  <div class="occ-fill" style="width:{{ item.occupancy_pct }}%;"></div>
+                </div>
+                <small>{{ item.occupancy_pct }}%</small>
+              </div>
+            </td>
+            <td class="text-success">₹{{ item.revenue|floatformat:0 }}</td>
+            <td>
+              {% if item.open_complaints %}
+              <span class="badge bg-danger">{{ item.open_complaints }}</span>
+              {% else %}
+              <span class="text-success">✓</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr style="background:rgba(99,102,241,.1);">
+            <td colspan="3"><strong>TOTALS</strong></td>
+            <td><strong>{{ total_students }}</strong></td>
+            <td><strong>{{ total_staff }}</strong></td>
+            <td><strong>{{ occupied_beds }} / {{ total_beds }}</strong></td>
+            <td><strong>{{ combined_occupancy }}%</strong></td>
+            <td class="text-success"><strong>₹{{ total_revenue|floatformat:0 }}</strong></td>
+            <td><strong>{{ open_complaints }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 opacity-50">
+      <p>No hostel data available for reporting.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div><!-- /tab-content -->
+
+<!-- AJAX Toggle Script -->
+<script>
+function toggleHostel(hostelId, checkbox) {
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+    || '{{ csrf_token }}';
+
+  fetch(`/control-center/hostel/${hostelId}/toggle/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrfToken,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      // refresh page to update card states
+      window.location.reload();
+    } else {
+      alert(data.error || 'Could not toggle hostel status.');
+      checkbox.checked = !checkbox.checked; // revert
+    }
+  })
+  .catch(() => {
+    alert('Network error. Please try again.');
+    checkbox.checked = !checkbox.checked;
+  });
+}
+</script>
+{% endblock %}
