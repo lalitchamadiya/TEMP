@@ -76,18 +76,15 @@ INSTALLED_APPS = [
     'student_app',
     'warden',
     'hms',
-    'organizations',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'organizations.middleware.WhiteLabelMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'organizations.middleware.SubscriptionCheckMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'authentication.middleware.AutoLogout',
@@ -109,7 +106,6 @@ TEMPLATES = [
                 'authentication.context_processors.rbac_context',
                 'authentication.context_processors.hostel_context',
                 'authentication.context_processors.system_settings_context',
-                'organizations.context_processors.org_branding_context',
             ],
         },
     },

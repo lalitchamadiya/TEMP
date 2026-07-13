@@ -154,17 +154,17 @@
                             </div>
                         </td>
                         <td>
-                            {% with total=roomDetails.room_type occupied=roomDetails.bed_set.all|length %}
+                            {% with total=roomDetails.room_type occupied=roomDetails.beds.all|length %}
                                 <div class="progress mb-1" style="height: 6px; width: 100px; border-radius: 10px; background: #f1f5f9;">
-                                    {% widthratio roomDetails.bed_set.all|length roomDetails.room_type 100 as percentage %}
+                                    {% widthratio roomDetails.beds.all|length roomDetails.room_type 100 as percentage %}
                                     <div class="progress-bar {% if percentage == '100' %}bg-danger{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ percentage }}%; border-radius: 10px;"></div>
                                 </div>
-                                <span class="text-muted x-small fw-bold">{{ roomDetails.bed_set.all|length }}/{{ roomDetails.room_type }} FILLED</span>
+                                <span class="text-muted x-small fw-bold">{{ roomDetails.beds.all|length }}/{{ roomDetails.room_type }} FILLED</span>
                             {% endwith %}
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                {% for bed in roomDetails.bed_set.all %} 
+                                {% for bed in roomDetails.beds.all %} 
                                     {% if bed.student %}
                                         <i class="bi bi-person-fill status-occupied bed-icon" title="Bed {{bed.bed_number}}: {{bed.student.name}}"></i>
                                     {% else %}

@@ -59,10 +59,7 @@ class RolePermission(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
-    organization = models.ForeignKey(
-        'organizations.Organization', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='user_profiles'
-    )
+
     hostel = models.ForeignKey(
         'authentication.Hostel', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='user_profiles',
@@ -118,10 +115,7 @@ class AuditLog(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='audit_records', verbose_name='Affected User'
     )
-    organization = models.ForeignKey(
-        'organizations.Organization', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='audit_logs'
-    )
+
     hostel = models.ForeignKey(
         'authentication.Hostel', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='audit_logs'
@@ -157,11 +151,7 @@ class Hostel(models.Model):
         ('Mixed', 'Mixed'),
     ]
 
-    # Organization link (Level 2 → Level 3)
-    organization = models.ForeignKey(
-        'organizations.Organization', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='hostels'
-    )
+
 
     name = models.CharField(max_length=100, unique=True)
     code = models.CharField(max_length=20, unique=True, default='H01')

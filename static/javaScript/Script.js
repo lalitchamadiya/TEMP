@@ -1,37 +1,54 @@
 /* =========================================================
-   HMS — Theme Toggle (Dark / Light)
-   Runs immediately; DOMContentLoaded hooks up the button.
+   HMS — Theme Toggle (Light / Dark / System Auto Detection)
+   Calculates active settings and matches OS theme options
    ========================================================= */
 (function () {
   var THEME_KEY = 'hms_theme';
 
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem(THEME_KEY, theme);
-    var icon = document.getElementById('themeIcon');
-    if (icon) {
-      icon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
-    }
-    var label = document.getElementById('themeLabel');
-    if (label) {
-      label.textContent = theme === 'dark' ? 'Light' : 'Dark';
-    }
+  function getSystemTheme() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
-  // Apply saved theme immediately (no flash)
+  window.applyThemeMode = function (theme) {
+    var actualTheme = theme;
+    if (theme === 'system') {
+      actualTheme = getSystemTheme();
+    }
+    
+    document.documentElement.setAttribute('data-theme', actualTheme);
+    localStorage.setItem(THEME_KEY, theme);
+
+    // Sync elements
+    var icon = document.getElementById('themeIcon');
+    if (icon) {
+      if (theme === 'dark') {
+        icon.className = 'bi bi-moon-fill text-primary';
+      } else if (theme === 'light') {
+        icon.className = 'bi bi-sun-fill text-warning';
+      } else {
+        icon.className = 'bi bi-laptop text-info';
+      }
+    }
+    
+    var label = document.getElementById('themeLabel');
+    if (label) {
+      label.textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+    }
+  };
+
+  // Listen for system theme changes if set to 'system'
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+    if (localStorage.getItem(THEME_KEY) === 'system') {
+      window.applyThemeMode('system');
+    }
+  });
+
+  // Apply immediately on load (no flash)
   var savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
-  applyTheme(savedTheme);
+  window.applyThemeMode(savedTheme);
 
   document.addEventListener('DOMContentLoaded', function () {
-    // Re-sync icon after DOM is ready
-    applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
-
-    var btn = document.getElementById('themeToggleBtn');
-    if (btn) {
-      btn.addEventListener('click', function () {
-        var current = document.documentElement.getAttribute('data-theme') || 'dark';
-        applyTheme(current === 'dark' ? 'light' : 'dark');
-      });
-    }
+    // Re-sync after DOM elements are fully loaded
+    window.applyThemeMode(localStorage.getItem(THEME_KEY) || 'dark');
   });
 })();

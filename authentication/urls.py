@@ -8,16 +8,7 @@ from .views import (
     user_list, user_create, user_detail, user_edit, user_delete,
     user_toggle_status, user_lock, user_reset_password,
     user_change_role, user_export, user_audit,
-    select_hostel,
     system_settings_view,
-    module_list,
-    module_create,
-    module_edit,
-    module_delete,
-    hostel_management_list,
-    hostel_management_create,
-    hostel_management_edit,
-    hostel_management_delete,
     # Legacy
     user_update_role,
 )
@@ -53,16 +44,7 @@ urlpatterns = [
 
     # Legacy (for existing sidebar link)
     path('users/update-role/<int:user_id>/', user_update_role, name='user_update_role'),
-    path('select-hostel/<int:pk>/', select_hostel, name='select_hostel'),
-    path('settings/system/', system_settings_view, name='system_settings_view'),
-    path('modules/', module_list, name='module_list'),
-    path('modules/create/', module_create, name='module_create'),
-    path('modules/<int:pk>/edit/', module_edit, name='module_edit'),
-    path('modules/<int:pk>/delete/', module_delete, name='module_delete'),
 
-    # Hostel Management
-    path('hostels/', hostel_management_list, name='hostel_management_list'),
-    path('hostels/create/', hostel_management_create, name='hostel_management_create'),
-    path('hostels/<int:pk>/edit/', hostel_management_edit, name='hostel_management_edit'),
-    path('hostels/<int:pk>/delete/', hostel_management_delete, name='hostel_management_delete'),
+    path('settings/system/', system_settings_view, name='system_settings_view'),
+
 ]

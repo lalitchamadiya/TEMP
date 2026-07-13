@@ -68,14 +68,7 @@ class CreateRoomForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if user:
-            profile = getattr(user, 'profile', None)
-            if profile and profile.role and profile.role.name == 'Admin':
-                self.fields['building'].queryset = HostelBuilding.objects.filter(is_active=True, organization=profile.organization)
-            else:
-                self.fields['building'].queryset = HostelBuilding.objects.filter(is_active=True)
-        else:
-            self.fields['building'].queryset = HostelBuilding.objects.filter(is_active=True)
+        self.fields['building'].queryset = HostelBuilding.objects.filter(is_active=True)
         self.fields['building'].empty_label = '— Select Building —'
         self.fields['floor'].empty_label = '— Select Floor —'
         self.fields['block'].required = False

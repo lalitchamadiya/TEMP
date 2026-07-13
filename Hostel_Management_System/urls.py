@@ -13,7 +13,7 @@ urlpatterns = [
     path('warden/', include('warden.urls')),
     
     path('admin/', admin.site.urls),
-    path('organization/', include('organizations.urls')),
+
     path('manifest.json', TemplateView.as_view(template_name='manifest.json', content_type='application/json'), name='manifest_json'),
     path('service-worker.js', TemplateView.as_view(template_name='service-worker.js', content_type='application/javascript'), name='service_worker_js'),
 ]

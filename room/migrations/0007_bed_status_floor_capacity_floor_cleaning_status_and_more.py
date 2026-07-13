@@ -8,7 +8,6 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('organizations', '0001_initial'),
         ('room', '0006_hostelbuilding_hostel_room_hostel'),
         ('student', '0005_student_organization'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -54,16 +53,6 @@ class Migration(migrations.Migration):
             model_name='hostelblock',
             name='is_active',
             field=models.BooleanField(default=True),
-        ),
-        migrations.AddField(
-            model_name='hostelblock',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='blocks', to='organizations.organization'),
-        ),
-        migrations.AddField(
-            model_name='hostelbuilding',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='buildings', to='organizations.organization'),
         ),
         migrations.AddField(
             model_name='hostelbuilding',

@@ -58,7 +58,7 @@
 </header>
 
 <div class="container-fluid">
-  <div class="d-flex" style="align-items: stretch; min-height: calc(100vh - 61px);">
+  <div class="d-flex" style="align-items: stretch; min-height: calc(100vh - 56px);">
     {% if not no_sidebar %}
       {% include 'side_navbar.html'%}
     {% endif %}
@@ -79,7 +79,7 @@
       <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.js" integrity="sha384-uO3SXW5IuS1ZpFPKugNNWqTZRRglnUJK6UAZ/gxOX80nxEkN9NcGZTftn6RzhGWE" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js" integrity="sha384-zNy6FEbO50N+Cg5wap8IKA4M/ZnLJgzc6w2NqACZaK0u0FXfOWRRJOnQtpZun8ha" crossorigin="anonymous"></script>
 
 <script>
-/* ---- Sidebar Toggle (desktop collapse + mobile slide) ---- */
+/* ---- Premium Navigation & Sidebar Features ---- */
 (function() {
   var btn       = document.getElementById('sidebarToggleBtn');
   var sidebar   = document.querySelector('.sidebar-wrapper');
@@ -96,17 +96,14 @@
 
   btn.addEventListener('click', function() {
     if (isMobile()) {
-      // Mobile: slide in/out
       var open = sidebar.classList.toggle('sidebar-mobile-open');
       if (overlay) overlay.classList.toggle('active', open);
     } else {
-      // Desktop: collapse to icon strip
       var collapsed = sidebar.classList.toggle('sidebar-collapsed');
       localStorage.setItem(STORE_KEY, collapsed ? '1' : '0');
     }
   });
 
-  // Close mobile sidebar when overlay is clicked
   if (overlay) {
     overlay.addEventListener('click', function() {
       sidebar.classList.remove('sidebar-mobile-open');
@@ -114,7 +111,6 @@
     });
   }
 
-  // Reset on resize so desktop/mobile states don't bleed into each other
   window.addEventListener('resize', function() {
     if (!isMobile()) {
       sidebar.classList.remove('sidebar-mobile-open');
@@ -123,6 +119,221 @@
       sidebar.classList.remove('sidebar-collapsed');
     }
   });
+})();
+
+/* ---- Dynamic Breadcrumb Parser ---- */
+(function() {
+  var breadcrumbContainer = document.getElementById('dynamicBreadcrumbSelector');
+  if (breadcrumbContainer) {
+    var paths = window.location.pathname.split('/').filter(function(p) { return p; });
+    var html = '<li class="breadcrumb-item"><a href="/" class="text-muted text-decoration-none"><i class="bi bi-house-door-fill me-1"></i>Home</a></li>';
+    var currentPath = '';
+    paths.forEach(function(part, index) {
+      currentPath += '/' + part;
+      var displayName = part.replace(/[-_]/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+      if (!isNaN(part)) {
+        displayName = '#' + part;
+      }
+      if (index === paths.length - 1) {
+        html += '<li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">' + displayName + '</li>';
+      } else {
+        html += '<li class="breadcrumb-item"><a href="' + currentPath + '" class="text-muted text-decoration-none">' + displayName + '</a></li>';
+      }
+    });
+    breadcrumbContainer.innerHTML = html;
+  }
+})();
+
+/* ---- Fullscreen Trigger ---- */
+(function() {
+  var fsBtn = document.getElementById('fullscreenToggleBtn');
+  var fsIcon = document.getElementById('fsIcon');
+  if (fsBtn && fsIcon) {
+    fsBtn.addEventListener('click', function() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(function() {
+          fsIcon.className = 'bi bi-fullscreen-exit';
+        }).catch(function(err) {
+          console.error('Error enabling fullscreen:', err);
+        });
+      } else {
+        document.exitFullscreen().then(function() {
+          fsIcon.className = 'bi bi-fullscreen';
+        });
+      }
+    });
+  }
+})();
+
+/* ---- Ctrl + K Global Search Focus Trigger ---- */
+document.addEventListener('keydown', function(event) {
+  if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+    var gSearch = document.getElementById('globalSearchInput');
+    if (gSearch) {
+      event.preventDefault();
+      gSearch.focus();
+    }
+  }
+  if (event.key === 'Escape') {
+    var gSearch = document.getElementById('globalSearchInput');
+    if (gSearch) {
+      gSearch.blur();
+    }
+  }
+});
+
+/* ---- Global Page Search Filter ---- */
+(function() {
+  var globalSearch = document.getElementById('globalSearchInput');
+  if (globalSearch) {
+    globalSearch.addEventListener('input', function() {
+      var query = this.value.toLowerCase().trim();
+      
+      // 1. Filter dashboard shortcut cards
+      var shortcuts = document.querySelectorAll('.shortcut-card');
+      shortcuts.forEach(function(card) {
+        var text = card.textContent.toLowerCase();
+        var col = card.closest('.col-6, .col-md-4, .col-lg-3');
+        if (text.indexOf(query) !== -1 || query === '') {
+          if (col) col.style.setProperty('display', '', 'important');
+        } else {
+          if (col) col.style.setProperty('display', 'none', 'important');
+        }
+      });
+      
+      // 2. Filter key-performance indicators (KPI cards)
+      var kpis = document.querySelectorAll('.kpi-card');
+      kpis.forEach(function(card) {
+        if (!card.classList.contains('shortcut-card') && !card.closest('.shortcut-card')) {
+          var text = card.textContent.toLowerCase();
+          var col = card.closest('.col-6, .col-md-4, .col-xl-2, .col-md-3, .col-6.col-md-3');
+          if (text.indexOf(query) !== -1 || query === '') {
+            if (col) col.style.setProperty('display', '', 'important');
+          } else {
+            if (col) col.style.setProperty('display', 'none', 'important');
+          }
+        }
+      });
+      
+      // 3. Filter table rows
+      var rows = document.querySelectorAll('.sa-table tbody tr, .table tbody tr');
+      rows.forEach(function(row) {
+        var text = row.textContent.toLowerCase();
+        if (text.indexOf(query) !== -1 || query === '') {
+          row.style.setProperty('display', '', 'important');
+        } else {
+          row.style.setProperty('display', 'none', 'important');
+        }
+      });
+      
+      // 4. Filter health rows
+      var healthRows = document.querySelectorAll('.health-row');
+      healthRows.forEach(function(row) {
+        var text = row.textContent.toLowerCase();
+        if (text.indexOf(query) !== -1 || query === '') {
+          row.style.setProperty('display', '', 'important');
+        } else {
+          row.style.setProperty('display', 'none', 'important');
+        }
+      });
+      
+      // 5. Hide panel-cards if empty in inner content
+      var panels = document.querySelectorAll('.panel-card');
+      panels.forEach(function(panel) {
+        if (query === '') {
+          panel.style.setProperty('display', '', 'important');
+          return;
+        }
+        var table = panel.querySelector('table');
+        var healthRowsList = panel.querySelectorAll('.health-row');
+        var anyVisible = false;
+        
+        if (table) {
+          var visibleRows = table.querySelectorAll('tbody tr:not([style*="display: none"])');
+          if (visibleRows.length > 0) anyVisible = true;
+        } else if (healthRowsList.length > 0) {
+          var visibleHealth = panel.querySelectorAll('.health-row:not([style*="display: none"])');
+          if (visibleHealth.length > 0) anyVisible = true;
+        } else {
+          var pText = panel.textContent.toLowerCase();
+          if (pText.indexOf(query) !== -1) anyVisible = true;
+        }
+        
+        if (anyVisible) {
+          panel.style.setProperty('display', '', 'important');
+        } else {
+          panel.style.setProperty('display', 'none', 'important');
+        }
+      });
+    });
+  }
+})();
+
+/* ---- Theme Direct Toggle Handler ---- */
+window.themeToggleHandler = function() {
+  var THEME_KEY = 'hms_theme';
+  var current = localStorage.getItem(THEME_KEY) || 'dark';
+  var target = (current === 'dark') ? 'light' : 'dark';
+  if (typeof window.applyThemeMode === 'function') {
+    window.applyThemeMode(target);
+  }
+};
+
+/* ---- Sidebar Menu Search Filter ---- */
+(SidebarMenuSearch = function() {
+  var searchInput = document.getElementById('sidebarSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      var query = this.value.toLowerCase().trim();
+      var sections = document.querySelectorAll('.sidebar-pro .nav-section');
+      var items = document.querySelectorAll('.sidebar-pro .nav-item');
+      
+      items.forEach(function(item) {
+        var link = item.querySelector('.nav-link');
+        var text = link ? link.textContent.toLowerCase() : '';
+        var submenu = item.querySelector('.collapse-submenu-list');
+        var submenuMatch = false;
+        
+        if (submenu) {
+          var sublinks = submenu.querySelectorAll('.nav-link');
+          sublinks.forEach(function(sub) {
+            if (sub.textContent.toLowerCase().indexOf(query) !== -1) {
+              sub.closest('.nav-item').style.display = '';
+              submenuMatch = true;
+            } else {
+              sub.closest('.nav-item').style.display = 'none';
+            }
+          });
+        }
+        
+        if (text.indexOf(query) !== -1 || submenuMatch) {
+          item.style.display = '';
+          if (submenu && query !== '') {
+            var collapseElement = item.querySelector('.collapse');
+            if (collapseElement && !collapseElement.classList.contains('show')) {
+              var bInst = bootstrap.Collapse.getInstance(collapseElement) || new bootstrap.Collapse(collapseElement, {toggle: false});
+              bInst.show();
+            }
+          }
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      
+      sections.forEach(function(section) {
+        var sibling = section.nextElementSibling;
+        var anyVisible = false;
+        while (sibling && !sibling.classList.contains('nav-section')) {
+          if (sibling.classList.contains('nav-item') && sibling.style.display !== 'none') {
+            anyVisible = true;
+            break;
+          }
+          sibling = sibling.nextElementSibling;
+        }
+        section.style.display = anyVisible || query === '' ? '' : 'none';
+      });
+    });
+  }
 })();
 </script>
       <script>

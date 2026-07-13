@@ -8,7 +8,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('authentication', '0008_hostel_capacity_hostel_code_hostel_description_and_more'),
-        ('organizations', '0001_initial'),
     ]
 
     operations = [
@@ -18,23 +17,8 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='audit_logs', to='authentication.hostel'),
         ),
         migrations.AddField(
-            model_name='auditlog',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='audit_logs', to='organizations.organization'),
-        ),
-        migrations.AddField(
-            model_name='hostel',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='hostels', to='organizations.organization'),
-        ),
-        migrations.AddField(
             model_name='userprofile',
             name='hostel',
             field=models.ForeignKey(blank=True, help_text='Hostel scope for non-super-admin users', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='user_profiles', to='authentication.hostel'),
-        ),
-        migrations.AddField(
-            model_name='userprofile',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='user_profiles', to='organizations.organization'),
         ),
     ]

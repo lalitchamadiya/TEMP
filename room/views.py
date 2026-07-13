@@ -62,13 +62,8 @@ def student_details_list(request):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'view')
 def room_manage(request):
-    profile = request.user.profile
-    if profile.role and profile.role.name == 'Admin':
-        buildings = HostelBuilding.objects.filter(is_active=True, organization=profile.organization)
-        rooms = Room.objects.filter(building__organization=profile.organization).select_related('building', 'floor').order_by('room_number')
-    else:
-        buildings = HostelBuilding.objects.filter(is_active=True)
-        rooms = Room.objects.select_related('building', 'floor').order_by('room_number')
+    buildings = HostelBuilding.objects.filter(is_active=True)
+    rooms = Room.objects.select_related('building', 'floor').order_by('room_number')
         
     selected_building_id = request.GET.get('building', '')
     q = request.GET.get('q', '').strip()
@@ -110,8 +105,8 @@ def rooms_by_building(request):
 
     data = []
     for r in rooms_qs:
-        occupied = r.bed_set.filter(student__isnull=False).count()
-        total = r.bed_set.count()
+        occupied = r.beds.filter(student__isnull=False).count()
+        total = r.beds.count()
         data.append({
             'id': r.id,
             'room_number': r.room_number,
@@ -132,11 +127,7 @@ def rooms_by_building(request):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'view')
 def building_list(request):
-    profile = request.user.profile
-    if profile.role and profile.role.name == 'Admin':
-        buildings = HostelBuilding.objects.filter(organization=profile.organization).annotate(room_count=Count('rooms')).order_by('name')
-    else:
-        buildings = HostelBuilding.objects.annotate(room_count=Count('rooms')).order_by('name')
+    buildings = HostelBuilding.objects.annotate(room_count=Count('rooms')).order_by('name')
     return render(request, 'room/building_list.html', {'buildings': buildings})
 
 
@@ -144,24 +135,17 @@ def building_list(request):
 @permission_required('room', 'add')
 def building_create(request):
     from .forms import HostelBuildingForm
-    profile = request.user.profile
-    is_org_admin = profile.role and profile.role.name == 'Admin'
-    
     if request.method == 'POST':
         form = HostelBuildingForm(request.POST)
         if form.is_valid():
-            building = form.save(commit=False)
-            if is_org_admin:
-                building.organization = profile.organization
-            building.save()
+            building = form.save()
             # Auto-create floors based on total_floors
             total = building.total_floors or 0
             for fn in range(1, total + 1):
                 from .models import HostelBlock
                 block, _ = HostelBlock.objects.get_or_create(
                     building=building,
-                    name='Main Block',
-                    defaults={'organization': building.organization}
+                    name='Main Block'
                 )
                 Floor.objects.get_or_create(building=building, block=block, floor_number=fn)
             messages.success(request, f'Building "{building.name}" created with {total} floor(s).')
@@ -177,9 +161,7 @@ def building_create(request):
 def building_edit(request, pk):
     from .forms import HostelBuildingForm
     building = get_object_or_404(HostelBuilding, pk=pk)
-    profile = request.user.profile
-    if profile.role and profile.role.name == 'Admin' and building.organization != profile.organization:
-        raise PermissionDenied
+
         
     if request.method == 'POST':
         form = HostelBuildingForm(request.POST, instance=building)
@@ -197,9 +179,7 @@ def building_edit(request, pk):
 @permission_required('room', 'delete')
 def building_delete(request, pk):
     building = get_object_or_404(HostelBuilding, pk=pk)
-    profile = request.user.profile
-    if profile.role and profile.role.name == 'Admin' and building.organization != profile.organization:
-        raise PermissionDenied
+
         
     if request.method == 'POST':
         if Room.objects.filter(building=building).exists():
@@ -214,9 +194,7 @@ def building_delete(request, pk):
 @permission_required('room', 'add')
 def building_toggle(request, pk):
     building = get_object_or_404(HostelBuilding, pk=pk)
-    profile = request.user.profile
-    if profile.role and profile.role.name == 'Admin' and building.organization != profile.organization:
-        raise PermissionDenied
+
         
     building.is_active = not building.is_active
     building.save()
@@ -230,7 +208,7 @@ def building_toggle(request, pk):
 def room_allocate(request):
     rooms = Room.objects.all().order_by('room_number')
     students = Student.objects.all()
-    available_rooms = Room.objects.filter(bed__student__isnull=True).distinct()
+    available_rooms = Room.objects.filter(beds__student__isnull=True).distinct()
     buildings = HostelBuilding.objects.filter(is_active=True)
     from .models import BLOCK_CHOICES
 
@@ -253,7 +231,7 @@ def room_allocate(request):
                     room = Room.objects.get(pk=int(selected_room_val))
                 else:
                     room = Room.objects.get(room_number=selected_room_val)
-                unallocated_beds = room.bed_set.filter(student__isnull=True).select_related('student')
+                unallocated_beds = room.beds.filter(student__isnull=True).select_related('student')
                 unallocated_students = Student.objects.filter(bed__isnull=True)
 
                 if room.gender == 'BOY':
@@ -282,7 +260,7 @@ def room_allocate(request):
                     room = Room.objects.get(pk=int(selected_room_val))
                 else:
                     room = Room.objects.get(room_number=selected_room_val)
-                beds = room.bed_set.filter(bed_number=selected_bed_number)
+                beds = room.beds.filter(bed_number=selected_bed_number)
 
                 unallocated_students = Student.objects.filter(bed__isnull=True)
                 if room.gender == 'BOY':
@@ -296,7 +274,7 @@ def room_allocate(request):
                         return render(request, 'room/allocate.html', {
                             **context_base,
                             'students': unallocated_students,
-                            'beds': room.bed_set.filter(student__isnull=True),
+                            'beds': room.beds.filter(student__isnull=True),
                             'error': 'Bed is already allocated'
                         })
                     else:
@@ -309,7 +287,7 @@ def room_allocate(request):
                                 return render(request, 'room/allocate.html', {
                                     **context_base,
                                     'students': unallocated_students,
-                                    'beds': room.bed_set.filter(student__isnull=True),
+                                    'beds': room.beds.filter(student__isnull=True),
                                     'error': 'Student is already allocated'
                                 })
 
@@ -318,14 +296,14 @@ def room_allocate(request):
                                 return render(request, 'room/allocate.html', {
                                     **context_base,
                                     'students': unallocated_students,
-                                    'beds': room.bed_set.filter(student__isnull=True),
+                                    'beds': room.beds.filter(student__isnull=True),
                                     'error': f'This room/building ({room.room_number}) is for Boys, but student is {student.gender}'
                                 })
                             elif room.gender == 'GIRL' and student.gender != 'Female':
                                 return render(request, 'room/allocate.html', {
                                     **context_base,
                                     'students': unallocated_students,
-                                    'beds': room.bed_set.filter(student__isnull=True),
+                                    'beds': room.beds.filter(student__isnull=True),
                                     'error': f'This room/building ({room.room_number}) is for Girls, but student is {student.gender}'
                                 })
 
@@ -339,14 +317,14 @@ def room_allocate(request):
                             return render(request, 'room/allocate.html', {
                                 **context_base,
                                 'students': unallocated_students,
-                                'beds': room.bed_set.filter(student__isnull=True),
+                                'beds': room.beds.filter(student__isnull=True),
                                 'error': 'Student not found'
                             })
                 else:
                     return render(request, 'room/allocate.html', {
                         **context_base,
                         'students': unallocated_students,
-                        'beds': room.bed_set.filter(student__isnull=True),
+                        'beds': room.beds.filter(student__isnull=True),
                         'error': 'Bed not found'
                     })
             except Room.DoesNotExist:
@@ -409,7 +387,7 @@ def get_rooms_for_allocation(request):
 
     rooms_data = []
     for r in rooms_qs.order_by('room_number'):
-        vacant_count = r.bed_set.filter(student__isnull=True).count()
+        vacant_count = r.beds.filter(student__isnull=True).count()
         rooms_data.append({
             'room_id': r.pk,
             'room_number': r.room_number,
@@ -438,7 +416,7 @@ def get_beds_for_room(request):
             room = Room.objects.get(room_number=room_number, building_id=building_id)
         else:
             room = Room.objects.get(room_number=room_number)
-        beds = room.bed_set.all().order_by('bed_number')
+        beds = room.beds.all().order_by('bed_number')
         beds_data = []
         for b in beds:
             student_info = None
@@ -485,21 +463,13 @@ def get_students_by_gender(request):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'add')
 def create_room(request):
-    profile = request.user.profile
-    is_org_admin = profile.role and profile.role.name == 'Admin'
-    if is_org_admin:
-        buildings = HostelBuilding.objects.filter(is_active=True, organization=profile.organization)
-    else:
-        buildings = HostelBuilding.objects.filter(is_active=True)
+    buildings = HostelBuilding.objects.filter(is_active=True)
     capacity_map = CAPACITY_MAP
 
     if request.method == 'POST':
         form = CreateRoomForm(request.POST, user=request.user)
         if form.is_valid():
-            room = form.save(commit=False)
-            if room.building and is_org_admin and room.building.organization != profile.organization:
-                raise PermissionDenied
-            room.save()
+            room = form.save()
             # Auto-create beds based on capacity
             cap = room.capacity
             for i in range(1, cap + 1):
@@ -531,16 +501,7 @@ def create_room(request):
 @permission_required('room', 'change')
 def edit_room(request, pk):
     room = get_object_or_404(Room, pk=pk)
-    profile = request.user.profile
-    is_org_admin = profile.role and profile.role.name == 'Admin'
-    
-    if is_org_admin and room.building and room.building.organization != profile.organization:
-        raise PermissionDenied
-        
-    if is_org_admin:
-        buildings = HostelBuilding.objects.filter(is_active=True, organization=profile.organization)
-    else:
-        buildings = HostelBuilding.objects.filter(is_active=True)
+    buildings = HostelBuilding.objects.filter(is_active=True)
     capacity_map = CAPACITY_MAP
 
     if request.method == 'POST':
@@ -552,7 +513,7 @@ def edit_room(request, pk):
 
             # If capacity decreases, verify no students are in the deleted beds
             if new_capacity < old_capacity:
-                total_allocated = room.bed_set.filter(student__isnull=False).count()
+                total_allocated = room.beds.filter(student__isnull=False).count()
                 if total_allocated > new_capacity:
                     messages.error(request, f"Cannot reduce capacity to {new_capacity} as there are {total_allocated} occupied bed{'s' if total_allocated != 1 else ''} in this room.")
                     return render(request, 'room/create_room.html', {
@@ -566,7 +527,7 @@ def edit_room(request, pk):
             room = form.save()
 
             # Adjust beds
-            current_beds_count = room.bed_set.count()
+            current_beds_count = room.beds.count()
             if new_capacity > current_beds_count:
                 for i in range(current_beds_count + 1, new_capacity + 1):
                     Bed.objects.create(
@@ -579,19 +540,19 @@ def edit_room(request, pk):
             elif new_capacity < current_beds_count:
                 # Delete excess vacant beds from the end (prefer deleting empty ones)
                 excess_count = current_beds_count - new_capacity
-                vacant_beds = list(room.bed_set.filter(student__isnull=True).order_by('-bed_number'))
+                vacant_beds = list(room.beds.filter(student__isnull=True).order_by('-bed_number'))
                 beds_to_delete = vacant_beds[:excess_count]
                 for eb in beds_to_delete:
                     eb.delete()
                 # Rename the remaining beds so they are ordered 1..N
-                all_beds = room.bed_set.all().order_by('id')
+                all_beds = room.beds.all().order_by('id')
                 for idx, b in enumerate(all_beds, 1):
                     b.bed_number = f'Bed {idx}'
                     b.save()
 
             # If monthly rent changed, update empty beds total/remaining amounts
             if room.monthly_rent != old_rent:
-                for bed in room.bed_set.filter(student__isnull=True):
+                for bed in room.beds.filter(student__isnull=True):
                     bed.total_amount = room.monthly_rent or 0
                     bed.remaining_amount = room.monthly_rent or 0
                     bed.save()
@@ -621,11 +582,9 @@ def delete_room(request, pk):
         messages.error(request, 'Room does not exist.')
         return redirect('room_manage')
         
-    profile = request.user.profile
-    if profile.role and profile.role.name == 'Admin' and room.building and room.building.organization != profile.organization:
-        raise PermissionDenied
 
-    allocated_beds = room.bed_set.filter(student__isnull=False).exists()
+
+    allocated_beds = room.beds.filter(student__isnull=False).exists()
     if allocated_beds:
         messages.error(request, 'Room cannot be deleted. Please transfer allocated beds first.')
         return redirect('room_manage')
@@ -662,7 +621,7 @@ def delete_allocation(request, bed_id):
 def student_allocated_view(request, room_id):
     rooms = Room.objects.all().order_by('room_number')
     room = get_object_or_404(Room, pk=room_id)
-    beds = room.bed_set.select_related('student').all()
+    beds = room.beds.select_related('student').all()
     total_beds = beds.count()
     occupied_beds = beds.filter(student__isnull=False).count()
     vacant_beds = total_beds - occupied_beds
@@ -740,12 +699,7 @@ def allocate_bed_ajax(request):
 
 def get_active_hostel(request):
     from authentication.models import Hostel
-    profile = getattr(request.user, 'profile', None) if request.user.is_authenticated else None
-    
-    if profile and profile.role and profile.role.name == 'Admin':
-        hostels = Hostel.objects.filter(organization=profile.organization)
-    else:
-        hostels = Hostel.objects.all()
+    hostels = Hostel.objects.all()
 
     active_hostel_id = request.session.get('active_hostel_id')
     if active_hostel_id:

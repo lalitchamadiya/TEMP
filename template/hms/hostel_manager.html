@@ -65,7 +65,7 @@
               <td>{{ room.get_room_type_display }}</td>
               <td>{{ room.get_gender_display }}</td>
               <td>
-                {% for bed in room.bed_set.all %}
+                {% for bed in room.beds.all %}
                 <span class="badge-s {% if bed.student %}s-red{% else %}s-green{% endif %} me-1">
                   Bed {{ bed.bed_number }}{% if bed.student %} – {{ bed.student.name|truncatechars:10 }}{% endif %}
                 </span>

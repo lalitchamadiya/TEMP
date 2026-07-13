@@ -60,10 +60,7 @@ CAPACITY_MAP = {
 
 class HostelBuilding(models.Model):
     hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='buildings', null=True, blank=True)
-    organization = models.ForeignKey(
-        'organizations.Organization', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='buildings'
-    )
+
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='MIXED')
@@ -93,10 +90,7 @@ class HostelBlock(models.Model):
         HostelBuilding, on_delete=models.CASCADE,
         related_name='blocks', null=True, blank=True
     )
-    organization = models.ForeignKey(
-        'organizations.Organization', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='blocks'
-    )
+
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     block_manager = models.ForeignKey(

@@ -1,57 +1,191 @@
 {% load static %}
 
 {% block content %}
-<div class="d-flex align-items-center">
-  {% if not no_sidebar %}
-  <!-- Sidebar toggle button - works on ALL screen sizes -->
-  <button id="sidebarToggleBtn" class="btn btn-sm sidebar-toggle-btn me-2 ms-2" type="button" title="Toggle Sidebar" aria-label="Toggle Sidebar">
-    <i class="bi bi-layout-sidebar fs-5"></i>
-  </button>
-  {% endif %}
-  <!-- Theme Toggle Button -->
-  <button id="themeToggleBtn" class="btn btn-sm theme-toggle-btn me-2" type="button" title="Toggle Theme" aria-label="Toggle Light/Dark Theme">
-    <i class="bi bi-moon-fill" id="themeIcon"></i>
-  </button>
-  <a class="navbar-brand" href="#">{{ system_settings.system_name|default:"Noble Hostel" }}</a>
-  {% if request.user.is_authenticated and available_hostels and not no_sidebar %}
-  <div class="dropdown ms-3">
-    <button class="btn btn-sm btn-secondary dropdown-toggle d-flex align-items-center bg-dark border-secondary px-3 py-1.5" type="button" id="hostelSelectDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 6px;">
-      <i class="bi bi-building me-2 text-primary"></i>
-      <span class="fw-medium text-light" style="font-size: 0.85rem;">{{ active_hostel.name|default:"Select Hostel" }}</span>
+<style>
+    /* CSS overrides for Breadcrumbs and dynamic panels */
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: var(--bs-breadcrumb-divider, "/");
+        color: var(--text-muted);
+        opacity: 0.5;
+    }
+    .breadcrumb-item a {
+        transition: color 0.15s ease;
+    }
+    .breadcrumb-item a:hover {
+        color: var(--primary) !important;
+    }
+    
+    /* Premium circular buttons styles */
+    .btn-nav-action-circle {
+        background: var(--btn-nav-action-bg);
+        border: 1px solid var(--header-border) !important;
+        color: var(--text-main) !important;
+        width: 36px;
+        height: 36px;
+        padding: 0 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50% !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-nav-action-circle:hover {
+        background: var(--btn-nav-action-hover);
+        transform: translateY(-1px);
+        color: var(--primary) !important;
+    }
+    
+    .profile-trigger {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid var(--header-border);
+        padding: 0;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+    .profile-trigger:hover {
+        transform: scale(1.05);
+        border-color: var(--primary);
+        box-shadow: 0 0 10px var(--primary-glow);
+    }
+</style>
+
+<div class="d-flex align-items-center w-100 justify-content-between">
+  
+  <div class="d-flex align-items-center">
+    {% if not no_sidebar %}
+    <!-- Sidebar toggle button - works on ALL screen sizes -->
+    <button id="sidebarToggleBtn" class="btn btn-sm btn-nav-action me-2 ms-1" type="button" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+      <i class="bi bi-layout-sidebar fs-5"></i>
     </button>
-    <ul class="dropdown-menu dropdown-menu-dark shadow border-secondary align-middle" aria-labelledby="hostelSelectDropdown">
-      {% for hostel in available_hostels %}
-      <li>
-        <a class="dropdown-item d-flex align-items-center py-2 {% if hostel.id == active_hostel.id %}active bg-primary{% endif %}" href="{% url 'select_hostel' hostel.id %}">
-          <span class="me-2" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block;" data-bg="{{ hostel.theme_color|default:'#0d6efd' }}"></span>
-          <span style="font-size: 0.85rem;">{{ hostel.name }}</span>
-        </a>
-      </li>
-      {% endfor %}
-    </ul>
+    {% endif %}
+    
+    <!-- Dynamic Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="d-none d-lg-block ms-2 mb-0">
+        <ol class="breadcrumb mb-0 align-items-center" id="dynamicBreadcrumbSelector" style="font-size: 0.8rem; font-weight: 500;"></ol>
+    </nav>
   </div>
-  {% endif %}
+
+  <div class="d-flex align-items-center">
+    
+    <!-- Theme Switcher Direct Toggle Button -->
+    <button class="btn btn-nav-action-circle me-2" id="themeToggleBtn" type="button" onclick="themeToggleHandler()" title="Toggle Theme">
+        <i class="bi bi-moon-fill" id="themeIcon" style="font-size:0.95rem;"></i>
+    </button>
+
+    <!-- Messages Dropdown -->
+    <div class="dropdown me-2">
+        <button class="btn btn-nav-action-circle position-relative" type="button" id="msgDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Messages">
+            <i class="bi bi-chat-right-text" style="font-size:0.95rem;"></i>
+            <span class="position-absolute translate-middle badge rounded-pill bg-primary border-0" style="top: 4px; start: 76%; font-size:0.55rem; padding: 2px 4px; box-shadow: 0 0 6px rgba(79, 156, 249, 0.5);">
+                2
+            </span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border border-opacity-10 py-1" aria-labelledby="msgDropdownBtn" style="width: 260px; font-size: 0.8rem; border-radius: 12px;">
+            <li class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
+                <span class="fw-bold">Messages</span>
+                <span class="badge bg-primary bg-opacity-15 text-primary" style="font-size:0.65rem;">2 New</span>
+            </li>
+            <li>
+                <a class="dropdown-item px-3 py-2 d-flex flex-column" href="#">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold">Warden David</span>
+                        <small class="text-muted">Yesterday</small>
+                    </div>
+                    <span class="text-muted text-truncate" style="font-size:0.72rem;">Can you check the main gates inventory list?</span>
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item px-3 py-2 d-flex flex-column" href="#">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold">Registrar Office</span>
+                        <small class="text-muted">2 days ago</small>
+                    </div>
+                    <span class="text-muted text-truncate" style="font-size:0.72rem;">Registration rosters list has been refreshed.</span>
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item px-3 py-2 border-top text-center text-primary fw-semibold" href="#">Open Messages</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Notification Dropdown -->
+    <div class="dropdown me-3">
+        <button class="btn btn-nav-action-circle position-relative" type="button" id="notifDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+            <i class="bi bi-bell" style="font-size:0.95rem;"></i>
+            <span class="position-absolute translate-middle badge rounded-pill bg-danger border-0" style="top: 4px; start: 76%; font-size:0.55rem; padding: 2px 4px; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);">
+                3
+            </span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border border-opacity-10 py-1" aria-labelledby="notifDropdownBtn" style="width: 280px; font-size: 0.8rem; border-radius: 12px;">
+            <li class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
+                <span class="fw-bold">Notifications</span>
+                <a href="#" class="text-primary text-decoration-none" style="font-size: 0.72rem;">Clear all</a>
+            </li>
+            <li>
+                <a class="dropdown-item px-3 py-2 d-flex flex-column" href="#">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold text-danger">Gate Pass Overdue</span>
+                        <small class="text-muted">10m ago</small>
+                    </div>
+                    <span class="text-muted" style="font-size:0.72rem;">Student John Doe is past curfew time.</span>
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item px-3 py-2 d-flex flex-column" href="#">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold text-primary">New Leave Request</span>
+                        <small class="text-muted">1h ago</small>
+                    </div>
+                    <span class="text-muted" style="font-size:0.72rem;">Hostel block C leave application awaiting approval.</span>
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item px-3 py-2 border-top text-center text-primary fw-semibold" href="#">View All Notifications</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Active User Profile Dropdown -->
+    <div class="dropdown">
+        <button class="btn profile-trigger" type="button" id="profileDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+            {% if request.user.student and request.user.student.photo %}
+              <img src="{{ request.user.student.photo.url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="User">
+            {% else %}
+              <img src="{% static 'image/User.jpg' %}" style="width: 100%; height: 100%; object-fit: cover;" alt="User">
+            {% endif %}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border border-opacity-10 py-1" aria-labelledby="profileDropdownBtn" style="width: 200px; font-size: 0.8rem; border-radius: 12px;">
+            <li class="px-3 py-2 border-bottom">
+                <span class="fw-bold d-block text-main lh-1 text-truncate">{{ request.user.username }}</span>
+                {% if is_superadmin %}
+                <small class="text-muted text-uppercase" style="font-size:0.6rem; letter-spacing:0.02em;">Super Admin</small>
+                {% else %}
+                <small class="text-muted text-uppercase" style="font-size:0.6rem; letter-spacing:0.02em;">{{ user.profile.role.name|default:"Member" }}</small>
+                {% endif %}
+            </li>
+            <li>
+                {% if request.user.student %}
+                <a class="dropdown-item py-2" href="{% url 'student_app:student_profile' %}"><i class="bi bi-person me-2"></i>My Profile</a>
+                {% else %}
+                <a class="dropdown-item py-2" href="#"><i class="bi bi-person me-2"></i>Warden Profile</a>
+                {% endif %}
+            </li>
+            <li><a class="dropdown-item py-2" href="{% url 'system_settings_view' %}"><i class="bi bi-gear me-2"></i>Settings</a></li>
+            <li><a class="dropdown-item py-2" href="#"><i class="bi bi-clock-history me-2"></i>Activity Logs</a></li>
+            <li><a class="dropdown-item py-2" href="#"><i class="bi bi-question-circle me-2"></i>Help Center</a></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+                <a class="dropdown-item py-2 text-danger fw-semibold" href="#" onclick="event.preventDefault(); document.getElementById('autoLogoutForm').submit();">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+
+  </div>
+
 </div>
-  <div class="navbar-nav ">
-    {% if request.user.is_authenticated %}
-    <form action="{% url 'logout'%}" method="post" class="nav-item text-nowrap d-flex justify-content-center align-items-center">
-      {% csrf_token %}
-      {% if request.user.student and request.user.student.photo %}
-        <img src="{{ request.user.student.photo.url }}" class="shadow-sm" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 2px solid #e2e8f0;" alt="User">
-      {% else %}
-        <img src="{% static 'image/User.jpg' %}" class="shadow-sm" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 2px solid #e2e8f0;" alt="User">
-      {% endif %}
-      <a class="nav-link m-2 fw-semibold" href="#">
-        {% if request.user.student %}
-          {{ request.user.student.name }}
-        {% else %}
-          {{ request.user.username }}
-        {% endif %}
-      </a>
-      <input class="btn btn-sm btn-outline-light m-2 mx-3" type="submit" value="Logout">
-    </form>
-  {% else %}
-    <!-- display login link or other content for anonymous users -->
-  {% endif %}
-  </div>
-{% endblock  %}
+{% endblock  %}
