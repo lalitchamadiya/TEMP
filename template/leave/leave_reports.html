@@ -100,8 +100,8 @@
                                     <span class="badge bg-light text-dark border small fw-bold">{{ bed.room.room_number|default:"N/A" }}</span>
                                     {% endwith %}
                                 </td>
-                                <td><span class="small">{{ student.hostelleave_set.last.leave_date }}</span></td>
-                                <td><span class="small fw-bold text-rose">{{ student.hostelleave_set.last.return_date|default:"---" }}</span></td>
+                                <td><span class="small">{{ student.hostelleave_set.last.leave_from }}</span></td>
+                                <td><span class="small fw-bold text-rose">{{ student.hostelleave_set.last.leave_to|default:"---" }}</span></td>
                             </tr>
                             {% empty %}
                             <tr>

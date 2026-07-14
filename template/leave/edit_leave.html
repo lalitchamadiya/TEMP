@@ -46,7 +46,7 @@
                         </div>
                         <div class="col-md-4">
                             <label for="leave_date" class="form-label text-muted small fw-semibold mb-1">Leave Date</label>
-                            <input type="date" name="leave_date" class="form-control form-control-sm pb-2" value="{{ leave.leave_date|date:'Y-m-d' }}" required />
+                            <input type="date" name="leave_date" class="form-control form-control-sm pb-2" value="{{ leave.leave_from|date:'Y-m-d' }}" required />
                         </div>
                         <div class="col-md-4 d-flex align-items-end mb-1">
                             <button type="submit" class="rounded-1 btn btn-primary px-4 shadow-sm w-100">

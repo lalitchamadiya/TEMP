@@ -3,10 +3,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from authentication.decorators import role_required, permission_required
 from django.core.exceptions import PermissionDenied
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 from django.utils import timezone
 from django.db import transaction, models
-from .models import HostelLeave, GatePass
+from .models import HostelLeave, GatePass, QRPass
 from student.models import Student, Attendance
 from authentication.models import Notification, AuditLog
 import uuid
@@ -34,8 +34,8 @@ def edit_leave(request, leave_id):
     student = leave.student
     if request.method == 'POST':
         leave.reason = request.POST.get('reason')
-        leave.leave_date = request.POST.get('leave_date')
-        leave.return_date = request.POST.get('return_date')
+        leave.leave_from = request.POST.get('leave_date')
+        leave.leave_to = request.POST.get('return_date')
         leave.start_time = request.POST.get('start_time')
         leave.end_time = request.POST.get('end_time')
         leave.destination = request.POST.get('destination')
@@ -59,13 +59,21 @@ def process_leave_action(request, leave, action):
             leave.approval_date = timezone.now()
             
             # Calculate total days
-            if leave.return_date and leave.leave_date:
-                leave.total_days = (leave.return_date - leave.leave_date).days or 1
+            if leave.leave_to and leave.leave_from:
+                leave.total_days = (leave.leave_to - leave.leave_from).days or 1
             leave.save()
 
             # Generate Gate Pass
             gp_no = generate_gate_pass_no()
             GatePass.objects.create(gate_pass_no=gp_no, leave_request=leave)
+
+            # Generate EXIT QRPass (Expires at the end of leave_from date)
+            expires_at = timezone.make_aware(datetime.combine(leave.leave_from, time(23, 59, 59)))
+            QRPass.objects.create(
+                leave=leave,
+                pass_type='EXIT',
+                expires_at=expires_at
+            )
 
             # Update Student Status
             student = leave.student
@@ -73,8 +81,8 @@ def process_leave_action(request, leave, action):
             student.save()
 
             # Mark Attendance as 'On Leave' for the dates
-            current_date = leave.leave_date
-            end_date = leave.return_date or leave.leave_date
+            current_date = leave.leave_from
+            end_date = leave.leave_to or leave.leave_from
             while current_date <= end_date:
                 Attendance.objects.update_or_create(
                     student=student,
@@ -86,7 +94,7 @@ def process_leave_action(request, leave, action):
             # Create Notification
             Notification.objects.create(
                 user=student.user,
-                message=f"Your leave request for {leave.leave_date} has been approved. Gate Pass {gp_no} generated."
+                message=f"Your leave request for {leave.leave_from} has been approved. Gate Pass {gp_no} and Exit QR Code generated."
             )
 
             # Log to AuditLog
@@ -94,7 +102,7 @@ def process_leave_action(request, leave, action):
                 actor=request.user,
                 target_user=student.user,
                 action='gate_pass',
-                details=f"Approved leave and generated Gate Pass {gp_no} for student {student.name}",
+                details=f"Approved leave and generated Gate Pass {gp_no} and EXIT QR for student {student.name}",
                 ip_address=request.META.get('REMOTE_ADDR')
             )
 
@@ -103,12 +111,15 @@ def process_leave_action(request, leave, action):
         leave.save()
         Notification.objects.create(
             user=leave.student.user,
-            message=f"Your leave request for {leave.leave_date} has been rejected."
+            message=f"Your leave request for {leave.leave_from} has been rejected."
         )
 
     elif action == 'entered':
+        # Legacy/direct entry mark support (also handles completed state)
         with transaction.atomic():
-            leave.status = 'entered'
+            leave.status = 'completed'
+            leave.entry_time = timezone.now()
+            leave.entry_verified = True
             leave.save()
             
             # Restore Student Status
@@ -124,6 +135,7 @@ def process_leave_action(request, leave, action):
                 details=f"Student {student.name} marked as returned from leave.",
                 ip_address=request.META.get('REMOTE_ADDR')
             )
+
 
 @login_required(login_url='/authentication/login')
 @permission_required('leave', 'view')
@@ -159,9 +171,9 @@ def leave_record(request):
             messages.error(request, "Leave request not found.")
 
     if hasattr(request.user, 'profile') and request.user.profile.role.name == 'Student':
-        leave_requests = HostelLeave.objects.filter(student__user=request.user, status__in=['rejected', 'entered'])
+        leave_requests = HostelLeave.objects.filter(student__user=request.user, status__in=['rejected', 'entered', 'completed'])
     else:
-        leave_requests = HostelLeave.objects.filter(status__in=['rejected', 'entered'])
+        leave_requests = HostelLeave.objects.filter(status__in=['rejected', 'entered', 'completed'])
     return render(request, 'leave/leave_record.html', {'leave_requests': leave_requests})
 
 @login_required(login_url='/authentication/login')
@@ -224,17 +236,17 @@ def add_leave(request):
                 if student.user != request.user:
                     raise PermissionDenied("You can only add leave for yourself.")
 
-            if HostelLeave.objects.filter(student=student).exclude(status__in=['entered', 'rejected']).exists():
+            if HostelLeave.objects.filter(student=student).exclude(status__in=['entered', 'completed', 'rejected']).exists():
                 messages.error(request, 'Active or pending request already exists.')
                 return redirect('add_leave') 
 
-            leave_date = datetime.strptime(leave_date_str, '%Y-%m-%d').date()
-            return_date = datetime.strptime(return_date_str, '%Y-%m-%d').date() if return_date_str else None
+            leave_from = datetime.strptime(leave_date_str, '%Y-%m-%d').date()
+            leave_to = datetime.strptime(return_date_str, '%Y-%m-%d').date() if return_date_str else None
             
             HostelLeave.objects.create(
                 student=student, 
-                leave_date=leave_date, 
-                return_date=return_date,
+                leave_from=leave_from, 
+                leave_to=leave_to,
                 start_time=start_time,
                 end_time=end_time,
                 reason=reason,
@@ -271,7 +283,7 @@ def check_enrollment(request):
         'error_message': error_message,
     })
 
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.template.loader import render_to_string
 try:
     from xhtml2pdf import pisa
@@ -298,7 +310,7 @@ def gate_pass_management(request):
         gate_passes = gate_passes.filter(status=status)
         
     if date:
-        gate_passes = gate_passes.filter(leave_request__leave_date=date)
+        gate_passes = gate_passes.filter(leave_request__leave_from=date)
         
     return render(request, 'leave/gate_pass_management.html', {'gate_passes': gate_passes})
 
@@ -329,8 +341,8 @@ def leave_reports(request):
     # Today's students on leave
     today = date.today()
     on_leave_today = Student.objects.filter(status='On Leave')
-    returned_today = HostelLeave.objects.filter(return_date=today, status='entered')
-    expected_return = HostelLeave.objects.filter(return_date=today, status='approved')
+    returned_today = HostelLeave.objects.filter(leave_to=today, status__in=['entered', 'completed'])
+    expected_return = HostelLeave.objects.filter(leave_to=today, status='approved')
     
     context = {
         'on_leave_today': on_leave_today,
@@ -350,4 +362,147 @@ def delete_leave(request, leave_id):
     leave.delete()
     messages.success(request, 'Deleted successfully.')
     return redirect('leave_record')
+
+# ==================== NEW QR CODE SERVICE & SCAN WORKFLOW ====================
+
+import qrcode
+from io import BytesIO
+
+@login_required(login_url='/authentication/login')
+def qr_code_image(request, qr_token):
+    qr_pass = get_object_or_404(QRPass, qr_token=qr_token)
+    
+    # JSON payload structure as specified in requirements
+    data = {
+       "leave_id": qr_pass.leave.id,
+       "student_id": qr_pass.leave.student.id,
+       "type": qr_pass.pass_type,
+       "token": str(qr_pass.qr_token)
+    }
+    
+    import json
+    from qrcode.image.pil import PilImage
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(json.dumps(data))
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white", image_factory=PilImage)
+    
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    return HttpResponse(buffer.getvalue(), content_type="image/png")
+
+@login_required(login_url='/authentication/login')
+@permission_required('leave', 'view')
+def security_dashboard(request):
+    # 1. Pending Exit: Leaves approved but exit_verified is False
+    pending_exits = HostelLeave.objects.filter(status='approved', exit_verified=False).select_related('student')
+    
+    # 2. Student Outside Hostel: Exited, but entry_verified is False
+    students_outside = HostelLeave.objects.filter(status='approved', exit_verified=True, entry_verified=False).select_related('student')
+    
+    # 3. Returned Students: status is completed and entry_verified is True
+    returned_students = HostelLeave.objects.filter(status='completed', entry_verified=True).select_related('student').order_by('-entry_time')
+
+    curr_now = timezone.now()
+    # Annotate dynamic states
+    for leave in pending_exits:
+        # Check active passes
+        active_qr = leave.qr_passes.filter(pass_type='EXIT', is_used=False).first()
+        if active_qr:
+            leave.qr_status = "Active" if curr_now <= active_qr.expires_at else "Expired"
+        else:
+            leave.qr_status = "No QR Pass Available"
+            
+    for leave in students_outside:
+        # Calculate dynamic status
+        if leave.leave_to and date.today() > leave.leave_to:
+            leave.current_status = "Overdue"
+        else:
+            leave.current_status = "Outside"
+            
+    for leave in returned_students:
+        # Compute duration
+        if leave.entry_time and leave.exit_time:
+            dur = leave.entry_time - leave.exit_time
+            hours, remainder = divmod(dur.total_seconds(), 3600)
+            minutes, _ = divmod(remainder, 60)
+            leave.duration_outside = f"{int(hours)}h {int(minutes)}m"
+        else:
+            leave.duration_outside = "Unknown"
+
+    context = {
+        'pending_exits': pending_exits,
+        'students_outside': students_outside,
+        'returned_students': returned_students,
+    }
+    return render(request, 'leave/security_dashboard.html', context)
+
+@login_required(login_url='/authentication/login')
+@permission_required('leave', 'view')
+def scan_gate_pass(request, qr_token):
+    qr = get_object_or_404(QRPass, qr_token=qr_token)
+    leave = qr.leave
+    student = leave.student
+    
+    error_msg = None
+    success_msg = None
+    
+    # Condition 1: check if used
+    if qr.is_used:
+        error_msg = "Pass Already Used"
+    # Check if expired
+    elif timezone.now() > qr.expires_at:
+        error_msg = "Pass Expired"
+    
+    if request.method == 'POST' and not error_msg:
+        with transaction.atomic():
+            # Condition 2: type == EXIT
+            if qr.pass_type == 'EXIT':
+                leave.exit_time = timezone.now()
+                leave.exit_verified = True
+                leave.save()
+                
+                qr.is_used = True
+                qr.used_at = timezone.now()
+                qr.save()
+                
+                # Generate ENTRY QR Pass (Expires end of return date + 1)
+                expires_at = timezone.make_aware(datetime.combine(leave.leave_to or leave.leave_from, time(23, 59, 59)))
+                QRPass.objects.create(
+                    leave=leave,
+                    pass_type='ENTRY',
+                    expires_at=expires_at
+                )
+                success_msg = f"EXIT APPROVED for {student.name}. Entry QR pass generated."
+                
+                # Update Student Status
+                student.status = 'On Leave'
+                student.save()
+                
+            # Condition 3: type == ENTRY
+            elif qr.pass_type == 'ENTRY':
+                leave.entry_time = timezone.now()
+                leave.entry_verified = True
+                leave.status = 'completed'
+                leave.save()
+                
+                qr.is_used = True
+                qr.used_at = timezone.now()
+                qr.save()
+                
+                # Restore Student Status
+                student.status = 'Active'
+                student.save()
+                success_msg = f"ENTRY APPROVED for {student.name}. Gating workflow complete."
+    
+    context = {
+        'qr': qr,
+        'leave': leave,
+        'student': student,
+        'bed': student.bed_set.first(),
+        'error_msg': error_msg,
+        'success_msg': success_msg,
+    }
+    return render(request, 'leave/scan_confirmation.html', context)
+
 

@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Security Gate Dashboard{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    body {
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--body-bg, #f8fafc);
+        color: var(--text-main, #0f172a);
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: white;
+        border-radius: 1.5rem;
+        padding: 2.25rem 2rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    .glass-card {
+        background: var(--card-bg, rgba(255, 255, 255, 0.8));
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.5));
+        border-radius: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        padding: 1.5rem;
+    }
+
+    .scanner-view-container {
+        border: 2px dashed #4f46e5;
+        border-radius: 1.25rem;
+        background-color: var(--light-bg, #fafafa);
+        overflow: hidden;
+        position: relative;
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dashboard-column {
+        height: 580px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+
+    /* Beautiful scrollbars */
+    .dashboard-column::-webkit-scrollbar {
+        width: 6px;
+    }
+    .dashboard-column::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .dashboard-column::-webkit-scrollbar-thumb {
+        background: var(--border-color, #e2e8f0);
+        border-radius: 10px;
+    }
+
+    .student-item {
+        transition: all 0.2s ease;
+        border-radius: 1rem;
+        border: 1px solid var(--border-color, #e2e8f0);
+        padding: 1rem;
+        background-color: var(--card-bg, white);
+        margin-bottom: 1rem;
+    }
+    .student-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.03);
+    }
+
+    .small-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 0.75rem;
+        object-fit: cover;
+    }
+
+    .sec-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50rem;
+        display: inline-block;
+    }
+</style>
+
+<div class="container-fluid py-4">
+
+    <!-- Dashboard Header Banner -->
+    <div class="dashboard-header d-flex justify-content-between align-items-center flex-wrap gap-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-danger px-3 py-1 text-white fw-bold">GATE CONTROL</span>
+                <span class="text-white text-opacity-50 small"><i class="bi bi-clock me-1"></i>Real-time scanning active</span>
+            </div>
+            <h2 class="fw-bold mb-0">Hostel Security Gate Checkpoint</h2>
+            <p class="text-white text-opacity-75 small mb-0 mt-1">Scan student passes or enter tokens manually to verify hostel exits and entries.</p>
+        </div>
+        <div class="bg-white bg-opacity-10 p-3 rounded-4 d-flex align-items-center gap-3">
+            <span class="material-symbols-outlined fs-2 text-warning">security</span>
+            <div class="text-start">
+                <div class="text-white small fw-bold">Live Checkpoint</div>
+                <div class="text-white text-opacity-50 small" id="live-time">Loading time...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Row -->
+    <div class="row g-4 mb-4">
+        <!-- Interactive QR Barcode Scanner -->
+        <div class="col-lg-6">
+            <div class="glass-card h-100">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-qr-code-scan text-primary me-2"></i>Rapid Digital Gate Scanner</h5>
+                
+                <div class="scanner-view-container p-3 text-center" id="scanner-wrapper">
+                    <!-- Scanner camera stream will render inside here -->
+                    <div id="checkpass-reader" class="w-100" style="max-width: 400px; border-radius: 12px; overflow: hidden;"></div>
+                    
+                    <div id="scanner-placeholder" class="py-4">
+                        <i class="bi bi-camera text-primary display-4 mb-3"></i>
+                        <p class="text-muted small">Access gate camera to automatically capture and validate exit or entry passes.</p>
+                        <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btn-start-scanner">
+                            <i class="bi bi-play-fill me-1"></i> Launch Gate Camera
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Token Validator -->
+        <div class="col-lg-6">
+            <div class="glass-card h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-keyboard text-primary me-2"></i>Manual Pass Verification</h5>
+                    <p class="text-muted small">If the student is unable to scan their QR code, manually enter their alphanumeric UUID token printed on the pass below to execute verification.</p>
+                    
+                    <form id="manual-token-form" class="mt-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold text-uppercase">Security Pass Token (UUID)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-shield-lock"></i></span>
+                                <input type="text" id="manual-token-input" class="form-control form-control-lg rounded-end-3" placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary rounded-pill w-100 py-3 fw-bold mt-2 shadow-sm">
+                            <i class="bi bi-shield-check me-2"></i> Validate System Token
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="alert alert-info rounded-4 border-0 mt-4 mb-0 d-flex align-items-start gap-3 small">
+                    <i class="bi bi-info-circle-fill text-info fs-5 mt-1"></i>
+                    <div>
+                        <strong>Gating Policy Reminder:</strong> One-time Exit passes remain valid until midnight of the departure date. One-time Entry passes remain valid until midnight of the return date.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Lists Row (Three Columns) -->
+    <div class="row g-4">
+        <!-- 1. PENDING EXIT -->
+        <div class="col-lg-4">
+            <div class="glass-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-door-open text-primary me-2"></i>Approved Exits</h5>
+                    <span class="badge bg-primary rounded-pill">{{ pending_exits.count }}</span>
+                </div>
+                <p class="text-muted small mb-4">Students authorized to leave; waiting exit verification at gate.</p>
+                
+                <div class="dashboard-column">
+                    {% for leave in pending_exits %}
+                    <div class="student-item">
+                        <div class="d-flex gap-3">
+                            <img src="{% if leave.student.photo %}{{ leave.student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="small-avatar" alt="Avatar">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="fw-bold text-dark mb-1 small">{{ leave.student.name }}</h6>
+                                    <span class="sec-badge {% if leave.qr_status == 'Active' %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %}">
+                                        {{ leave.qr_status }}
+                                    </span>
+                                </div>
+                                <div class="text-muted x-small mb-2">Roll: {{ leave.student.roll }}</div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted border-top pt-2">
+                                    <span>Date: <strong>{{ leave.leave_from }}</strong></span>
+                                    <span>Room: <strong>{{ leave.student.bed_set.first.room.room_number|default:"N/A" }}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted opacity-50">
+                        <i class="bi bi-box2 display-6 d-block mb-2"></i>
+                        <span class="small">No pending exits scheduled.</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. STUDENT OUTSIDE -->
+        <div class="col-lg-4">
+            <div class="glass-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-geo text-warning me-2"></i>Students Outside</h5>
+                    <span class="badge bg-warning text-dark rounded-pill">{{ students_outside.count }}</span>
+                </div>
+                <p class="text-muted small mb-4">Students currently checked out and away from the hostel premises.</p>
+                
+                <div class="dashboard-column">
+                    {% for leave in students_outside %}
+                    <div class="student-item">
+                        <div class="d-flex gap-3">
+                            <img src="{% if leave.student.photo %}{{ leave.student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="small-avatar" alt="Avatar">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="fw-bold text-dark mb-1 small">{{ leave.student.name }}</h6>
+                                    <span class="sec-badge {% if leave.current_status == 'Overdue' %}bg-danger text-white{% else %}bg-warning bg-opacity-10 text-warning-emphasis{% endif %}">
+                                        {{ leave.current_status }}
+                                    </span>
+                                </div>
+                                <div class="text-muted x-small mb-2">Exited: {{ leave.exit_time|date:"d M, H:i" }}</div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted border-top pt-2">
+                                    <span>Expected Return:</span>
+                                    <span class="fw-bold text-dark">{{ leave.leave_to|default:"Today" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted opacity-50">
+                        <i class="bi bi-check2-all display-6 d-block mb-2"></i>
+                        <span class="small">All students are inside the hostel.</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. RETURNED STUDENTS -->
+        <div class="col-lg-4">
+            <div class="glass-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-shield-fill-check text-success me-2"></i>Returned Today</h5>
+                    <span class="badge bg-success rounded-pill">{{ returned_students.count }}</span>
+                </div>
+                <p class="text-muted small mb-4">Students who safely checked back into their rooms today.</p>
+                
+                <div class="dashboard-column">
+                    {% for leave in returned_students %}
+                    <div class="student-item">
+                        <div class="d-flex gap-3">
+                            <img src="{% if leave.student.photo %}{{ leave.student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="small-avatar" alt="Avatar">
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold text-dark mb-1 small">{{ leave.student.name }}</h6>
+                                <div class="text-muted x-small mb-1">Returned: {{ leave.entry_time|date:"H:i" }} (Today)</div>
+                                <div class="d-flex justify-content-between align-items-center small text-muted border-top pt-2">
+                                    <span>Total Duration Out:</span>
+                                    <span class="fw-bold text-success">{{ leave.duration_outside }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted opacity-50">
+                        <i class="bi bi-clock display-6 d-block mb-2"></i>
+                        <span class="small">No student returns logged today.</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Embed Html5Qrcode Library -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<script>
+    // Live Time Clock
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('live-time').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Webcam QR Code Scanner Setup
+    let html5QrcodeScanner = null;
+    const btnStart = document.getElementById('btn-start-scanner');
+    const placeholder = document.getElementById('scanner-placeholder');
+
+    btnStart.addEventListener('click', () => {
+        placeholder.style.display = 'none';
+        
+        html5QrcodeScanner = new Html5QrcodeScanner(
+            "checkpass-reader", 
+            { fps: 10, qrbox: {width: 250, height: 250} },
+            /* verbose= */ false
+        );
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Once scanned successfully, we stop scanning
+            html5QrcodeScanner.clear().then(() => {
+                try {
+                    // Try to parse JSON from the QR pass payload
+                    const payload = JSON.parse(decodedText);
+                    if (payload && payload.token) {
+                        window.location.href = `/leave/scan/${payload.token}/`;
+                    } else {
+                        alert("Invalid QR format detected. Please make sure to scan a valid hostel gate pass.");
+                        window.location.reload();
+                    }
+                } catch(e) {
+                    // Fallback to literal URL redirect or parameter extraction
+                    if (decodedText.includes('/leave/scan/')) {
+                        window.location.href = decodedText;
+                    } else {
+                        // Attempt to treat decoded text as the literal token
+                        window.location.href = `/leave/scan/${decodedText}/`;
+                    }
+                }
+            }).catch(error => {
+                console.error("Failed to stop scanning.", error);
+            });
+        }
+
+        function onScanFailure(error) {
+            // Quiet failed scans (real-time camera search frames)
+        }
+
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    });
+
+    // Manual Token Input Form Submission
+    const manualForm = document.getElementById('manual-token-form');
+    manualForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const tokenInput = document.getElementById('manual-token-input').value.trim();
+        if (tokenInput) {
+            window.location.href = `/leave/scan/${tokenInput}/`;
+        }
+    });
+</script>
+{% endblock %}

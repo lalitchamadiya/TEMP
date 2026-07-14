@@ -109,8 +109,8 @@
             <tr><th style="width: 25%;">Field</th><th style="width: 25%;">Departure Details</th><th style="width: 25%;">Expected Return</th><th style="width: 25%;">Journey Info</th></tr>
             <tr>
                 <td>Date / Time</td>
-                <td>{{ gp.leave_request.leave_date|date:"d M Y" }}<br>{{ gp.leave_request.start_time|default:"--:--" }}</td>
-                <td>{{ gp.leave_request.return_date|date:"d M Y" }}<br>{{ gp.leave_request.end_time|default:"--:--" }}</td>
+                <td>{{ gp.leave_request.leave_from|date:"d M Y" }}<br>{{ gp.leave_request.start_time|default:"--:--" }}</td>
+                <td>{{ gp.leave_request.leave_to|date:"d M Y" }}<br>{{ gp.leave_request.end_time|default:"--:--" }}</td>
                 <td>Mode: {{ gp.leave_request.transport_mode|default:"Not Specified" }}</td>
             </tr>
             <tr><td>Destination</td><td colspan="2">{{ gp.leave_request.destination|default:"Contact Home Address" }}</td><td>Days: {{ gp.leave_request.total_days }}</td></tr>

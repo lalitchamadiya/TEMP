@@ -15,7 +15,8 @@
                         <tr>
                             <th scope="col" class="px-4">#</th>
                             <th scope="col">Reason</th>
-                            <th scope="col">Leave Date</th>
+                            <th scope="col">Leave From</th>
+                            <th scope="col">Leave To</th>
                             <th scope="col">Status</th>
                             <th scope="col">Submitted On</th>
                         </tr>
@@ -25,17 +26,23 @@
                             <tr>
                                 <td class="px-4 text-muted fw-semibold">{{ forloop.counter }}</td>
                                 <td class="fw-semibold">{{ leave.reason }}</td>
-                                <td><span class="badge bg-light text-dark border">{{ leave.leave_date }}</span></td>
+                                <td><span class="badge bg-light text-dark border">{{ leave.leave_from }}</span></td>
+                                <td><span class="badge bg-light text-dark border">{{ leave.leave_to }}</span></td>
                                 <td>
-                                    {% if leave.status == 'approved' or leave.status == 'entered' %}
+                                    {% if leave.status == 'approved' %}
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="badge bg-success rounded-pill px-3">Approved</span>
+                                            <a href="{% url 'student_app:view_active_pass' leave.id %}" class="btn btn-sm btn-primary rounded-pill px-2 fw-semibold text-white shadow-sm" style="font-size: 0.75rem;">
+                                                <i class="bi bi-qr-code-scan me-1"></i> Active Pass
+                                            </a>
                                             {% if leave.gate_pass %}
-                                            <a href="{% url 'download_gate_pass' leave.gate_pass.id %}" target="_blank" class="btn btn-sm btn-outline-primary border-0 rounded-circle" title="Download Gate Pass">
+                                            <a href="{% url 'download_gate_pass' leave.gate_pass.id %}" target="_blank" class="btn btn-sm btn-outline-secondary border-0 rounded-circle" title="Download Gate Pass">
                                                 <i class="bi bi-download"></i>
                                             </a>
                                             {% endif %}
                                         </div>
+                                    {% elif leave.status == 'entered' or leave.status == 'completed' %}
+                                        <span class="badge bg-secondary rounded-pill px-3">Completed</span>
                                     {% elif leave.status == 'rejected' %}
                                         <span class="badge bg-danger rounded-pill px-3">Rejected</span>
                                     {% else %}

@@ -13,6 +13,9 @@ urlpatterns = [
     path('gate_pass_management/', views.gate_pass_management, name='gate_pass_management'),
     path('download_gate_pass/<int:gp_id>/', views.download_gate_pass_pdf, name='download_gate_pass'),
     path('leave_reports/', views.leave_reports, name='leave_reports'),
+    path('security/dashboard/', views.security_dashboard, name='security_dashboard'),
+    path('qr-image/<uuid:qr_token>/', views.qr_code_image, name='qr_code_image'),
+    path('scan/<uuid:qr_token>/', views.scan_gate_pass, name='scan_gate_pass'),
 ]
 
 

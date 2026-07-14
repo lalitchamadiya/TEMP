@@ -170,7 +170,7 @@
                 {% if request.user.student %}
                 <a class="dropdown-item py-2" href="{% url 'student_app:student_profile' %}"><i class="bi bi-person me-2"></i>My Profile</a>
                 {% else %}
-                <a class="dropdown-item py-2" href="#"><i class="bi bi-person me-2"></i>Warden Profile</a>
+                <a class="dropdown-item py-2" href="#"><i class="bi bi-person me-2"></i>Profile</a>
                 {% endif %}
             </li>
             <li><a class="dropdown-item py-2" href="{% url 'system_settings_view' %}"><i class="bi bi-gear me-2"></i>Settings</a></li>

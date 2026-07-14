@@ -105,7 +105,7 @@ def superadmin_dashboard(request):
 
     # ── Leaves ──
     pending_leaves = HostelLeave.objects.filter(status='pending').count()
-    approved_leaves_today = HostelLeave.objects.filter(status='approved', leave_date=today).count()
+    approved_leaves_today = HostelLeave.objects.filter(status='approved', leave_from=today).count()
 
     # ── HMS Models ──
     total_staff = StaffProfile.objects.count()

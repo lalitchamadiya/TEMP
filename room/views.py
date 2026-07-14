@@ -499,11 +499,14 @@ def create_room(request):
                     remaining_amount=room.monthly_rent or 0,
                     paid_amount=0,
                 )
+            from django.utils.safestring import mark_safe
+            from django.urls import reverse
+            edit_url = reverse('edit_room', kwargs={'pk': room.pk})
             messages.success(
                 request,
-                f'Room {room.room_number} created successfully with {cap} bed{"s" if cap != 1 else ""}.'
+                mark_safe(f'Room {room.room_number} created successfully with {cap} bed{"s" if cap != 1 else ""}. <a href="{edit_url}" class="alert-link fw-bold text-decoration-underline" style="color: inherit;">Edit Room Details</a>')
             )
-            return redirect('room_manage')
+            return redirect('student_allocated_view', room_id=room.pk)
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
