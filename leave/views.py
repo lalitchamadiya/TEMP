@@ -75,10 +75,7 @@ def process_leave_action(request, leave, action):
                 expires_at=expires_at
             )
 
-            # Update Student Status
             student = leave.student
-            student.status = 'On Leave'
-            student.save()
 
             # Mark Attendance as 'On Leave' for the dates
             current_date = leave.leave_from

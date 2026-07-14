@@ -58,6 +58,10 @@ class LeaveGatingTestCase(TestCase):
         self.assertIsNotNone(exit_pass)
         self.assertFalse(exit_pass.is_used)
         self.assertEqual(exit_pass.expires_at.date(), self.leave.leave_from)
+        
+        # Check that student status remains Active on leave approval
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.status, 'Active')
 
     def test_exit_pass_verification_flow(self):
         # Generate EXIT pass
