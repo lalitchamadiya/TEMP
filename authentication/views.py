@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.views import View
 
 from .decorators import role_required, permission_required
-from .models import AuditLog, Module, Role, RolePermission, UserProfile, Hostel
+from .models import AuditLog, Module, Role, RolePermission, UserProfile, Hostel, PermissionElement, RoleElementPermission
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -183,6 +183,7 @@ def role_list(request):
 @role_required('Super Admin')
 def role_create(request):
     modules = Module.objects.all()
+    elements = PermissionElement.objects.select_related('module').all()
     if request.method == 'POST':
         name = request.POST.get('name')
         description = request.POST.get('description')
@@ -206,10 +207,22 @@ def role_create(request):
                 can_disable=request.POST.get(f'disable_{module.id}') == 'on',
             )
 
+        for element in elements:
+            RoleElementPermission.objects.create(
+                role=role,
+                element=element,
+                is_enabled=request.POST.get(f'element_{element.id}') == 'on'
+            )
+
         messages.success(request, f"Role '{name}' created successfully.")
         return redirect('role_list')
 
-    return render(request, 'authentication/rbac/role_form.html', {'modules': modules, 'role_perms': {}})
+    return render(request, 'authentication/rbac/role_form.html', {
+        'modules': modules,
+        'role_perms': {},
+        'elements': elements,
+        'role_element_perms': set()
+    })
 
 
 @login_required
@@ -221,6 +234,7 @@ def role_edit(request, pk):
         return redirect('role_list')
         
     modules = Module.objects.all()
+    elements = PermissionElement.objects.select_related('module').all()
 
     if request.method == 'POST':
         role.name = request.POST.get('name')
@@ -243,12 +257,22 @@ def role_edit(request, pk):
             perm.can_disable = request.POST.get(f'disable_{module.id}') == 'on'
             perm.save()
 
+        for element in elements:
+            el_perm, _ = RoleElementPermission.objects.get_or_create(role=role, element=element)
+            el_perm.is_enabled = request.POST.get(f'element_{element.id}') == 'on'
+            el_perm.save()
+
         messages.success(request, f"Role '{role.name}' updated successfully.")
         return redirect('role_list')
 
     role_perms = {p.module_id: p for p in role.permissions.all()}
+    role_element_perms = set(RoleElementPermission.objects.filter(role=role, is_enabled=True).values_list('element_id', flat=True))
     return render(request, 'authentication/rbac/role_form.html', {
-        'role': role, 'modules': modules, 'role_perms': role_perms
+        'role': role,
+        'modules': modules,
+        'role_perms': role_perms,
+        'elements': elements,
+        'role_element_perms': role_element_perms
     })
 
 
@@ -329,6 +353,44 @@ def role_delete(request, pk):
     else:
         role.delete()
         messages.success(request, 'Role deleted successfully.')
+    return redirect('role_list')
+
+
+@login_required
+@role_required('Super Admin')
+def add_custom_permission_element(request):
+    """Allows Super Admins to dynamically add new permission elements from Role forms."""
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip().replace(' ', '_').lower()
+        name = request.POST.get('name', '').strip()
+        category = request.POST.get('category', 'button')
+        description = request.POST.get('description', '').strip()
+        module_id = request.POST.get('module')
+
+        if not code or not name:
+            messages.error(request, "Code and Name are required fields.")
+        elif PermissionElement.objects.filter(code=code).exists():
+            messages.error(request, f"Permission element with code '{code}' already exists.")
+        else:
+            module_obj = None
+            if module_id:
+                try:
+                    module_obj = Module.objects.get(id=module_id)
+                except Module.DoesNotExist:
+                    pass
+            
+            PermissionElement.objects.create(
+                code=code,
+                name=name,
+                category=category,
+                description=description,
+                module=module_obj
+            )
+            messages.success(request, f"Custom permission element '{name}' created successfully.")
+            
+    referrer = request.META.get('HTTP_REFERER')
+    if referrer:
+        return redirect(referrer)
     return redirect('role_list')
 
 
@@ -732,7 +794,9 @@ class SystemSettingsForm(forms.ModelForm):
             'system_name', 'organization_name', 'logo', 'favicon', 
             'theme_color', 'dark_mode_default', 'timezone', 
             'date_format', 'time_format', 'currency', 'language', 
-            'maintenance_mode', 'system_version', 'license_key', 'license_expiry'
+            'maintenance_mode', 'system_version', 'license_key', 'license_expiry',
+            'session_timeout', 'login_attempt_limit', 'allowed_ips',
+            'enable_audit_logs', 'password_expiry_days', 'backup_frequency'
         ]
         widgets = {
             'system_name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -750,6 +814,17 @@ class SystemSettingsForm(forms.ModelForm):
             'system_version': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
             'license_key': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'license_expiry': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'session_timeout': forms.NumberInput(attrs={'class': 'form-control', 'min': 60, 'placeholder': 'e.g. 1800 (seconds)'}),
+            'login_attempt_limit': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 20, 'placeholder': 'e.g. 5 attempts'}),
+            'allowed_ips': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'e.g. 192.168.1.1, 10.0.0.0/24 (blank for all)'}),
+            'enable_audit_logs': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'password_expiry_days': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'placeholder': 'e.g. 90 (0 to disable)'}),
+            'backup_frequency': forms.Select(choices=[
+                ('daily', 'Daily Auto-Backup'),
+                ('weekly', 'Weekly Auto-Backup'),
+                ('monthly', 'Monthly Auto-Backup'),
+                ('manual', 'Manual Backups Only')
+            ], attrs={'class': 'form-select'}),
         }
 
 

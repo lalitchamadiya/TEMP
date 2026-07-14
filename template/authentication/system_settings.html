@@ -107,109 +107,187 @@
         <!-- Configuration Form Card -->
         <div class="col-lg-8">
             <div class="glass-card p-3">
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-
-                    <h6 class="section-header mb-3"><i class="bi bi-shield-lock me-2 text-primary"></i>Identity & Branding</h6>
-                    <div class="row g-2.5 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">System Name</label>
-                            {{ form.system_name }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Organization Name</label>
-                            {{ form.organization_name }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">System Logo</label>
-                            {{ form.logo }}
-                            {% if settings.logo %}
-                            <div class="mt-2">
-                                <img src="{{ settings.logo.url }}" alt="Logo" class="img-thumbnail" style="max-height: 40px;">
+                <div class="row">
+                    <!-- Tab Content Column (Full Width) -->
+                    <div class="col-md-12">
+                        <div class="tab-content" id="settings-tabs-content">
+                            <!-- Branding Pane -->
+                            <div class="tab-pane fade {% if not request.GET.tab or request.GET.tab == 'branding' %}show active{% endif %}" id="tab-branding" role="tabpanel">
+                                <form class="settings-section-form" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <h6 class="section-header mb-3"><i class="bi bi-shield-lock me-2 text-primary"></i>Identity & Branding</h6>
+                                    <div class="row g-2.5 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">System Name</label>
+                                            {{ form.system_name }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Organization Name</label>
+                                            {{ form.organization_name }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">System Logo</label>
+                                            {{ form.logo }}
+                                            {% if settings.logo %}
+                                            <div class="mt-2">
+                                                <img src="{{ settings.logo.url }}" alt="Logo" class="img-thumbnail" style="max-height: 40px;">
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Favicon Icon (ICO/PNG)</label>
+                                            {{ form.favicon }}
+                                            {% if settings.favicon %}
+                                            <div class="mt-2">
+                                                <img src="{{ settings.favicon.url }}" alt="Favicon" class="img-thumbnail" style="max-height: 25px;">
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Favicon Icon (ICO/PNG)</label>
-                            {{ form.favicon }}
-                            {% if settings.favicon %}
-                            <div class="mt-2">
-                                <img src="{{ settings.favicon.url }}" alt="Favicon" class="img-thumbnail" style="max-height: 25px;">
+
+                            <!-- Theme Pane -->
+                            <div class="tab-pane fade {% if request.GET.tab == 'theme' %}show active{% endif %}" id="tab-theme" role="tabpanel">
+                                <form class="settings-section-form">
+                                    {% csrf_token %}
+                                    <h6 class="section-header mb-3"><i class="bi bi-palette me-2 text-primary"></i>Theme & Styling</h6>
+                                    <div class="row g-2.5 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Theme Color Override</label>
+                                            {{ form.theme_color }}
+                                        </div>
+                                        <div class="col-md-6 d-flex align-items-center mt-3 mt-md-4">
+                                            <div class="form-check form-switch ps-5">
+                                                {{ form.dark_mode_default }}
+                                                <label class="form-check-label fw-bold text-secondary" style="font-size:0.8rem;">Enforce Dark Mode as Default</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
-                            {% endif %}
-                        </div>
-                    </div>
 
-                    <h6 class="section-header mb-3"><i class="bi bi-palette me-2 text-primary"></i>Theme & Styling</h6>
-                    <div class="row g-2.5 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Theme Color Override</label>
-                            {{ form.theme_color }}
-                        </div>
-                        <div class="col-md-6 d-flex align-items-center mt-3 mt-md-4">
-                            <div class="form-check form-switch ps-5">
-                                {{ form.dark_mode_default }}
-                                <label class="form-check-label fw-bold text-secondary" style="font-size:0.8rem;">Enforce Dark Mode as Default</label>
+                            <!-- Regional Pane -->
+                            <div class="tab-pane fade {% if request.GET.tab == 'regional' %}show active{% endif %}" id="tab-regional" role="tabpanel">
+                                <form class="settings-section-form">
+                                    {% csrf_token %}
+                                    <h6 class="section-header mb-3"><i class="bi bi-globe me-2 text-primary"></i>Regional Defaults</h6>
+                                    <div class="row g-2.5 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Default System Timezone</label>
+                                            {{ form.timezone }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Currency Symbol</label>
+                                            {{ form.currency }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Date Format Pattern</label>
+                                            {{ form.date_format }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Time Format Pattern</label>
+                                            {{ form.time_format }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Core Language</label>
+                                            {{ form.language }}
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Security Pane -->
+                            <div class="tab-pane fade {% if request.GET.tab == 'security' %}show active{% endif %}" id="tab-security" role="tabpanel">
+                                <form class="settings-section-form">
+                                    {% csrf_token %}
+                                    <h6 class="section-header mb-3"><i class="bi bi-shield-check me-2 text-primary"></i>Security & Session Settings</h6>
+                                    <div class="row g-2.5 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Session Timeout (Seconds)</label>
+                                            {{ form.session_timeout }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Password Expiry Cycle (Days)</label>
+                                            {{ form.password_expiry_days }}
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Access Pane -->
+                            <div class="tab-pane fade {% if request.GET.tab == 'access' %}show active{% endif %}" id="tab-access" role="tabpanel">
+                                <form class="settings-section-form">
+                                    {% csrf_token %}
+                                    <h6 class="section-header mb-3"><i class="bi bi-shield-slash me-2 text-primary"></i>Access Control Settings</h6>
+                                    <div class="row g-2.5 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Login Attempt Limit</label>
+                                            {{ form.login_attempt_limit }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Allowed IP Address Whitelist (Comma-separated)</label>
+                                            {{ form.allowed_ips }}
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Operations Pane -->
+                            <div class="tab-pane fade {% if request.GET.tab == 'operations' %}show active{% endif %}" id="tab-operations" role="tabpanel">
+                                <form class="settings-section-form">
+                                    {% csrf_token %}
+                                    <h6 class="section-header mb-3"><i class="bi bi-cpu me-2 text-primary"></i>System Control & Version</h6>
+                                    <div class="row g-2.5 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Software Version (Read-only)</label>
+                                            {{ form.system_version }}
+                                        </div>
+                                        <div class="col-md-6 d-flex align-items-center mt-3 mt-md-4">
+                                            <div class="form-check form-switch ps-5">
+                                                {{ form.maintenance_mode }}
+                                                <label class="form-check-label fw-bold text-danger" style="font-size:0.8rem;">Enable System Maintenance Mode</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="section-header mb-3"><i class="bi bi-key me-2 text-primary"></i>Licensing</h6>
+                                    <div class="row g-2.5 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">License Agreement Activation Key</label>
+                                            {{ form.license_key }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">License Expiration Date</label>
+                                            {{ form.license_expiry }}
+                                        </div>
+                                    </div>
+
+                                    <h6 class="section-header mb-3"><i class="bi bi-clipboard-pulse me-2 text-primary"></i>Audit & Data Operations</h6>
+                                    <div class="row g-2.5 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Database Backup Schedule</label>
+                                            {{ form.backup_frequency }}
+                                        </div>
+                                        <div class="col-md-6 d-flex align-items-center mt-3 mt-md-4">
+                                            <div class="form-check form-switch ps-5">
+                                                {{ form.enable_audit_logs }}
+                                                <label class="form-check-label fw-bold text-secondary" style="font-size:0.8rem;">Enable System Audit Logging</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-                    </div>
 
-                    <h6 class="section-header mb-3"><i class="bi bi-globe me-2 text-primary"></i>Regional Defaults</h6>
-                    <div class="row g-2.5 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Default System Timezone</label>
-                            {{ form.timezone }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Currency Symbol</label>
-                            {{ form.currency }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Date Format Pattern</label>
-                            {{ form.date_format }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Time Format Pattern</label>
-                            {{ form.time_format }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Core Language</label>
-                            {{ form.language }}
+                        <!-- Single Global Submit Button at the bottom of the card -->
+                        <div class="text-end pt-3 border-top border-secondary border-opacity-10 mt-3">
+                            <button type="button" id="save-all-settings-btn" class="btn btn-primary px-4 border-0 theme-primary-grad py-2 fw-semibold" style="border-radius:6px; font-size: 0.9rem;">
+                                <i class="bi bi-save me-1"></i>Commit & Apply Settings
+                            </button>
                         </div>
                     </div>
-
-                    <h6 class="section-header mb-3"><i class="bi bi-cpu me-2 text-primary"></i>System Control & Version</h6>
-                    <div class="row g-2.5 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Software Version (Read-only)</label>
-                            {{ form.system_version }}
-                        </div>
-                        <div class="col-md-6 d-flex align-items-center mt-3 mt-md-4">
-                            <div class="form-check form-switch ps-5">
-                                {{ form.maintenance_mode }}
-                                <label class="form-check-label fw-bold text-danger" style="font-size:0.8rem;">Enable System Maintenance Mode</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <h6 class="section-header mb-3"><i class="bi bi-key me-2 text-primary"></i>Licensing</h6>
-                    <div class="row g-2.5 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">License Agreement Activation Key</label>
-                            {{ form.license_key }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">License Expiration Date</label>
-                            {{ form.license_expiry }}
-                        </div>
-                    </div>
-
-                    <div class="text-end pt-2">
-                        <button type="submit" class="btn btn-primary px-4 border-0 theme-primary-grad py-2 fw-semibold" style="border-radius:6px; font-size: 0.9rem;">
-                            <i class="bi bi-save me-1"></i>Commit & Apply Settings
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -235,4 +313,54 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const saveBtn = document.getElementById('save-all-settings-btn');
+    if (!saveBtn) return;
+
+    saveBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...';
+
+        const data = new FormData();
+        
+        // Append CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (csrfToken) {
+            data.append('csrfmiddlewaretoken', csrfToken);
+        }
+
+        // Loop over each form and add all its variables.
+        document.querySelectorAll('.settings-section-form').forEach(form => {
+            const tempFd = new FormData(form);
+            for (let [key, val] of tempFd.entries()) {
+                if (key === 'csrfmiddlewaretoken') continue;
+                data.append(key, val);
+            }
+        });
+
+        // Make AJAX request to same path (POST).
+        fetch(window.location.href, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            const activeTabEl = document.querySelector('.tab-pane.active');
+            const activeTabId = activeTabEl ? activeTabEl.id.replace('tab-', '') : 'branding';
+            window.location.href = window.location.pathname + '?tab=' + activeTabId;
+        })
+        .catch(err => {
+            console.error('Error saving settings:', err);
+            alert('Failed to save settings.');
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-save me-1"></i>Commit & Apply Settings';
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -67,14 +67,46 @@ class CreateRoomForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        hostel = kwargs.pop('hostel', None)
         super().__init__(*args, **kwargs)
-        self.fields['building'].queryset = HostelBuilding.objects.filter(is_active=True)
+        building_qs = HostelBuilding.objects.filter(is_active=True)
+        if hostel:
+            building_qs = building_qs.filter(hostel=hostel)
+        self.fields['building'].queryset = building_qs
         self.fields['building'].empty_label = '— Select Building —'
         self.fields['floor'].empty_label = '— Select Floor —'
         self.fields['block'].required = False
         self.fields['room_name'].required = False
         self.fields['description'].required = False
         self.fields['monthly_rent'].required = False
+
+        # Dynamically set choices based on active pricing configurations
+        from room.models import RoomTypePricing, RoomCategoryPricing
+        from django.db.models import Q
+        
+        pricing_q = Q(hostel=hostel) if hostel else Q(hostel__isnull=True)
+        
+        rtc = [('CUSTOM', 'Custom')]
+        rtp_qs = RoomTypePricing.objects.filter(pricing_q, is_active=True)
+        if hostel and not rtp_qs.exists():
+            rtp_qs = RoomTypePricing.objects.filter(hostel__isnull=True, is_active=True)
+        for rtp in rtp_qs:
+            rtc.append((rtp.room_type, rtp.label or rtp.room_type))
+        
+        if self.instance and self.instance.pk and self.instance.room_type not in [x[0] for x in rtc]:
+            rtc.append((self.instance.room_type, self.instance.room_type))
+        self.fields['room_type'].choices = rtc
+
+        rcc = []
+        rcp_qs = RoomCategoryPricing.objects.filter(pricing_q, is_active=True)
+        if hostel and not rcp_qs.exists():
+            rcp_qs = RoomCategoryPricing.objects.filter(hostel__isnull=True, is_active=True)
+        for rcp in rcp_qs:
+            rcc.append((rcp.category, rcp.label or rcp.category))
+            
+        if self.instance and self.instance.pk and self.instance.category not in [x[0] for x in rcc]:
+            rcc.append((self.instance.category, self.instance.category))
+        self.fields['category'].choices = rcc
 
     def clean_room_number(self):
         number = self.cleaned_data.get('room_number', '').strip()

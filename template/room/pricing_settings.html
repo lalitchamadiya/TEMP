@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Room Pricing Settings{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --accent: #6366f1;
+        --accent-2: #a855f7;
+        --accent-soft: rgba(99,102,241,0.07);
+        --glass-bg: rgba(255,255,255,0.82);
+        --border: rgba(226,232,240,0.75);
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --input-bg: rgba(248,250,252,0.9);
+    }
+    body { font-family: 'Outfit', sans-serif; background: #f1f5f9; }
+
+    /* Page header */
+    .page-header {
+        background: var(--glass-bg);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1rem 1.5rem;
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    .page-header h4 { font-weight: 700; margin: 0; font-size: 1.1rem; color: var(--text-main); }
+    .page-header p  { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+
+    /* Section cards */
+    .section-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+    }
+    .section-card-header {
+        display: flex; align-items: center; gap: 0.6rem;
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255,255,255,0.5);
+    }
+    .section-icon {
+        width: 30px; height: 30px;
+        border-radius: 0.5rem;
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.9rem; flex-shrink: 0;
+    }
+    .section-title { font-weight: 700; font-size: 0.875rem; color: var(--text-main); margin: 0; }
+    .section-card-body { padding: 1.25rem; }
+
+    /* Input styling */
+    .form-control {
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        font-size: 0.9rem; color: var(--text-main);
+    }
+    .form-control:focus {
+        background: #fff !important;
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.12) !important;
+    }
+
+    /* Submit button */
+    .btn-create {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        border: none; color: white;
+        padding: 0.65rem 2.5rem;
+        font-weight: 700; font-size: 0.95rem;
+        border-radius: 0.625rem;
+        box-shadow: 0 4px 14px rgba(99,102,241,0.25);
+        transition: all 0.2s ease;
+    }
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(99,102,241,0.35);
+        color: white;
+    }
+</style>
+
+<div class="container-fluid py-3 px-md-4">
+    <!-- Sub navigation menu -->
+    {% include 'room/room_nav.html' %}
+
+    <form method="post" action="{% url 'room_pricing_settings' %}" id="pricingSettingsForm">
+        {% csrf_token %}
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h4><i class="bi bi-gear-fill me-2 text-primary"></i>Room & Pricing Configuration</h4>
+                <p>Customize base rates and multipliers options for active hostel context: <strong>{{ active_hostel.name }}</strong></p>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn-create btn btn-sm">
+                    <i class="bi bi-check-circle me-1"></i>Save Changes
+                </button>
+            </div>
+        </div>
+
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible rounded-3 border-0 shadow-sm py-2 fade show mb-2" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="row g-4">
+            <!-- Room Type Pricing Options -->
+            <div class="col-lg-6">
+                <div class="section-card h-100">
+                    <div class="section-card-header">
+                        <div class="section-icon"><i class="bi bi-door-open"></i></div>
+                        <span class="section-title">Room Type Options (Base Rent - ₹)</span>
+                    </div>
+                    <div class="section-card-body">
+                        <p class="text-muted small mb-4">Set the base monthly cost for each available room configuration. Custom types enter details manually during room creation.</p>
+                        
+                        <div class="d-flex flex-column gap-3">
+                            {% for item in room_types_prices %}
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <label class="form-label mb-0 fw-semibold text-dark">{{ item.get_room_type_display }}</label>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted border-end-0">₹</span>
+                                        <input type="number" step="0.01" min="0" name="price_{{ item.room_type }}" value="{{ item.base_rent }}" class="form-control ps-2" required>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-center text-muted py-3">No Room Type options configured.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Pricing Options -->
+            <div class="col-lg-6">
+                <div class="section-card h-100">
+                    <div class="section-card-header">
+                        <div class="section-icon" style="background: rgba(168,85,247,0.08); color: #a855f7;"><i class="bi bi-tags"></i></div>
+                        <span class="section-title">Category Options (Rent Multiplier)</span>
+                    </div>
+                    <div class="section-card-body">
+                        <p class="text-muted small mb-4">Modify pricing ratios compared to standard general rates. e.g. 1.30 implies +30% surcharge, 0.00 locks it as free/no rent.</p>
+                        
+                        <div class="d-flex flex-column gap-3">
+                            {% for item in room_categories_multipliers %}
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <label class="form-label mb-0 fw-semibold text-dark">{{ item.get_category_display }}</label>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" min="0" name="mult_{{ item.category }}" value="{{ item.multiplier }}" class="form-control text-end pe-2" required>
+                                        <span class="input-group-text bg-light text-muted border-start-0">x</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-center text-muted py-3">No Class/Category options configured.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn-create btn">
+                <i class="bi bi-save2 me-1"></i>Save Pricing Configuration
+            </button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

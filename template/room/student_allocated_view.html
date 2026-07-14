@@ -231,6 +231,9 @@
                                 <a href="{% url 'view_student' bed.student.pk %}" class="action-btn view" title="View Profile">
                                     <i class="bi bi-eye"></i>
                                 </a>
+                                <a href="{% url 'change_room' bed.id %}" class="action-btn view bg-opacity-10 text-primary ms-1" style="background: rgba(168, 85, 247, 0.1); color: #8b5cf6;" title="Change Room">
+                                    <i class="bi bi-arrow-left-right"></i>
+                                </a>
                                 <form method="post" action="{% url 'delete_allocation' bed.id %}?next={{ request.get_full_path }}" class="d-inline"
                                       onsubmit="return confirm('Remove {{ bed.student.name }} from Bed {{ bed.bed_number }}?')">
                                     {% csrf_token %}

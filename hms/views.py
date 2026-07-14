@@ -18,7 +18,7 @@ from room.models import HostelBuilding, HostelBlock, Floor, Room, Bed
 from paybill.models import Payment, FeeStructure
 from leave.models import HostelLeave
 from django.contrib.auth.models import Group
-from authentication.models import Role, UserProfile
+from authentication.models import Role, UserProfile, AuditLog
 
 
 # ──────────────────────────────────────────────────────
@@ -155,6 +155,60 @@ def superadmin_dashboard(request):
     # Recent visitors
     recent_visitors = Visitor.objects.order_by('-visit_date', '-id')[:6]
 
+    # ── Audit Logs ──
+    from django.core.paginator import Paginator
+    log_qs = AuditLog.objects.select_related('actor', 'target_user', 'hostel').order_by('-timestamp')
+    log_action = request.GET.get('log_action', '')
+    log_search = request.GET.get('log_q', '').strip()
+    log_start_date = request.GET.get('log_start_date', '').strip()
+    log_end_date = request.GET.get('log_end_date', '').strip()
+
+    if log_action:
+        log_qs = log_qs.filter(action=log_action)
+    if log_search:
+        log_qs = log_qs.filter(
+            Q(details__icontains=log_search) |
+            Q(actor__username__icontains=log_search) |
+            Q(target_user__username__icontains=log_search) |
+            Q(ip_address__icontains=log_search)
+        )
+    if log_start_date:
+        log_qs = log_qs.filter(timestamp__date__gte=log_start_date)
+    if log_end_date:
+        log_qs = log_qs.filter(timestamp__date__lte=log_end_date)
+
+    if request.GET.get('log_export') == 'csv':
+        import csv
+        from django.http import HttpResponse
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="audit_logs_export.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Timestamp', 'Actor/Username', 'Action', 'Target User', 'Hostel', 'IP Address', 'Details'])
+        for log in log_qs:
+            writer.writerow([
+                log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                log.actor.username if log.actor else 'System',
+                log.get_action_display(),
+                log.target_user.username if log.target_user else 'None',
+                log.hostel.name if log.hostel else 'N/A',
+                log.ip_address or '',
+                log.details or ''
+            ])
+        return response
+
+    log_paginator = Paginator(log_qs, 10)
+    log_page = request.GET.get('log_page', 1)
+    recent_logs = log_paginator.get_page(log_page)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
+        from django.template.loader import render_to_string
+        from django.http import JsonResponse
+        html = render_to_string('hms/audit_logs_rows.html', {'recent_logs': recent_logs}, request=request)
+        return JsonResponse({
+            'html': html,
+            'has_next': recent_logs.has_next(),
+        })
+
     context = {
         'page_title': 'Super Admin Dashboard',
         # Students
@@ -205,6 +259,13 @@ def superadmin_dashboard(request):
         'recent_payments': recent_payments,
         'recent_complaints': recent_complaints,
         'recent_visitors': recent_visitors,
+        # Audit Logs
+        'recent_logs': recent_logs,
+        'log_actions': AuditLog.ACTION_CHOICES,
+        'log_action_selected': log_action,
+        'log_search_query': log_search,
+        'log_start_date': log_start_date,
+        'log_end_date': log_end_date,
     }
     return render(request, 'hms/superadmin_dashboard.html', context)
 

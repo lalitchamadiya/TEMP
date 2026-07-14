@@ -350,23 +350,10 @@ const CAPACITY_MAP = {
 };
 
 // ── Pricing calculation logic ─────────────────────────────────────────────────
-const BASE_RENTS = {
-    'SINGLE': 8000,
-    'DOUBLE': 6000,
-    'TRIPLE': 5000,
-    'DORMITORY': 3000,
-    'DELUXE': 9000,
-    'AC': 6000,
-    'NON_AC': 6000,
-    'CUSTOM': null
-};
+const BASE_RENTS = {{ base_rents_json|safe }};
+BASE_RENTS['CUSTOM'] = null;
 
-const CATEGORY_MULTIPLIERS = {
-    'GENERAL': 1.0,
-    'VIP': 1.3,
-    'STAFF': 0.0,
-    'RESERVED': 0.0
-};
+const CATEGORY_MULTIPLIERS = {{ category_multipliers_json|safe }};
 
 function calculateSuggestedRent() {
     const roomType = document.getElementById('id_room_type').value;

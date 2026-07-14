@@ -20,6 +20,26 @@
         color: white !important;
         box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
     }
+    @media (max-width: 991.98px) {
+        .room-nav-pills {
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 6px;
+            width: 100%;
+        }
+        .room-nav-pills .nav-link {
+            padding: 0.4rem 0.85rem !important;
+            font-size: 0.8rem !important;
+        }
+        .room-nav-pills::-webkit-scrollbar {
+            height: 4px;
+        }
+        .room-nav-pills::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.15);
+            border-radius: 10px;
+        }
+    }
     .search-group-premium {
         position: relative;
         min-width: 200px;

@@ -120,3 +120,48 @@ def api_permission_required(module_code, action):
             )
         return _wrapped_view
     return decorator
+
+
+def check_element_perm(user, element_code):
+    """
+    Returns True if the user has the given element permission enabled.
+    Always returns True for super-admins or Django superusers.
+    """
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+
+    profile = None
+    try:
+        profile = user.profile
+    except Exception:
+        pass
+
+    if profile and profile.role and profile.role.is_superadmin:
+        return True
+    if profile and profile.role:
+        perm = profile.role.element_permissions.filter(element__code=element_code).first()
+        if perm:
+            return perm.is_enabled
+    return False
+
+
+def element_permission_required(element_code):
+    """
+    Decorator that checks whether the user's role has the designated permission element enabled.
+    Redirects to 403 PermissionDenied if not allowed.
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return redirect('login')
+
+            if check_element_perm(request.user, element_code):
+                return view_func(request, *args, **kwargs)
+
+            raise PermissionDenied
+        return _wrapped_view
+    return decorator
+

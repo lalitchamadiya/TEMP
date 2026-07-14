@@ -796,9 +796,101 @@ html[data-theme="light"] {
     </div>
   </div>
 
-</div>
+  <!-- ── Row 8: System Audit Logs ── -->
+  <p class="sa-section-label" id="logs-anchor">System Audit Logs</p>
+  <div class="panel-card mb-4" id="logs-panel">
+    <div class="panel-title d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-clock-history"></i>
+        <span>Security & Administrative Audit Logs</span>
+      </div>
+      <!-- Log filters -->
+      <form method="get" action="{% url 'superadmin_dashboard' %}#logs-anchor" class="d-flex align-items-center gap-2 flex-wrap" id="logs-filter-form">
+        <input type="text" name="log_q" value="{{ log_search_query|default:'' }}" placeholder="Search details, actor, IP..." class="form-control form-control-sm rounded-pill text-white bg-dark border-secondary px-3" style="width:180px; font-size:0.8rem;">
+        
+        <select name="log_action" class="form-select form-select-sm rounded-pill text-white bg-dark border-secondary px-3" style="width:130px; font-size:0.8rem;">
+          <option value="">All Actions</option>
+          {% for code, label in log_actions %}
+          <option value="{{ code }}" {% if log_action_selected == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
 
-<!-- ── Chart.js Scripts ── -->
+        <span class="text-white opacity-60" style="font-size: 0.75rem;">From:</span>
+        <input type="date" name="log_start_date" value="{{ log_start_date|default:'' }}" class="form-control form-control-sm rounded-pill text-white bg-dark border-secondary px-2" style="width:120px; font-size:0.75rem;">
+        
+        <span class="text-white opacity-60" style="font-size: 0.75rem;">To:</span>
+        <input type="date" name="log_end_date" value="{{ log_end_date|default:'' }}" class="form-control form-control-sm rounded-pill text-white bg-dark border-secondary px-2" style="width:120px; font-size:0.75rem;">
+
+        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3" title="Apply Filter"><i class="bi bi-filter"></i> Filter</button>
+        <button type="submit" name="log_export" value="csv" class="btn btn-sm btn-outline-success rounded-pill px-3" title="Export to CSV"><i class="bi bi-file-earmark-arrow-down"></i> Export</button>
+
+        {% if log_search_query or log_action_selected or log_start_date or log_end_date %}
+        <a href="{% url 'superadmin_dashboard' %}#logs-anchor" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Clear</a>
+        {% endif %}
+      </form>
+    </div>
+
+    <div class="table-responsive mt-3" id="audit-logs-table-container" style="max-height: 520px; overflow-y: auto;">
+      <table class="table sa-table mb-0">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Actor</th>
+            <th>Action</th>
+            <th>Affected Target</th>
+            <th>IP Address</th>
+            <th class="text-end">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% include 'hms/audit_logs_rows.html' %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div id="audit-logs-pagination">
+      {% if recent_logs.has_other_pages %}
+      <nav class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="border-color: var(--glass-border) !important;">
+        <small class="text-muted">Showing {{ recent_logs.start_index }} to {{ recent_logs.end_index }} of {{ recent_logs.paginator.count }} logs</small>
+        <ul class="pagination pagination-sm mb-0">
+          {% if recent_logs.has_previous %}
+          <li class="page-item"><a class="page-link text-white bg-dark border-secondary" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ recent_logs.previous_page_number }}#logs-anchor"><i class="bi bi-chevron-left"></i></a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link bg-dark border-secondary opacity-50"><i class="bi bi-chevron-left"></i></span></li>
+          {% endif %}
+
+          {% for num in recent_logs.paginator.page_range %}
+            {% if recent_logs.number == num %}
+            <li class="page-item active"><span class="page-link bg-primary border-primary">{{ num }}</span></li>
+            {% elif num > recent_logs.number|add:'-3' and num < recent_logs.number|add:'3' %}
+            <li class="page-item"><a class="page-link text-white bg-dark border-secondary" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ num }}#logs-anchor">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if recent_logs.has_next %}
+          <li class="page-item"><a class="page-link text-white bg-dark border-secondary" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ recent_logs.next_page_number }}#logs-anchor"><i class="bi bi-chevron-right"></i></a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link bg-dark border-secondary opacity-50"><i class="bi bi-chevron-right"></i></span></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+
+    <!-- Scroll Loading States -->
+    <div id="logs-loading-spinner" class="text-center py-3" style="display: none;">
+      <div class="spinner-border spinner-border-sm text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <span class="ms-2 text-white opacity-70" style="font-size: 0.8rem;">Loading more logs...</span>
+    </div>
+    <div id="logs-no-more" class="text-center text-muted py-3" style="display: none; font-size: 0.8rem;">
+      <i class="bi bi-info-circle me-1"></i> No more logs to load.
+    </div>
+  </div>
+
+  <!-- ── Chart.js Scripts ── -->
 <script id="chart-monthly-labels" type="application/json">{{ monthly_labels|safe }}</script>
 <script id="chart-monthly-data" type="application/json">{{ monthly_data|safe }}</script>
 <script id="chart-gender-data" type="application/json">[{{ gender_male }}, {{ gender_female }}]</script>
@@ -896,5 +988,74 @@ new Chart(bCtx, {
     plugins: { legend: { display: false } }
   }
 });
+</script>
+
+<script>
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    const tableContainer = document.getElementById('audit-logs-table-container');
+    const tableBody = tableContainer ? tableContainer.querySelector('tbody') : null;
+    if (!tableContainer || !tableBody) return;
+
+    let nextPage = 2;
+    let hasNext = {% if recent_logs.has_next %}true{% else %}false{% endif %};
+    let loading = false;
+
+    // Hide pagination controls if JS is active
+    const paginationEl = document.getElementById('audit-logs-pagination');
+    if (paginationEl) {
+      paginationEl.style.setProperty('display', 'none', 'important');
+    }
+
+    const spinner = document.getElementById('logs-loading-spinner');
+    const noMoreEl = document.getElementById('logs-no-more');
+
+    // Scroll listener on the scrollable container itself
+    tableContainer.addEventListener('scroll', function() {
+      if (!hasNext || loading) return;
+
+      // When the user has scrolled to the bottom of the container
+      if (tableContainer.scrollHeight - tableContainer.scrollTop <= tableContainer.clientHeight + 40) {
+        loadMoreLogs();
+      }
+    });
+
+    function loadMoreLogs() {
+      loading = true;
+      if (spinner) spinner.style.display = 'block';
+      if (noMoreEl) noMoreEl.style.display = 'none';
+
+      const q = encodeURIComponent('{{ log_search_query|default:"" }}');
+      const action = encodeURIComponent('{{ log_action_selected|default:"" }}');
+      const startDate = encodeURIComponent('{{ log_start_date|default:"" }}');
+      const endDate = encodeURIComponent('{{ log_end_date|default:"" }}');
+
+      const url = `?log_page=${nextPage}&log_q=${q}&log_action=${action}&log_start_date=${startDate}&log_end_date=${endDate}&ajax=1`;
+
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw new Error('Network response error');
+          return response.json();
+        })
+        .then(data => {
+          if (data.html) {
+            tableBody.insertAdjacentHTML('beforeend', data.html);
+          }
+          hasNext = data.has_next;
+          nextPage++;
+          loading = false;
+          if (spinner) spinner.style.display = 'none';
+          if (!hasNext && noMoreEl) {
+            noMoreEl.style.display = 'block';
+          }
+        })
+        .catch(err => {
+          console.error('Error loading audit logs:', err);
+          loading = false;
+          if (spinner) spinner.style.display = 'none';
+        });
+    }
+  });
+})();
 </script>
 {% endblock %}

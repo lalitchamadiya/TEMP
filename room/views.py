@@ -36,6 +36,10 @@ def room_base(request):
     total_students = Student.objects.filter(hostel=hostel).count()
     upcoming_vacancies = 0 # Placeholder for future logic
 
+    total_buildings = HostelBuilding.objects.filter(hostel=hostel).count()
+    total_boys_allocated = beds.filter(student__isnull=False, room__gender='BOY').count()
+    total_girls_allocated = beds.filter(student__isnull=False, room__gender='GIRL').count()
+
     return render(request, 'room/room_base.html', {
         'total_allocated_beds': total_allocated_beds,
         'total_unallocated_beds': total_unallocated_beds,
@@ -47,6 +51,9 @@ def room_base(request):
         'upcoming_vacancies': upcoming_vacancies,
         'total_student': total_students,
         'active_hostel': hostel,
+        'total_buildings': total_buildings,
+        'total_boys_allocated': total_boys_allocated,
+        'total_girls_allocated': total_girls_allocated,
     })
 
 
@@ -62,8 +69,9 @@ def student_details_list(request):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'view')
 def room_manage(request):
-    buildings = HostelBuilding.objects.filter(is_active=True)
-    rooms = Room.objects.select_related('building', 'floor').order_by('room_number')
+    hostel = get_active_hostel(request)
+    buildings = HostelBuilding.objects.filter(hostel=hostel, is_active=True)
+    rooms = Room.objects.filter(hostel=hostel).select_related('building', 'floor').order_by('room_number')
         
     selected_building_id = request.GET.get('building', '')
     q = request.GET.get('q', '').strip()
@@ -98,8 +106,9 @@ def room_available(request):
 # ── AJAX: Rooms filtered by building (JSON) ───────────────────────────────────
 @login_required(login_url='/authentication/login')
 def rooms_by_building(request):
+    hostel = get_active_hostel(request)
     building_id = request.GET.get('building_id', '')
-    rooms_qs = Room.objects.select_related('building', 'floor').order_by('room_number')
+    rooms_qs = Room.objects.filter(hostel=hostel).select_related('building', 'floor').order_by('room_number')
     if building_id:
         rooms_qs = rooms_qs.filter(building_id=building_id)
 
@@ -127,7 +136,8 @@ def rooms_by_building(request):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'view')
 def building_list(request):
-    buildings = HostelBuilding.objects.annotate(room_count=Count('rooms')).order_by('name')
+    hostel = get_active_hostel(request)
+    buildings = HostelBuilding.objects.filter(hostel=hostel).annotate(room_count=Count('rooms')).order_by('name')
     return render(request, 'room/building_list.html', {'buildings': buildings})
 
 
@@ -138,7 +148,9 @@ def building_create(request):
     if request.method == 'POST':
         form = HostelBuildingForm(request.POST)
         if form.is_valid():
-            building = form.save()
+            building = form.save(commit=False)
+            building.hostel = get_active_hostel(request)
+            building.save()
             # Auto-create floors based on total_floors
             total = building.total_floors or 0
             for fn in range(1, total + 1):
@@ -166,7 +178,10 @@ def building_edit(request, pk):
     if request.method == 'POST':
         form = HostelBuildingForm(request.POST, instance=building)
         if form.is_valid():
-            form.save()
+            building = form.save(commit=False)
+            if not building.hostel:
+                building.hostel = get_active_hostel(request)
+            building.save()
             messages.success(request, f'Building "{building.name}" updated.')
             return redirect('building_list')
         messages.error(request, 'Please fix the errors below.')
@@ -206,10 +221,11 @@ def building_toggle(request, pk):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'add')
 def room_allocate(request):
-    rooms = Room.objects.all().order_by('room_number')
-    students = Student.objects.all()
-    available_rooms = Room.objects.filter(beds__student__isnull=True).distinct()
-    buildings = HostelBuilding.objects.filter(is_active=True)
+    hostel = get_active_hostel(request)
+    rooms = Room.objects.filter(hostel=hostel).order_by('room_number')
+    students = Student.objects.filter(hostel=hostel)
+    available_rooms = Room.objects.filter(hostel=hostel, beds__student__isnull=True).distinct()
+    buildings = HostelBuilding.objects.filter(hostel=hostel, is_active=True)
     from .models import BLOCK_CHOICES
 
     total_amount = FeeStructure.objects.aggregate(total=Sum('amount'))['total'] or 0
@@ -463,13 +479,16 @@ def get_students_by_gender(request):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'add')
 def create_room(request):
-    buildings = HostelBuilding.objects.filter(is_active=True)
+    hostel = get_active_hostel(request)
+    buildings = HostelBuilding.objects.filter(hostel=hostel, is_active=True)
     capacity_map = CAPACITY_MAP
 
     if request.method == 'POST':
-        form = CreateRoomForm(request.POST, user=request.user)
+        form = CreateRoomForm(request.POST, user=request.user, hostel=hostel)
         if form.is_valid():
-            room = form.save()
+            room = form.save(commit=False)
+            room.hostel = hostel
+            room.save()
             # Auto-create beds based on capacity
             cap = room.capacity
             for i in range(1, cap + 1):
@@ -488,12 +507,32 @@ def create_room(request):
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = CreateRoomForm(user=request.user)
+        form = CreateRoomForm(user=request.user, hostel=hostel)
+
+    # Fetch base rents and multipliers as JSON
+    from .models import DEFAULT_ROOM_TYPE_PRICES, DEFAULT_CATEGORY_MULTIPLIERS, ROOM_TYPE_CHOICES, ROOM_CATEGORY_CHOICES, RoomTypePricing, RoomCategoryPricing
+    base_rents = {}
+    for t, _ in ROOM_TYPE_CHOICES:
+        if t == 'CUSTOM':
+            continue
+        try:
+            base_rents[t] = float(RoomTypePricing.objects.get(hostel=hostel, room_type=t).base_rent)
+        except RoomTypePricing.DoesNotExist:
+            base_rents[t] = float(DEFAULT_ROOM_TYPE_PRICES.get(t, 0.00))
+
+    category_multipliers = {}
+    for c, _ in ROOM_CATEGORY_CHOICES:
+        try:
+            category_multipliers[c] = float(RoomCategoryPricing.objects.get(hostel=hostel, category=c).multiplier)
+        except RoomCategoryPricing.DoesNotExist:
+            category_multipliers[c] = float(DEFAULT_CATEGORY_MULTIPLIERS.get(c, 1.00))
 
     return render(request, 'room/create_room.html', {
         'form': form,
         'buildings': buildings,
         'capacity_map': capacity_map,
+        'base_rents_json': json.dumps(base_rents),
+        'category_multipliers_json': json.dumps(category_multipliers),
     })
 
 
@@ -501,13 +540,14 @@ def create_room(request):
 @permission_required('room', 'change')
 def edit_room(request, pk):
     room = get_object_or_404(Room, pk=pk)
-    buildings = HostelBuilding.objects.filter(is_active=True)
+    hostel = get_active_hostel(request)
+    buildings = HostelBuilding.objects.filter(hostel=hostel, is_active=True)
     capacity_map = CAPACITY_MAP
 
     if request.method == 'POST':
         old_capacity = room.capacity
         old_rent = room.monthly_rent
-        form = CreateRoomForm(request.POST, instance=room, user=request.user)
+        form = CreateRoomForm(request.POST, instance=room, user=request.user, hostel=hostel)
         if form.is_valid():
             new_capacity = form.cleaned_data['capacity']
 
@@ -524,7 +564,10 @@ def edit_room(request, pk):
                         'action': 'Edit',
                     })
 
-            room = form.save()
+            room = form.save(commit=False)
+            if not room.hostel:
+                room.hostel = hostel
+            room.save()
 
             # Adjust beds
             current_beds_count = room.beds.count()
@@ -562,7 +605,25 @@ def edit_room(request, pk):
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = CreateRoomForm(instance=room, user=request.user)
+        form = CreateRoomForm(instance=room, user=request.user, hostel=hostel)
+
+    # Fetch base rents and multipliers as JSON
+    from .models import DEFAULT_ROOM_TYPE_PRICES, DEFAULT_CATEGORY_MULTIPLIERS, ROOM_TYPE_CHOICES, ROOM_CATEGORY_CHOICES, RoomTypePricing, RoomCategoryPricing
+    base_rents = {}
+    for t, _ in ROOM_TYPE_CHOICES:
+        if t == 'CUSTOM':
+            continue
+        try:
+            base_rents[t] = float(RoomTypePricing.objects.get(hostel=hostel, room_type=t).base_rent)
+        except RoomTypePricing.DoesNotExist:
+            base_rents[t] = float(DEFAULT_ROOM_TYPE_PRICES.get(t, 0.00))
+
+    category_multipliers = {}
+    for c, _ in ROOM_CATEGORY_CHOICES:
+        try:
+            category_multipliers[c] = float(RoomCategoryPricing.objects.get(hostel=hostel, category=c).multiplier)
+        except RoomCategoryPricing.DoesNotExist:
+            category_multipliers[c] = float(DEFAULT_CATEGORY_MULTIPLIERS.get(c, 1.00))
 
     return render(request, 'room/create_room.html', {
         'form': form,
@@ -570,6 +631,8 @@ def edit_room(request, pk):
         'capacity_map': capacity_map,
         'room': room,
         'action': 'Edit',
+        'base_rents_json': json.dumps(base_rents),
+        'category_multipliers_json': json.dumps(category_multipliers),
     })
 
 
@@ -619,8 +682,9 @@ def delete_allocation(request, bed_id):
 @login_required(login_url='/authentication/login')
 @permission_required('room', 'view')
 def student_allocated_view(request, room_id):
-    rooms = Room.objects.all().order_by('room_number')
-    room = get_object_or_404(Room, pk=room_id)
+    hostel = get_active_hostel(request)
+    rooms = Room.objects.filter(hostel=hostel).order_by('room_number')
+    room = get_object_or_404(Room, pk=room_id, hostel=hostel)
     beds = room.beds.select_related('student').all()
     total_beds = beds.count()
     occupied_beds = beds.filter(student__isnull=False).count()
@@ -803,4 +867,96 @@ def room_auto_allocate_execute(request):
         messages.warning(request, 'No auto-allocations were performed.')
 
     return redirect('room_manage')
+
+
+@login_required(login_url='/authentication/login')
+@permission_required('room', 'change')
+def change_room(request, current_bed_id):
+    current_bed = get_object_or_404(Bed, id=current_bed_id)
+    student = current_bed.student
+
+    if not student:
+        messages.error(request, "This bed is not occupied.")
+        return redirect('room_manage')
+
+    hostel = get_active_hostel(request)
+    buildings = HostelBuilding.objects.filter(hostel=hostel, is_active=True)
+
+    # Filter buildings by gender compatibility
+    if student.gender == 'Male':
+        buildings = buildings.filter(gender__in=['BOY', 'MIXED'])
+    elif student.gender == 'Female':
+        buildings = buildings.filter(gender__in=['GIRL', 'MIXED'])
+
+    from .models import BLOCK_CHOICES
+
+    if request.method == 'POST':
+        new_room_id = request.POST.get('room-select')
+        new_bed_number = request.POST.get('bed-select')
+
+        if not new_room_id or not new_bed_number:
+            messages.error(request, "Please select both a room and a bed.")
+        else:
+            try:
+                new_room = Room.objects.get(pk=new_room_id, hostel=hostel)
+                target_bed = Bed.objects.get(room=new_room, bed_number=new_bed_number)
+
+                # Validation
+                if target_bed.student is not None:
+                    messages.error(request, "The selected bed is already occupied.")
+                elif new_room.gender == 'BOY' and student.gender != 'Male':
+                    messages.error(request, f"This room/building ({new_room.room_number}) is for Boys, but student is {student.gender}.")
+                elif new_room.gender == 'GIRL' and student.gender != 'Female':
+                    messages.error(request, f"This room/building ({new_room.room_number}) is for Girls, but student is {student.gender}.")
+                else:
+                    # Perform room change transaction
+                    from django.db import transaction
+                    with transaction.atomic():
+                        # Save old bed info context
+                        old_room_number = current_bed.room.room_number
+
+                        # Deallocate old bed
+                        current_bed.student = None
+                        current_bed.paid_amount = 0
+                        current_bed.remaining_amount = 0
+                        current_bed.total_amount = 0
+                        current_bed.save()
+
+                        # Allocate new bed
+                        yearly_amount = (new_room.monthly_rent or 0) * 12
+                        target_bed.student = student
+                        target_bed.total_amount = yearly_amount
+                        target_bed.remaining_amount = yearly_amount
+                        target_bed.paid_amount = 0
+                        target_bed.save()
+
+                        # Log the action to AuditLog
+                        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                        if x_forwarded_for:
+                            ip = x_forwarded_for.split(',')[0].strip()
+                        else:
+                            ip = request.META.get('REMOTE_ADDR')
+
+                        from authentication.models import AuditLog
+                        AuditLog.objects.create(
+                            actor=request.user,
+                            target_user=student.user if hasattr(student, 'user') else None,
+                            hostel=hostel,
+                            action='edit',
+                            details=f"Changed room for student {student.name} from Room {old_room_number} to Room {new_room.room_number} (Bed {target_bed.bed_number})",
+                            ip_address=ip
+                        )
+
+                    messages.success(request, f"Successfully changed {student.name}'s room from Room {old_room_number} to Room {new_room.room_number} (Bed {target_bed.bed_number}).")
+                    return redirect('student_allocated_view', room_id=new_room.id)
+            except Exception as e:
+                messages.error(request, f"Error changing room: {str(e)}")
+
+    return render(request, 'room/change_room.html', {
+        'current_bed': current_bed,
+        'student': student,
+        'buildings': buildings,
+        'blocks': BLOCK_CHOICES,
+        'active_hostel': hostel,
+    })
 

@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .views import (
     RegistrationView, UserNameValidationView, EmailValidationView,
     LoginView, LogoutView,
-    role_list, role_create, role_edit, role_delete, role_clone, permission_overview,
+    role_list, role_create, role_edit, role_delete, role_clone, permission_overview, add_custom_permission_element,
     user_list, user_create, user_detail, user_edit, user_delete,
     user_toggle_status, user_lock, user_reset_password,
     user_change_role, user_export, user_audit,
@@ -27,6 +27,7 @@ urlpatterns = [
     path('roles/edit/<int:pk>/', role_edit, name='role_edit'),
     path('roles/delete/<int:pk>/', role_delete, name='role_delete'),
     path('roles/<int:pk>/clone/', role_clone, name='role_clone'),
+    path('roles/custom-permission/', add_custom_permission_element, name='add_custom_permission_element'),
     path('api/user-permissions/<int:pk>/', permission_overview, name='permission_overview'),
 
     # User Management

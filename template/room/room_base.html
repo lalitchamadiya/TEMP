@@ -40,6 +40,7 @@
         margin-bottom: 1.25rem;
     }
 
+    .grad-cyan { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); box-shadow: 0 8px 15px rgba(6, 182, 212, 0.2); }
     .grad-blue { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); box-shadow: 0 8px 15px rgba(99, 102, 241, 0.2); }
     .grad-purple { background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%); box-shadow: 0 8px 15px rgba(168, 85, 247, 0.2); }
     .grad-pink { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); box-shadow: 0 8px 15px rgba(236, 72, 153, 0.2); }
@@ -62,6 +63,25 @@
         letter-spacing: 0.05em;
     }
 
+    @media (max-width: 575.98px) {
+        .icon-box-gradient {
+            width: 44px !important;
+            height: 44px !important;
+            font-size: 1.20rem !important;
+            margin-bottom: 0.75rem !important;
+            border-radius: 0.75rem !important;
+        }
+        .stat-value {
+            font-size: 1.45rem !important;
+        }
+        .stat-label {
+            font-size: 0.72rem !important;
+        }
+        .stat-card-premium {
+            padding: 1.1rem !important;
+        }
+    }
+
 </style>
 
 <div class="container-fluid py-4">
@@ -76,19 +96,30 @@
     {% include 'room/room_nav.html' %}
 
     <div class="row g-4 mt-1">
-        <!-- Card 1: Total Rooms -->
-        <div class="col-md-4 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+        <!-- Card 1: Total Buildings -->
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="glass-card stat-card-premium p-4 h-100">
+                <div class="icon-box-gradient grad-cyan">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div class="stat-value">{{ total_buildings|default:0 }}</div>
+                <div class="stat-label">Total Buildings</div>
+            </div>
+        </div>
+
+        <!-- Card 2: Total Rooms -->
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="glass-card stat-card-premium p-4 h-100">
                 <div class="icon-box-gradient grad-blue">
                     <i class="bi bi-door-closed"></i>
                 </div>
-                <div class="stat-value">{{ total_availabel_room }}</div>
+                <div class="stat-value">{{ total_availabel_room|default:0 }}</div>
                 <div class="stat-label">Total Rooms</div>
             </div>
         </div>
 
-        <!-- Card 2: Boys Rooms -->
-        <div class="col-md-4 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+        <!-- Card 3: Boys Wing -->
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="glass-card stat-card-premium p-4 h-100">
                 <div class="icon-box-gradient grad-purple">
                     <i class="bi bi-person-standing"></i>
@@ -98,8 +129,8 @@
             </div>
         </div>
 
-        <!-- Card 3: Girls Rooms -->
-        <div class="col-md-4 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+        <!-- Card 4: Girls Wing -->
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="glass-card stat-card-premium p-4 h-100">
                 <div class="icon-box-gradient grad-pink">
                     <i class="bi bi-person-standing-dress"></i>
@@ -109,24 +140,24 @@
             </div>
         </div>
 
-        <!-- Card 4: Allocated Beds -->
-        <div class="col-md-6 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+        <!-- Card 5: Allocated Beds -->
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="glass-card stat-card-premium p-4 h-100">
                 <div class="icon-box-gradient grad-green">
                     <i class="bi bi-check-all"></i>
                 </div>
-                <div class="stat-value">{{ total_allocated_beds }}</div>
+                <div class="stat-value">{{ total_allocated_beds|default:0 }}</div>
                 <div class="stat-label">Allocated</div>
             </div>
         </div>
 
-        <!-- Card 5: Unallocated Beds -->
-        <div class="col-md-6 col-lg-2-4" style="flex: 0 0 auto; width: 20%;">
+        <!-- Card 6: Vacant Beds -->
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="glass-card stat-card-premium p-4 h-100">
                 <div class="icon-box-gradient grad-orange">
                     <i class="bi bi-exclamation-square"></i>
                 </div>
-                <div class="stat-value">{{ total_unallocated_beds }}</div>
+                <div class="stat-value">{{ total_unallocated_beds|default:0 }}</div>
                 <div class="stat-label">Vacant Beds</div>
             </div>
         </div>
@@ -181,6 +212,32 @@
                         <span class="badge bg-info bg-opacity-10 text-info fw-bold px-3 py-1.5" style="font-size:0.75rem;">{{ total_reserved_beds|default:0 }}</span>
                     </div>
 
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-2">
+                                <i class="bi bi-person-fill-check text-primary fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size:0.9rem;">Boys Residents</h6>
+                                <small class="text-muted">Active boys allocated</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1.5" style="font-size:0.75rem;">{{ total_boys_allocated|default:0 }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-danger bg-opacity-10 p-2 me-2">
+                                <i class="bi bi-person-fill-check text-danger fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size:0.9rem;">Girls Residents</h6>
+                                <small class="text-muted">Active girls allocated</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-danger bg-opacity-10 text-danger fw-bold px-3 py-1.5" style="font-size:0.75rem;">{{ total_girls_allocated|default:0 }}</span>
+                    </div>
+
                     <div class="d-flex justify-content-between align-items-center mb-3 pb-3">
                         <div class="d-flex align-items-center">
                             <div class="rounded-circle bg-secondary bg-opacity-10 p-2 me-2">
@@ -195,10 +252,7 @@
                     </div>
                 </div>
 
-                <div class="bg-light rounded-3 p-3 text-center mt-3">
-                    <span class="text-muted small">Active Hostel context:</span>
-                    <div class="fw-bold text-dark fs-6">{{ active_hostel.name|default:"Not selected" }}</div>
-                </div>
+
             </div>
         </div>
     </div>

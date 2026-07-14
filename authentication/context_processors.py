@@ -14,12 +14,14 @@ def rbac_context(request):
       user_permissions  — dict  {module_code: {action: bool, ...}}
       visible_modules   — list  of Module objects the user has can_view=True on
       is_superadmin     — bool
+      user_element_permissions — dict {element_code: bool}
     """
     if not request.user.is_authenticated:
         return {
             'user_permissions': {},
             'visible_modules': [],
             'is_superadmin': False,
+            'user_element_permissions': {},
         }
 
     # Use per-request cache to avoid duplicate DB queries
@@ -41,6 +43,7 @@ def rbac_context(request):
     )
 
     all_modules = list(Module.objects.order_by('order', 'name'))
+    from .models import PermissionElement, RoleElementPermission
 
     if is_super:
         # Super admin sees everything with all actions enabled
@@ -51,9 +54,11 @@ def rbac_context(request):
             for m in all_modules
         }
         visible_modules = all_modules
+        user_element_permissions = {el.code: True for el in PermissionElement.objects.all()}
     else:
         user_permissions = {}
         visible_modules = []
+        user_element_permissions = {}
 
         if profile and profile.role:
             role = request.user.profile.role
@@ -86,11 +91,17 @@ def rbac_context(request):
                         for action in ['view', 'add', 'edit', 'delete', 'approve',
                                        'reject', 'export', 'print', 'import', 'hide', 'disable']
                     }
+            
+            # Load granular element permissions
+            role_el_perms = RoleElementPermission.objects.filter(role=role, is_enabled=True).select_related('element')
+            for rep in role_el_perms:
+                user_element_permissions[rep.element.code] = True
 
     result = {
         'user_permissions': user_permissions,
         'visible_modules': visible_modules,
         'is_superadmin': is_super,
+        'user_element_permissions': user_element_permissions,
     }
     request._rbac_cache = result
     return result

@@ -63,3 +63,24 @@ def get_item(dictionary, key):
     if dictionary and hasattr(dictionary, 'get'):
         return dictionary.get(key)
     return None
+
+
+@register.simple_tag
+def has_element_perm(user, element_code):
+    """
+    Usage: {% has_element_perm user 'btn_create_room' %}
+    Returns True/False.
+    """
+    from authentication.decorators import check_element_perm
+    return check_element_perm(user, element_code)
+
+
+@register.filter(name='has_element_perm')
+def has_element_perm_filter(user, element_code):
+    """
+    Usage: {{ user|has_element_perm:'btn_create_room' }}
+    Returns True/False.
+    """
+    from authentication.decorators import check_element_perm
+    return check_element_perm(user, element_code)
+

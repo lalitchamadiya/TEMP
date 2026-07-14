@@ -57,6 +57,55 @@ CAPACITY_MAP = {
     'CUSTOM': 0,
 }
 
+DEFAULT_ROOM_TYPE_PRICES = {
+    'SINGLE': 8000.00,
+    'DOUBLE': 6000.00,
+    'TRIPLE': 5000.00,
+    'DORMITORY': 3000.00,
+    'DELUXE': 9000.00,
+    'AC': 6000.00,
+    'NON_AC': 6000.00,
+}
+
+DEFAULT_CATEGORY_MULTIPLIERS = {
+    'GENERAL': 1.00,
+    'VIP': 1.30,
+    'STAFF': 0.00,
+    'RESERVED': 0.00,
+}
+
+
+class RoomTypePricing(models.Model):
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='room_type_pricings', null=True, blank=True)
+    room_type = models.CharField(max_length=50)
+    label = models.CharField(max_length=100, blank=True, null=True)
+    base_rent = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('hostel', 'room_type')
+        db_table = 'room_type_pricing'
+
+    def __str__(self):
+        return f"{self.label or self.room_type}: {self.base_rent}"
+
+
+class RoomCategoryPricing(models.Model):
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='room_category_pricings', null=True, blank=True)
+    category = models.CharField(max_length=50)
+    label = models.CharField(max_length=100, blank=True, null=True)
+    multiplier = models.DecimalField(max_digits=4, decimal_places=2, default=1.00)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('hostel', 'category')
+        db_table = 'room_category_pricing'
+
+    def __str__(self):
+        return f"{self.label or self.category}: {self.multiplier}"
+
+
+
 
 class HostelBuilding(models.Model):
     hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='buildings', null=True, blank=True)
@@ -210,33 +259,48 @@ class Room(models.Model):
     def calculate_suggested_rent(self):
         """
         Calculate suggested monthly rent based on:
-        - Room Type Base Rent
-        - Category Multiplier
+        - Room Type Base Rent (dynamic if configured)
+        - Category Multiplier (dynamic if configured)
         - AC Amenity Charge
         """
         if self.room_type == 'CUSTOM':
             return self.monthly_rent
 
         # Base Rent Map
-        base_rent_map = {
-            'SINGLE': 8000,
-            'DOUBLE': 6000,
-            'TRIPLE': 5000,
-            'DORMITORY': 3000,
-            'DELUXE': 9000,
-            'AC': 6000,
-            'NON_AC': 6000,
-        }
-        base_rent = base_rent_map.get(self.room_type, 0)
+        base_rent = None
+        if self.hostel:
+            try:
+                pricing = RoomTypePricing.objects.get(hostel=self.hostel, room_type=self.room_type)
+                if pricing.is_active:
+                    base_rent = pricing.base_rent
+            except RoomTypePricing.DoesNotExist:
+                pass
+        
+        if base_rent is None:
+            try:
+                pricing = RoomTypePricing.objects.get(hostel__isnull=True, room_type=self.room_type)
+                if pricing.is_active:
+                    base_rent = pricing.base_rent
+            except RoomTypePricing.DoesNotExist:
+                base_rent = DEFAULT_ROOM_TYPE_PRICES.get(self.room_type, 0.00)
 
         # Category Multipliers
-        category_multipliers = {
-            'GENERAL': 1.0,
-            'VIP': 1.3,
-            'STAFF': 0.0,
-            'RESERVED': 0.0,
-        }
-        multiplier = category_multipliers.get(self.category, 0.0)
+        multiplier = None
+        if self.hostel:
+            try:
+                pricing = RoomCategoryPricing.objects.get(hostel=self.hostel, category=self.category)
+                if pricing.is_active:
+                    multiplier = pricing.multiplier
+            except RoomCategoryPricing.DoesNotExist:
+                pass
+
+        if multiplier is None:
+            try:
+                pricing = RoomCategoryPricing.objects.get(hostel__isnull=True, category=self.category)
+                if pricing.is_active:
+                    multiplier = pricing.multiplier
+            except RoomCategoryPricing.DoesNotExist:
+                multiplier = DEFAULT_CATEGORY_MULTIPLIERS.get(self.category, 0.00)
 
         # Amenity Charge (AC)
         amenity_charge = 0

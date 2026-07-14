@@ -31,6 +31,9 @@
         font-size: 0.8rem;
         padding-left: 20px !important;
     }
+    .sidebar-pro .collapse-submenu-list .nav-link.active::before {
+        display: none !important;
+    }
     
     /* Collapsed Sidebar Adjustments */
     .sidebar-wrapper.sidebar-collapsed .collapse-chevron {
@@ -85,10 +88,52 @@
                 <span class="section-title">System Controls</span>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' %}active{% endif %}" href="{% url 'system_settings_view' %}" title="System Settings">
+                <a class="nav-link nav-link-collapse collapsed {% if request.resolver_match.url_name == 'system_settings_view' %}active{% endif %}" 
+                   data-bs-toggle="collapse" href="#settingsCollapse" role="button" aria-expanded="{% if request.resolver_match.url_name == 'system_settings_view' %}true{% else %}false{% endif %}" aria-controls="settingsCollapse" title="System Settings">
                     <span class="material-symbols-outlined">settings</span>
                     <span class="sidebar-label">System Settings</span>
+                    <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
                 </a>
+                <div class="collapse {% if request.resolver_match.url_name == 'system_settings_view' %}show{% endif %}" id="settingsCollapse">
+                    <ul class="collapse-submenu-list">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'branding' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=branding" title="Identity & Branding">
+                                <i class="bi bi-shield-lock opacity-75 fs-6 me-2"></i>
+                                <span class="sidebar-label">Identity & Branding</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'theme' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=theme" title="Theme & Styling">
+                                <i class="bi bi-palette opacity-75 fs-6 me-2"></i>
+                                <span class="sidebar-label">Theme & Styling</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'regional' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=regional" title="Regional Defaults">
+                                <i class="bi bi-globe opacity-75 fs-6 me-2"></i>
+                                <span class="sidebar-label">Regional Defaults</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'security' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=security" title="Security & Sessions">
+                                <i class="bi bi-shield-check opacity-75 fs-6 me-2"></i>
+                                <span class="sidebar-label">Security & Sessions</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'access' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=access" title="Access Control">
+                                <i class="bi bi-shield-slash opacity-75 fs-6 me-2"></i>
+                                <span class="sidebar-label">Access Control</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'operations' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=operations" title="Data & Systems">
+                                <i class="bi bi-clipboard-pulse opacity-75 fs-6 me-2"></i>
+                                <span class="sidebar-label">Data & Systems</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'role_list' or request.resolver_match.url_name == 'role_create' or request.resolver_match.url_name == 'role_edit' or request.resolver_match.url_name == 'role_delete' %}active{% endif %}" href="{% url 'role_list' %}" title="Roles & Permissions">

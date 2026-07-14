@@ -199,6 +199,14 @@ class SystemSettings(models.Model):
     license_key = models.TextField(blank=True)
     license_expiry = models.DateField(null=True, blank=True)
 
+    # Security Settings
+    session_timeout = models.IntegerField(default=1800, help_text="Session timeout in seconds")
+    login_attempt_limit = models.IntegerField(default=5, help_text="Max login attempts before lockout")
+    allowed_ips = models.TextField(blank=True, help_text="Allowed IP ranges/CSV list (blank to disable check)")
+    enable_audit_logs = models.BooleanField(default=True, help_text="Toggle logging system events")
+    password_expiry_days = models.IntegerField(default=90, help_text="Force password reset after X days (0 to disable)")
+    backup_frequency = models.CharField(max_length=20, default='daily', help_text="Frequency of database backups")
+
     class Meta:
         verbose_name = "Global System Settings"
         verbose_name_plural = "Global System Settings"
@@ -211,5 +219,34 @@ class SystemSettings(models.Model):
     def get_settings(cls):
         settings, created = cls.objects.get_or_create(pk=1)
         return settings
+
+
+class PermissionElement(models.Model):
+    CATEGORY_CHOICES = [
+        ('page', 'Page / View'),
+        ('button', 'Button / CTA'),
+        ('item', 'Minor UI Item / Section'),
+        ('api', 'API Endpoint / Action'),
+    ]
+    code = models.SlugField(max_length=100, unique=True, help_text="Unique permission code e.g. btn_create_room")
+    name = models.CharField(max_length=150, help_text="Human readable name e.g. New Room Button")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='button')
+    description = models.TextField(blank=True, help_text="What this permission controls")
+    module = models.ForeignKey('Module', on_delete=models.SET_NULL, null=True, blank=True, related_name='elements')
+
+    def __str__(self):
+        return f"{self.get_category_display()} - {self.name} ({self.code})"
+
+
+class RoleElementPermission(models.Model):
+    role = models.ForeignKey('Role', on_delete=models.CASCADE, related_name='element_permissions')
+    element = models.ForeignKey(PermissionElement, on_delete=models.CASCADE, related_name='role_permissions')
+    is_enabled = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('role', 'element')
+
+    def __str__(self):
+        return f"{self.role.name} -> {self.element.code}: {self.is_enabled}"
 
 

@@ -57,11 +57,36 @@ def student_details(request):
 def fee_structure(request):
     from django.db import IntegrityError
     from .models import InstallmentConfig
-    
-    config = InstallmentConfig.get_config()
+    from room.models import (
+        RoomTypePricing, RoomCategoryPricing,
+        ROOM_TYPE_CHOICES, ROOM_CATEGORY_CHOICES,
+        DEFAULT_ROOM_TYPE_PRICES, DEFAULT_CATEGORY_MULTIPLIERS,
+    )
+    from room.views import get_active_hostel
+    from decimal import Decimal
+
+    hostel = get_active_hostel(request)
+    config = InstallmentConfig.get_config(hostel=hostel)
+
+    # Prepopulate defaults for active hostel
+    for t, label in ROOM_TYPE_CHOICES:
+        if t == 'CUSTOM':
+            continue
+        RoomTypePricing.objects.get_or_create(
+            hostel=hostel, room_type=t,
+            defaults={'base_rent': DEFAULT_ROOM_TYPE_PRICES.get(t, 0.00), 'label': label}
+        )
+
+    for c, label in ROOM_CATEGORY_CHOICES:
+        RoomCategoryPricing.objects.get_or_create(
+            hostel=hostel, category=c,
+            defaults={'multiplier': DEFAULT_CATEGORY_MULTIPLIERS.get(c, 1.00), 'label': label}
+        )
 
     if request.method == 'POST':
         action = request.POST.get('action')
+        
+        # Action A: Save Installment & Penalty Schedule
         if action == 'save_installments':
             part1_due = request.POST.get('part1_due_date')
             part1_penalty = request.POST.get('part1_late_fee_per_day')
@@ -69,50 +94,131 @@ def fee_structure(request):
             part2_penalty = request.POST.get('part2_late_fee_per_day')
 
             try:
-                if part1_due:
-                    config.part1_due_date = part1_due
-                else:
-                    config.part1_due_date = None
-                    
+                config.part1_due_date = part1_due if part1_due else None
                 if part1_penalty:
                     config.part1_late_fee_per_day = Decimal(part1_penalty)
-                    
-                if part2_due:
-                    config.part2_due_date = part2_due
-                else:
-                    config.part2_due_date = None
-                    
+                config.part2_due_date = part2_due if part2_due else None
                 if part2_penalty:
                     config.part2_late_fee_per_day = Decimal(part2_penalty)
-
                 config.save()
-                messages.success(request, 'Installment configuration updated successfully.')
-                return redirect('fee_structure')
+                messages.success(request, 'Installment and penalty schedule updated successfully.')
             except Exception as e:
                 messages.error(request, f"Error updating installment configuration: {str(e)}")
-        else:
-            amount = request.POST.get('amount')
-            fee_type = request.POST.get('fee_type')
-            if amount and fee_type:
+            return redirect('fee_structure')
+
+        # Action B: Bulk save prices & multipliers
+        elif action == 'save_prices':
+            room_types = RoomTypePricing.objects.filter(hostel=hostel)
+            for rtp in room_types:
+                val = request.POST.get(f'price_{rtp.room_type}')
+                if val is not None:
+                    try:
+                        rtp.base_rent = Decimal(val)
+                        rtp.save()
+                    except Exception:
+                        pass
+            
+            categories = RoomCategoryPricing.objects.filter(hostel=hostel)
+            for rcp in categories:
+                val = request.POST.get(f'mult_{rcp.category}')
+                if val is not None:
+                    try:
+                        rcp.multiplier = Decimal(val)
+                        rcp.save()
+                    except Exception:
+                        pass
+            messages.success(request, 'Pricing options configurations updated successfully.')
+            return redirect('fee_structure')
+
+        # Action C: Add Room Type Option
+        elif action == 'add_room_type':
+            label_val = request.POST.get('label', '').strip()
+            rent_val = request.POST.get('base_rent', '0.00').strip()
+            if label_val:
+                code_val = label_val.upper().replace(' ', '_')
                 try:
-                    amount_decimal = Decimal(amount)
-                    if amount_decimal <= 0:
-                        messages.error(request, 'Fee amount must be greater than zero.')
-                    else:
-                        FeeStructure.objects.create(fee_type=fee_type, amount=amount_decimal)
-                        messages.success(request, 'Fee structure created successfully.')
-                        return redirect('fee_structure')
-                except InvalidOperation:
-                    messages.error(request, 'Invalid amount format.')
+                    RoomTypePricing.objects.create(
+                        hostel=hostel,
+                        room_type=code_val,
+                        label=label_val,
+                        base_rent=Decimal(rent_val),
+                        is_active=True
+                    )
+                    messages.success(request, f"Room type option '{label_val}' added successfully.")
                 except IntegrityError:
-                    messages.error(request, f"Fee type '{fee_type}' already exists. Delete existing items before recreating them.")
+                    messages.error(request, f"Room type option '{label_val}' already exists.")
                 except Exception as e:
-                    messages.error(request, f"Error: {str(e)}")
-                    
-    fee_structures = FeeStructure.objects.all()
+                    messages.error(request, f"Error adding room type option: {str(e)}")
+            return redirect('fee_structure')
+
+        # Action D: Add Category Option
+        elif action == 'add_category':
+            label_val = request.POST.get('label', '').strip()
+            mult_val = request.POST.get('multiplier', '1.00').strip()
+            if label_val:
+                code_val = label_val.upper().replace(' ', '_')
+                try:
+                    RoomCategoryPricing.objects.create(
+                        hostel=hostel,
+                        category=code_val,
+                        label=label_val,
+                        multiplier=Decimal(mult_val),
+                        is_active=True
+                    )
+                    messages.success(request, f"Category option '{label_val}' added successfully.")
+                except IntegrityError:
+                    messages.error(request, f"Category option '{label_val}' already exists.")
+                except Exception as e:
+                    messages.error(request, f"Error adding category option: {str(e)}")
+            return redirect('fee_structure')
+
+        # Action E: Toggle room type activation status
+        elif action == 'toggle_room_type':
+            pk_val = request.POST.get('pk')
+            pricing = get_object_or_404(RoomTypePricing, pk=pk_val, hostel=hostel)
+            pricing.is_active = not pricing.is_active
+            pricing.save()
+            state = 'enabled' if pricing.is_active else 'disabled'
+            messages.success(request, f"Room type option '{pricing.label or pricing.room_type}' is now {state}.")
+            return redirect('fee_structure')
+
+        # Action F: Toggle category activation status
+        elif action == 'toggle_category':
+            pk_val = request.POST.get('pk')
+            pricing = get_object_or_404(RoomCategoryPricing, pk=pk_val, hostel=hostel)
+            pricing.is_active = not pricing.is_active
+            pricing.save()
+            state = 'enabled' if pricing.is_active else 'disabled'
+            messages.success(request, f"Category option '{pricing.label or pricing.category}' is now {state}.")
+            return redirect('fee_structure')
+
+        # Action G: Delete room type option
+        elif action == 'delete_room_type':
+            pk_val = request.POST.get('pk')
+            pricing = get_object_or_404(RoomTypePricing, pk=pk_val, hostel=hostel)
+            label = pricing.label or pricing.room_type
+            pricing.delete()
+            messages.success(request, f"Room type option '{label}' deleted successfully.")
+            return redirect('fee_structure')
+
+        # Action H: Delete category option
+        elif action == 'delete_category':
+            pk_val = request.POST.get('pk')
+            pricing = get_object_or_404(RoomCategoryPricing, pk=pk_val, hostel=hostel)
+            label = pricing.label or pricing.category
+            pricing.delete()
+            messages.success(request, f"Category option '{label}' deleted successfully.")
+            return redirect('fee_structure')
+
+    # GET request
+    room_types_prices = RoomTypePricing.objects.filter(hostel=hostel)
+    room_categories_multipliers = RoomCategoryPricing.objects.filter(hostel=hostel)
+
     return render(request, 'paybill/fee_structure.html', {
-        'fee_structures': fee_structures,
-        'installment_config': config
+        'room_types_prices': room_types_prices,
+        'room_categories_multipliers': room_categories_multipliers,
+        'installment_config': config,
+        'active_hostel': hostel,
     })
 
 @login_required(login_url='/authentication/login')
