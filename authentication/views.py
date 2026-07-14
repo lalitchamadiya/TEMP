@@ -147,6 +147,8 @@ class LoginView(View):
                             return redirect('warden_dashboard')
                         elif role_name == 'Staff':
                             return redirect('superadmin_dashboard')
+                        elif role_name in ('Security Guard', 'Security'):
+                            return redirect('security_dashboard')
                     return redirect('superadmin_dashboard')
 
                 messages.error(request, 'Account is not active')

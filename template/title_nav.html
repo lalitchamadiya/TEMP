@@ -163,7 +163,7 @@
                 {% if is_superadmin %}
                 <small class="text-muted text-uppercase" style="font-size:0.6rem; letter-spacing:0.02em;">Super Admin</small>
                 {% else %}
-                <small class="text-muted text-uppercase" style="font-size:0.6rem; letter-spacing:0.02em;">{{ user.profile.role.name|default:"Member" }}</small>
+                <small class="text-muted text-uppercase" style="font-size:0.6rem; letter-spacing:0.02em;">{{ request.user.profile.role.name|default:"Member" }}</small>
                 {% endif %}
             </li>
             <li>

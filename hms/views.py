@@ -52,6 +52,8 @@ def dashboard(request):
         return redirect('warden_dashboard')
     if role_name == 'Admin':
         return redirect('superadmin_dashboard')
+    if role_name in ('Security Guard', 'Security'):
+        return redirect('security_dashboard')
     return redirect('superadmin_dashboard')
 
 
@@ -61,6 +63,16 @@ def dashboard(request):
 @login_required(login_url='/authentication/login')
 def superadmin_dashboard(request):
     if not _is_admin(request.user):
+        try:
+            r_name = request.user.profile.role.name
+        except Exception:
+            r_name = None
+        if r_name == 'Warden':
+            return redirect('warden_dashboard')
+        elif r_name in ('Security Guard', 'Security'):
+            return redirect('security_dashboard')
+        elif r_name == 'Student' or hasattr(request.user, 'student'):
+            return redirect('student_app:student_dashboard')
         return redirect('student_app:student_dashboard')
 
     today = timezone.now().date()
