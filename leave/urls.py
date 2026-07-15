@@ -11,6 +11,7 @@ urlpatterns = [
     path('leave/delete/<int:leave_id>/', views.delete_leave, name='delete_leave'),
     path('leave/edit/<int:leave_id>/', views.edit_leave, name='edit_leave'),
     path('gate_pass_management/', views.gate_pass_management, name='gate_pass_management'),
+    path('gate_pass/cancel/<int:gp_id>/', views.cancel_gate_pass, name='cancel_gate_pass'),
     path('download_gate_pass/<int:gp_id>/', views.download_gate_pass_pdf, name='download_gate_pass'),
     path('leave_reports/', views.leave_reports, name='leave_reports'),
     path('security/dashboard/', views.security_dashboard, name='security_dashboard'),

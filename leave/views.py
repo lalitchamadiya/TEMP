@@ -360,6 +360,42 @@ def delete_leave(request, leave_id):
     messages.success(request, 'Deleted successfully.')
     return redirect('leave_record')
 
+@login_required(login_url='/authentication/login')    
+@permission_required('leave', 'delete')
+def cancel_gate_pass(request, gp_id):
+    if request.method == 'POST':
+        gp = get_object_or_404(GatePass, id=gp_id)
+        
+        with transaction.atomic():
+            gp.status = 'Cancelled'
+            gp.save()
+            
+            # Revert corresponding leave status to rejected
+            leave = gp.leave_request
+            leave.status = 'rejected'
+            leave.save()
+            
+            # Deactivate all active QR passes for this leave
+            leave.qr_passes.filter(is_used=False).update(is_used=True)
+            
+            # Notify the student
+            Notification.objects.create(
+                user=leave.student.user,
+                message=f"Your Gate Pass {gp.gate_pass_no} has been cancelled by the administration."
+            )
+            
+            # Audit logging
+            AuditLog.objects.create(
+                actor=request.user,
+                target_user=leave.student.user,
+                action='delete',
+                details=f"Cancelled Gate Pass {gp.gate_pass_no} for student {leave.student.name}",
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+            
+        messages.success(request, f"Gate Pass {gp.gate_pass_no} cancelled successfully.")
+    return redirect('gate_pass_management')
+
 # ==================== NEW QR CODE SERVICE & SCAN WORKFLOW ====================
 
 import qrcode

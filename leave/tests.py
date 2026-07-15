@@ -168,3 +168,30 @@ class LeaveGatingTestCase(TestCase):
         
         # Check for error in response context
         self.assertEqual(response.context['error_msg'], "Pass Already Used")
+
+    def test_cancel_gate_pass(self):
+        self.leave.status = 'approved'
+        self.leave.save()
+        gp = GatePass.objects.create(gate_pass_no='GP-12345', leave_request=self.leave)
+        
+        # Create an active QRPass
+        qr = QRPass.objects.create(
+            leave=self.leave,
+            pass_type='EXIT',
+            expires_at=timezone.now() + timedelta(days=1)
+        )
+        
+        url = reverse('cancel_gate_pass', kwargs={'gp_id': gp.id})
+        response = self.client.post(url)
+        
+        # Verify redirect
+        self.assertRedirects(response, reverse('gate_pass_management'))
+        
+        # Verify status changes
+        gp.refresh_from_db()
+        self.leave.refresh_from_db()
+        qr.refresh_from_db()
+        
+        self.assertEqual(gp.status, 'Cancelled')
+        self.assertEqual(self.leave.status, 'rejected')
+        self.assertTrue(qr.is_used)
