@@ -91,6 +91,74 @@
         text-transform: uppercase;
         transition: all 0.2s ease;
     }
+
+    /* Success Checkmark & Overlay styles */
+    #success-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.9);
+        z-index: 99999;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+    }
+    #success-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .checkmark-wrapper {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .checkmark-svg {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 4;
+        stroke: #10b981;
+        stroke-miterlimit: 10;
+        box-shadow: inset 0px 0px 0px #10b981;
+        animation: fill-anim .4s ease-in-out .4s forwards, scale-anim .3s ease-in-out .9s both;
+    }
+    .checkmark-circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-width: 4;
+        stroke-miterlimit: 10;
+        stroke: #10b981;
+        fill: none;
+        animation: stroke-anim .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .checkmark-check {
+        transform-origin: 50% 50%;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        stroke: white;
+        stroke-linecap: round;
+        animation: stroke-anim .3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke-anim {
+        100% { stroke-dashoffset: 0; }
+    }
+    @keyframes fill-anim {
+        100% { box-shadow: inset 0px 0px 0px 50px #10b981; }
+    }
+    @keyframes scale-anim {
+        0%, 100% { transform: none; }
+        50% { transform: scale3d(1.1, 1.1, 1); }
+    }
 </style>
 
 <div class="container py-5 min-vh-100">
@@ -191,4 +259,69 @@
         </div>
     </div>
 </div>
+
+<div id="success-overlay">
+    <div class="checkmark-wrapper">
+         <svg class="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+             <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+             <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+         </svg>
+    </div>
+    <h2 id="success-overlay-title" class="fw-bold mt-4" style="letter-spacing:-0.02em;">Transit Approved!</h2>
+    <p id="success-overlay-msg" class="text-white-50 mt-1 px-4 text-center" style="max-width:320px;">Logging exit transit...</p>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.querySelector("form");
+        const overlay = document.getElementById("success-overlay");
+        const overlayTitle = document.getElementById("success-overlay-title");
+        const overlayMsg = document.getElementById("success-overlay-msg");
+        const passType = "{{ qr.pass_type }}";
+
+        if (form) {
+            form.addEventListener("submit", function(e) {
+                e.preventDefault();
+                
+                // Show loading message initially on overlay
+                overlayTitle.textContent = "Processing...";
+                overlayMsg.textContent = `Registering ${passType} transit...`;
+                overlay.style.display = "flex";
+                setTimeout(() => overlay.classList.add("show"), 10);
+
+                const formData = new FormData(form);
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    // Update overlay with checkmark success
+                    overlayTitle.textContent = "Transit Approved!";
+                    overlayMsg.textContent = `${passType === 'EXIT' ? 'Exit' : 'Entry'} successfully logged.`;
+                    
+                    // Force the checkmark path animation to replay
+                    const svg = document.querySelector(".checkmark-svg");
+                    if (svg) {
+                        svg.style.display = "none";
+                        svg.offsetHeight; // trigger reflow
+                        svg.style.display = "block";
+                    }
+
+                    setTimeout(() => {
+                        window.location.href = "{% url 'security_dashboard' %}";
+                    }, 1800);
+                })
+                .catch(err => {
+                    console.error("Gating execution failed: ", err);
+                    overlay.classList.remove("show");
+                    setTimeout(() => overlay.style.display = "none", 400);
+                    alert("Gating action failed to persist. Please try again.");
+                });
+            });
+        }
+    });
+</script>
 {% endblock %}

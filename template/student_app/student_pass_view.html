@@ -140,6 +140,74 @@
         70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
         100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
     }
+
+    /* Success Checkmark & Overlay styles */
+    #success-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.9);
+        z-index: 99999;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+    }
+    #success-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .checkmark-wrapper {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .checkmark-svg {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 4;
+        stroke: #10b981;
+        stroke-miterlimit: 10;
+        box-shadow: inset 0px 0px 0px #10b981;
+        animation: fill-anim .4s ease-in-out .4s forwards, scale-anim .3s ease-in-out .9s both;
+    }
+    .checkmark-circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-width: 4;
+        stroke-miterlimit: 10;
+        stroke: #10b981;
+        fill: none;
+        animation: stroke-anim .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .checkmark-check {
+        transform-origin: 50% 50%;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        stroke: white;
+        stroke-linecap: round;
+        animation: stroke-anim .3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke-anim {
+        100% { stroke-dashoffset: 0; }
+    }
+    @keyframes fill-anim {
+        100% { box-shadow: inset 0px 0px 0px 50px #10b981; }
+    }
+    @keyframes scale-anim {
+        0%, 100% { transform: none; }
+        50% { transform: scale3d(1.1, 1.1, 1); }
+    }
 </style>
 
 <div class="container-fluid py-4 min-vh-100">
@@ -217,4 +285,114 @@
         {% endif %}
     </div>
 </div>
+
+<div id="success-overlay">
+    <div class="checkmark-wrapper">
+         <svg class="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+             <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+             <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+         </svg>
+    </div>
+    <h2 id="success-overlay-title" class="fw-bold mt-4" style="letter-spacing:-0.02em;">Gating Verified!</h2>
+    <p id="success-overlay-msg" class="text-white-50 mt-1 px-4 text-center" style="max-width:320px;">Your transit has been approved by checkpoint security.</p>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const leaveId = "{{ leave.id }}";
+        let currentPassType = "{% if active_pass %}{{ active_pass.pass_type }}{% else %}NONE{% endif %}";
+        let currentPassUsed = {% if active_pass %}{{ active_pass.is_used|yesno:"true,false" }}{% else %}false{% endif %};
+        let isTransitioning = false;
+
+        const overlay = document.getElementById("success-overlay");
+        const overlayTitle = document.getElementById("success-overlay-title");
+        const overlayMsg = document.getElementById("success-overlay-msg");
+
+        function showOverlay(title, message, duration, callback) {
+            overlayTitle.textContent = title;
+            overlayMsg.textContent = message;
+            overlay.style.display = "flex";
+            setTimeout(() => overlay.classList.add("show"), 10);
+            
+            setTimeout(() => {
+                overlay.classList.remove("show");
+                setTimeout(() => {
+                    overlay.style.display = "none";
+                    if (callback) callback();
+                }, 400); // Overlay transition duration
+            }, duration);
+        }
+
+        function checkStatus() {
+            if (isTransitioning) return;
+            fetch(`/student/active-pass-status/${leaveId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.has_pass) {
+                        if (data.pass_type !== currentPassType || data.is_used !== currentPassUsed) {
+                            isTransitioning = true;
+                            const isExitScanned = (currentPassType === 'EXIT' && data.pass_type === 'ENTRY');
+                            
+                            const title = isExitScanned ? "Exit Approved!" : "Entry Approved!";
+                            const msg = isExitScanned ? "Generating Entry Ticket..." : "Welcome back to your hostel.";
+                            
+                            showOverlay(title, msg, 2200, () => {
+                                currentPassType = data.pass_type;
+                                currentPassUsed = data.is_used;
+
+                                // Update Badge
+                                const badge = document.querySelector(".pass-type-badge");
+                                if (badge) {
+                                    badge.className = `pass-type-badge ${data.pass_type === 'EXIT' ? 'pass-exit' : 'pass-entry'} mb-3 d-inline-block`;
+                                    badge.textContent = `${data.pass_type} TICKET`;
+                                }
+
+                                // Update QR Image
+                                const qrImg = document.querySelector(".qr-container img");
+                                if (qrImg) {
+                                    qrImg.src = data.qr_url;
+                                }
+                                
+                                // Update Expiry Date label dynamically
+                                const infoVals = document.querySelectorAll(".info-val");
+                                if (infoVals.length >= 4) {
+                                    const dateObj = new Date(data.expires_at.replace(/-/g, "/"));
+                                    const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+                                    infoVals[3].textContent = dateObj.toLocaleDateString('en-GB', options).replace(',', '');
+                                }
+
+                                isTransitioning = false;
+                            });
+                        }
+                    } else {
+                        if (currentPassType !== 'NONE') {
+                            isTransitioning = true;
+                            showOverlay("Entry Approved!", 'Welcome back! Your leave is completed.', 2200, () => {
+                                const container = document.querySelector(".ticket-container");
+                                if (container) {
+                                    container.innerHTML = `
+                                        <div class="glass-card p-5 text-center shadow-sm border-0" style="background: var(--card-bg, rgba(255, 255, 255, 0.75)); border-radius: 2rem; border: 1px solid var(--border-color, rgba(255, 255, 255, 0.4)); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);">
+                                            <div class="text-success mb-3">
+                                                <i class="bi bi-patch-check-fill fs-1"></i>
+                                            </div>
+                                            <h4 class="fw-bold text-dark">Leave Completed!</h4>
+                                            <p class="text-muted small mb-4">Your entry transit was approved. Welcome back to the hostel.</p>
+                                            <a href="{% url 'student_app:student_leave_details' %}" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold">
+                                                My Leave History
+                                            </a>
+                                        </div>
+                                    `;
+                                }
+                                currentPassType = 'NONE';
+                                isTransitioning = false;
+                            });
+                        }
+                    }
+                })
+                .catch(err => console.error("Error polling pass status: ", err));
+        }
+
+        setInterval(checkStatus, 2500);
+    });
+</script>
 {% endblock %}

@@ -662,4 +662,29 @@ def view_active_pass(request, leave_id):
     }
     return render(request, 'student_app/student_pass_view.html', context)
 
+from django.urls import reverse
+
+@login_required(login_url='/authentication/login')
+def active_pass_status_json(request, leave_id):
+    student = get_object_or_404(Student, user=request.user)
+    leave = get_object_or_404(HostelLeave, id=leave_id, student=student)
+    active_pass = leave.qr_passes.order_by('-generated_at').first()
+    
+    if active_pass:
+        return JsonResponse({
+            'has_pass': True,
+            'pass_id': active_pass.id,
+            'pass_type': active_pass.pass_type,
+            'is_used': active_pass.is_used,
+            'qr_token': str(active_pass.qr_token),
+            'qr_url': request.build_absolute_uri(reverse('qr_code_image', kwargs={'qr_token': active_pass.qr_token})),
+            'expires_at': active_pass.expires_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'leave_status': leave.status,
+        })
+    else:
+        return JsonResponse({
+            'has_pass': False,
+            'leave_status': leave.status,
+        })
+
 
