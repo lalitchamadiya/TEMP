@@ -372,7 +372,7 @@ def qr_code_image(request, qr_token):
     # JSON payload structure as specified in requirements
     data = {
        "leave_id": qr_pass.leave.id,
-       "student_id": qr_pass.leave.student.id,
+       "student_id": qr_pass.leave.student.student_id,
        "type": qr_pass.pass_type,
        "token": str(qr_pass.qr_token)
     }

@@ -63,6 +63,20 @@ class LeaveGatingTestCase(TestCase):
         self.student.refresh_from_db()
         self.assertEqual(self.student.status, 'Active')
 
+    def test_qr_code_image_view(self):
+        # Generate EXIT pass
+        expires_at = timezone.make_aware(timezone.datetime.combine(self.leave.leave_from, time(23, 59, 59)))
+        exit_pass = QRPass.objects.create(
+            leave=self.leave,
+            pass_type='EXIT',
+            expires_at=expires_at
+        )
+        url = reverse('qr_code_image', kwargs={'qr_token': exit_pass.qr_token})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['content-type'], 'image/png')
+        self.assertTrue(len(response.content) > 0)
+
     def test_exit_pass_verification_flow(self):
         # Generate EXIT pass
         expires_at = timezone.make_aware(timezone.datetime.combine(self.leave.leave_from, time(23, 59, 59)))
