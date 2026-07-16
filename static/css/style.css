@@ -81,6 +81,7 @@ html[data-theme="dark"] {
   --radius-lg: 1rem;
 
   --close-btn-filter: invert(1) grayscale(1) brightness(2);
+  --modal-bg: #161b22;
 }
 
 /* --- LIGHT THEME --- */
@@ -157,6 +158,7 @@ html[data-theme="light"] {
   --radius-lg: 1rem;
 
   --close-btn-filter: none;
+  --modal-bg: #ffffff;
 }
 
 /* Smooth theme switching — no flash */
