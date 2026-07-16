@@ -695,6 +695,21 @@
     </div>
 </div>
 
+<script id="calendar-events-data" type="application/json">
+[
+    {% for d in assignments %}
+    {
+        "title": "{{ d.staff.name|escapejs }} - {{ d.duty_title|escapejs }}",
+        "start": "{{ d.assigned_date|date:'Y-m-d' }}{% if d.shift_start %}T{{ d.shift_start|time:'H:i:s' }}{% endif %}",
+        "end": "{{ d.assigned_date|date:'Y-m-d' }}{% if d.shift_end %}T{{ d.shift_end|time:'H:i:s' }}{% endif %}",
+        "description": "{{ d.description|escapejs }}",
+        "textColor": "#ffffff",
+        "backgroundColor": "{% if d.duty.priority == 'high' %}#ef4444{% elif d.duty.priority == 'medium' %}#f59e0b{% else %}#10b981{% endif %}",
+        "borderColor": "{% if d.duty.priority == 'high' %}#ef4444{% elif d.duty.priority == 'medium' %}#f59e0b{% else %}#10b981{% endif %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+]
+</script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -717,19 +732,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize FullCalendar
     const calendarEl = document.getElementById('dutyCalendar');
     if (calendarEl) {
-        const events = [
-            {% for d in assignments %}
-            {
-                title: "{{ d.staff.name }} - {{ d.duty_title }}",
-                start: "{{ d.assigned_date|date:'Y-m-d' }}{% if d.shift_start %}T{{ d.shift_start|time:'H:i:s' }}{% endif %}",
-                end: "{{ d.assigned_date|date:'Y-m-d' }}{% if d.shift_end %}T{{ d.shift_end|time:'H:i:s' }}{% endif %}",
-                description: "{{ d.description|escapejs }}",
-                textColor: '#ffffff',
-                backgroundColor: "{% if d.duty.priority == 'high' %}#ef4444{% elif d.duty.priority == 'medium' %}#f59e0b{% else %}#10b981{% endif %}",
-                borderColor: "{% if d.duty.priority == 'high' %}#ef4444{% elif d.duty.priority == 'medium' %}#f59e0b{% else %}#10b981{% endif %}"
-            },
-            {% endfor %}
-        ];
+        let events = [];
+        const eventsDataEl = document.getElementById('calendar-events-data');
+        if (eventsDataEl) {
+            try {
+                events = JSON.parse(eventsDataEl.textContent);
+            } catch (e) {
+                console.error("Error parsing calendar events:", e);
+            }
+        }
         
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
