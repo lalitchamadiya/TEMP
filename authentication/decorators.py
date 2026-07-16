@@ -27,6 +27,33 @@ def check_perm(user, module_code, action):
 
     if profile and profile.role and profile.role.is_superadmin:
         return True
+
+    # 1. Overlay/intercept active duty permissions
+    try:
+        from hms.models import DutyAssignment
+        # Query active assignment
+        assignment = DutyAssignment.objects.filter(staff__user=user, is_active=True).first()
+        if assignment and assignment.duty:
+            # Map core module code to duty module name
+            core_to_duty = {
+                'leave': 'leave',
+                'student': 'students',
+                'paybill': 'fees',
+                'attendance': 'attendance',
+            }
+            duty_mod = core_to_duty.get(module_code)
+            if duty_mod:
+                dp = assignment.duty.permissions.filter(module_name=duty_mod).first()
+                if dp:
+                    field = f'can_{action}'
+                    return getattr(dp, field, False)
+                else:
+                    # Duty is active, but doesn't grant permissions to this module
+                    return False
+    except Exception as e:
+        pass
+
+    # 2. Fall back to standard Role-based check
     if profile and profile.role:
         perm = profile.role.permissions.filter(module__code=module_code).first()
         if perm:

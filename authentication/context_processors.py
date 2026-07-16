@@ -97,6 +97,43 @@ def rbac_context(request):
             for rep in role_el_perms:
                 user_element_permissions[rep.element.code] = True
 
+            # Overlay/intercept active duty permissions
+            from hms.models import DutyAssignment
+            assignment = DutyAssignment.objects.filter(staff__user=request.user, is_active=True).first()
+            if assignment and assignment.duty:
+                duty_perms = {dp.module_name: dp for dp in assignment.duty.permissions.all()}
+                reg_mapping = [('leave', 'leave'), ('students', 'student'), ('fees', 'paybill'), ('attendance', 'attendance')]
+                
+                for duty_mod, core_mod in reg_mapping:
+                    dp = duty_perms.get(duty_mod)
+                    if core_mod not in user_permissions:
+                        user_permissions[core_mod] = {action: False for action in ['view', 'add', 'edit', 'delete', 'approve',
+                                                                                   'reject', 'export', 'print', 'import', 'hide', 'disable']}
+                    if dp:
+                        user_permissions[core_mod]['view'] = dp.can_view
+                        user_permissions[core_mod]['add'] = dp.can_add
+                        user_permissions[core_mod]['edit'] = dp.can_edit
+                        user_permissions[core_mod]['delete'] = dp.can_delete
+                        if not dp.can_view:
+                            user_permissions[core_mod]['approve'] = False
+                            user_permissions[core_mod]['reject'] = False
+                        
+                        # Sync visibility
+                        mod_obj = next((m for m in all_modules if m.code == core_mod), None)
+                        if mod_obj:
+                            if dp.can_view and mod_obj.url_name:
+                                if mod_obj not in visible_modules:
+                                    visible_modules.append(mod_obj)
+                            else:
+                                if mod_obj in visible_modules:
+                                    visible_modules.remove(mod_obj)
+                    else:
+                        for action in user_permissions[core_mod]:
+                            user_permissions[core_mod][action] = False
+                        mod_obj = next((m for m in all_modules if m.code == core_mod), None)
+                        if mod_obj and mod_obj in visible_modules:
+                            visible_modules.remove(mod_obj)
+
     result = {
         'user_permissions': user_permissions,
         'visible_modules': visible_modules,

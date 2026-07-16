@@ -11,7 +11,7 @@ from django.contrib import messages
 from .models import (
     StaffProfile, Visitor, InventoryItem,
     ComplaintTicket, SecurityGuard, IncidentReport,
-    DutyAssignment
+    DutyAssignment, Duty, DutyPermission
 )
 from student.models import Student
 from room.models import HostelBuilding, HostelBlock, Floor, Room, Bed
@@ -1268,18 +1268,20 @@ from authentication.decorators import permission_required, api_permission_requir
 @login_required(login_url='/authentication/login')
 @permission_required('duty_management', 'view')
 def duty_list(request):
-    assignments = DutyAssignment.objects.select_related('staff', 'building', 'block', 'floor').filter(is_active=True).order_by('-assigned_date')
+    assignments = DutyAssignment.objects.select_related('staff', 'building', 'block', 'floor', 'duty').filter(is_active=True).order_by('-assigned_date')
     staff_members = StaffProfile.objects.filter(status='active').order_by('name')
     buildings = HostelBuilding.objects.filter(is_active=True).order_by('name')
     blocks = HostelBlock.objects.all().order_by('name')
+    duties = Duty.objects.prefetch_related('permissions').all().order_by('name')
     
-    # We will pass the list of assignments, active staff, buildings, blocks
+    # We will pass the list of assignments, active staff, buildings, blocks, duties
     context = {
         'page_title': 'Staff Duty Assignments',
         'assignments': assignments,
         'staff_members': staff_members,
         'buildings': buildings,
         'blocks': blocks,
+        'duties': duties,
     }
     return render(request, 'hms/duty_list.html', context)
 
@@ -1290,6 +1292,7 @@ def duty_assign(request):
     if request.method == 'POST':
         data = request.POST
         staff_id = data.get('staff_id')
+        duty_id = data.get('duty_id')
         duty_title = data.get('duty_title', '').strip()
         building_id = data.get('building_id')
         block_id = data.get('block_id')
@@ -1304,7 +1307,19 @@ def duty_assign(request):
         block = HostelBlock.objects.filter(pk=block_id).first() if block_id else None
         floor = Floor.objects.filter(pk=floor_id).first() if floor_id else None
         
+        duty = None
+        if duty_id:
+            duty = Duty.objects.filter(pk=duty_id).first()
+            if duty and not duty_title:
+                duty_title = duty.name
+            if duty:
+                if not shift_start and duty.start_time:
+                    shift_start = duty.start_time
+                if not shift_end and duty.end_time:
+                    shift_end = duty.end_time
+        
         DutyAssignment.objects.create(
+            duty=duty,
             staff=staff,
             duty_title=duty_title,
             building=building,
@@ -1326,6 +1341,7 @@ def duty_edit(request, pk):
     if request.method == 'POST':
         data = request.POST
         staff_id = data.get('staff_id')
+        duty_id = data.get('duty_id')
         duty_title = data.get('duty_title', '').strip()
         building_id = data.get('building_id')
         block_id = data.get('block_id')
@@ -1340,6 +1356,13 @@ def duty_edit(request, pk):
         block = HostelBlock.objects.filter(pk=block_id).first() if block_id else None
         floor = Floor.objects.filter(pk=floor_id).first() if floor_id else None
         
+        duty = None
+        if duty_id:
+            duty = Duty.objects.filter(pk=duty_id).first()
+            if duty and not duty_title:
+                duty_title = duty.name
+        
+        assignment.duty = duty
         assignment.staff = staff
         assignment.duty_title = duty_title
         assignment.building = building
@@ -1361,6 +1384,106 @@ def duty_delete(request, pk):
     if request.method == 'POST':
         assignment.delete()
         messages.success(request, 'Duty assignment deleted.')
+    return redirect('duty_list')
+
+
+@login_required(login_url='/authentication/login')
+@permission_required('duty_management', 'add')
+def duty_create(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        category = request.POST.get('category', 'Custom Duty').strip()
+        priority = request.POST.get('priority', 'medium')
+        start_date = request.POST.get('start_date') or None
+        end_date = request.POST.get('end_date') or None
+        start_time = request.POST.get('start_time') or None
+        end_time = request.POST.get('end_time') or None
+        repeat_type = request.POST.get('repeat_type', 'none')
+        
+        duty = Duty.objects.create(
+            name=name,
+            description=description,
+            category=category,
+            priority=priority,
+            start_date=start_date,
+            end_date=end_date,
+            start_time=start_time,
+            end_time=end_time,
+            repeat_type=repeat_type,
+            status='active',
+            created_by=request.user
+        )
+        
+        # Save permissions for each module
+        modules = ['leave', 'students', 'fees', 'attendance']
+        for mod in modules:
+            can_view = request.POST.get(f'perm_{mod}_view') == 'on'
+            can_add = request.POST.get(f'perm_{mod}_add') == 'on'
+            can_edit = request.POST.get(f'perm_{mod}_edit') == 'on'
+            can_delete = request.POST.get(f'perm_{mod}_delete') == 'on'
+            
+            # If any permission is granted, save it
+            if can_view or can_add or can_edit or can_delete:
+                DutyPermission.objects.create(
+                    duty=duty,
+                    module_name=mod,
+                    can_view=can_view,
+                    can_add=can_add,
+                    can_edit=can_edit,
+                    can_delete=can_delete
+                )
+        
+        messages.success(request, f"Duty '{name}' created successfully.")
+    return redirect('duty_list')
+
+
+@login_required(login_url='/authentication/login')
+@permission_required('duty_management', 'edit')
+def duty_edit_definition(request, pk):
+    duty = get_object_or_404(Duty, pk=pk)
+    if request.method == 'POST':
+        duty.name = request.POST.get('name', '').strip()
+        duty.description = request.POST.get('description', '').strip()
+        duty.category = request.POST.get('category', 'Custom Duty').strip()
+        duty.priority = request.POST.get('priority', 'medium')
+        duty.start_date = request.POST.get('start_date') or None
+        duty.end_date = request.POST.get('end_date') or None
+        duty.start_time = request.POST.get('start_time') or None
+        duty.end_time = request.POST.get('end_time') or None
+        duty.repeat_type = request.POST.get('repeat_type', 'none')
+        duty.status = request.POST.get('status', 'active')
+        duty.save()
+        
+        # Reset permissions
+        duty.permissions.all().delete()
+        modules = ['leave', 'students', 'fees', 'attendance']
+        for mod in modules:
+            can_view = request.POST.get(f'perm_{mod}_view') == 'on'
+            can_add = request.POST.get(f'perm_{mod}_add') == 'on'
+            can_edit = request.POST.get(f'perm_{mod}_edit') == 'on'
+            can_delete = request.POST.get(f'perm_{mod}_delete') == 'on'
+            
+            if can_view or can_add or can_edit or can_delete:
+                DutyPermission.objects.create(
+                    duty=duty,
+                    module_name=mod,
+                    can_view=can_view,
+                    can_add=can_add,
+                    can_edit=can_edit,
+                    can_delete=can_delete
+                )
+        messages.success(request, f"Duty definition '{duty.name}' updated.")
+    return redirect('duty_list')
+
+
+@login_required(login_url='/authentication/login')
+@permission_required('duty_management', 'delete')
+def duty_delete_definition(request, pk):
+    duty = get_object_or_404(Duty, pk=pk)
+    if request.method == 'POST':
+        duty.delete()
+        messages.success(request, "Duty definition deleted.")
     return redirect('duty_list')
 
 

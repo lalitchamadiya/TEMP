@@ -84,3 +84,11 @@ def has_element_perm_filter(user, element_code):
     from authentication.decorators import check_element_perm
     return check_element_perm(user, element_code)
 
+
+@register.filter(name='split')
+def split(value, key):
+    """
+    Splits a string by key: {{ "leave,students"|split:"," }}
+    """
+    return [item.strip() for item in value.split(key)]
+

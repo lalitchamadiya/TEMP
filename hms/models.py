@@ -170,7 +170,57 @@ class IncidentReport(models.Model):
         return f"{self.get_title_display()} - {self.date}"
 
 
+class Duty(models.Model):
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High/Critical'),
+    ]
+    REPEAT_CHOICES = [
+        ('none', 'None'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+    ]
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+    ]
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=100, default='Custom Duty')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    repeat_type = models.CharField(max_length=20, choices=REPEAT_CHOICES, default='none')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class DutyPermission(models.Model):
+    duty = models.ForeignKey(Duty, on_delete=models.CASCADE, related_name='permissions')
+    module_name = models.CharField(max_length=50) # e.g. leave, students, fees, attendance
+    can_view = models.BooleanField(default=False)
+    can_add = models.BooleanField(default=False)
+    can_edit = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'duty_permissions'
+        unique_together = ('duty', 'module_name')
+
+    def __str__(self):
+        return f"{self.duty.name} - {self.module_name}"
+
+
 class DutyAssignment(models.Model):
+    duty = models.ForeignKey(Duty, on_delete=models.SET_NULL, null=True, blank=True, related_name='assignments')
     staff = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, related_name='duties')
     duty_title = models.CharField(max_length=100, help_text="e.g. Floor Supervisor, Guard, Kitchen Help")
     building = models.ForeignKey(HostelBuilding, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_duties')

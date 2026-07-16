@@ -17,6 +17,9 @@ urlpatterns = [
     path("staff/duties/assign/", views.duty_assign, name='duty_assign'),
     path("staff/duties/<int:pk>/edit/", views.duty_edit, name='duty_edit'),
     path("staff/duties/<int:pk>/delete/", views.duty_delete, name='duty_delete'),
+    path("staff/duties/definitions/create/", views.duty_create, name='duty_create'),
+    path("staff/duties/definitions/<int:pk>/edit/", views.duty_edit_definition, name='duty_edit_definition'),
+    path("staff/duties/definitions/<int:pk>/delete/", views.duty_delete_definition, name='duty_delete_definition'),
     path("staff/duties/ajax/get-floors/", views.get_floors_for_building, name='get_floors_for_building'),
     
     # Visitor Management

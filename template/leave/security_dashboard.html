@@ -116,6 +116,116 @@
         </div>
     </div>
 
+    <!-- Active Duty Progress Timeline Widget -->
+    {% if active_duty_assignment %}
+    <div class="row mb-4 animate__animated animate__fadeInDown">
+        <div class="col-12">
+            <div class="glass-card p-4 text-white border-0 shadow-sm" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); position: relative; overflow: hidden; border-radius: 1.25rem;">
+                <div class="position-absolute" style="top:-20px; right:-20px; font-size: 8rem; opacity: 0.05; color:#fff;"><i class="bi bi-shield-check"></i></div>
+                <div class="row g-3 align-items-center">
+                    <div class="col-lg-3 border-end border-white border-opacity-10 py-2">
+                        <span class="badge bg-warning text-dark font-uppercase fw-bold mb-2 shadow-sm" style="font-size: 0.65rem;">Active Assignment</span>
+                        <h4 class="fw-bold mb-1">{{ active_duty_assignment.duty_title }}</h4>
+                        <p class="text-white opacity-75 small mb-0"><i class="bi bi-building-fill me-1"></i>Scope: 
+                            {% if active_duty_assignment.building %}{{ active_duty_assignment.building.name }}{% endif %}
+                            {% if active_duty_assignment.block %}, {{ active_duty_assignment.block.name }}{% endif %}
+                            {% if active_duty_assignment.floor %}, Floor {{ active_duty_assignment.floor.floor_number }}{% endif %}
+                        </p>
+                    </div>
+                    <div class="col-lg-5 py-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-semibold text-white"><i class="bi bi-clock me-1"></i>Shift plan: 
+                                {{ active_duty_assignment.shift_start|time:"g:i A"|default:"--" }} - {{ active_duty_assignment.shift_end|time:"g:i A"|default:"--" }}
+                            </span>
+                            <span class="small text-white" id="shift-progress-percent">0%</span>
+                        </div>
+                        <div class="progress bg-white bg-opacity-20" style="height: 8px; border-radius: 5px;">
+                            <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" id="shift-progress-bar" style="width: 0%"></div>
+                        </div>
+                        {% if active_duty_assignment.description %}
+                        <p class="small mb-0 mt-3 text-white text-opacity-80 italic"><i class="bi bi-info-circle me-1"></i>Instructions: "{{ active_duty_assignment.description }}"</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-lg-4 px-4 py-2">
+                        <!-- Tiny animated timeline -->
+                        <div class="d-flex justify-content-between position-relative">
+                            <div class="position-absolute bg-white bg-opacity-20 w-100" style="height: 2px; top: 11px; left:0; z-index: 1;"></div>
+                            <div class="text-center" style="z-index: 2;">
+                                <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center" style="width:24px; height:24px;"><i class="bi bi-check text-dark" style="font-size:0.75rem;"></i></div>
+                                <span class="x-small d-block mt-1 text-white opacity-75" style="font-size:0.65rem;">Check In</span>
+                            </div>
+                            <div class="text-center" style="z-index: 2;">
+                                <div id="timeline-midpoint" class="bg-warning rounded-circle d-flex align-items-center justify-content-center pulsating-pulse" style="width:24px; height:24px;"><i class="bi bi-play-fill text-dark" style="font-size:0.75rem;"></i></div>
+                                <span class="x-small d-block mt-1 text-white opacity-75" style="font-size:0.65rem;">On Duty</span>
+                            </div>
+                            <div class="text-center" style="z-index: 2;">
+                                <div id="timeline-endpoint" class="bg-white bg-opacity-40 rounded-circle d-flex align-items-center justify-content-center" style="width:24px; height:24px;"><i class="bi bi-dash text-dark" style="font-size:0.75rem;"></i></div>
+                                <span class="x-small d-block mt-1 text-white opacity-75" style="font-size:0.65rem;">Check Out</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script to calculate shift percentage -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const startStr = "{% if active_duty_assignment.shift_start %}{{ active_duty_assignment.shift_start|time:'H:i' }}{% endif %}";
+        const endStr = "{% if active_duty_assignment.shift_end %}{{ active_duty_assignment.shift_end|time:'H:i' }}{% endif %}";
+        
+        if (startStr && endStr) {
+            function updateProgress() {
+                const now = new Date();
+                const start = new Date(now.toDateString() + ' ' + startStr);
+                const end = new Date(now.toDateString() + ' ' + endStr);
+                if (end < start) {
+                    end.setDate(end.getDate() + 1); // Handles night shifts
+                }
+                
+                if (now < start) {
+                    setProgress(0);
+                } else if (now > end) {
+                    setProgress(100);
+                    document.getElementById('timeline-endpoint').className = 'bg-warning rounded-circle d-flex align-items-center justify-content-center';
+                    document.getElementById('timeline-endpoint').innerHTML = '<i class="bi bi-check text-dark" style="font-size:0.75rem;"></i>';
+                } else {
+                    const elapsed = now - start;
+                    const duration = end - start;
+                    const pct = Math.min(100, Math.max(0, Math.floor((elapsed / duration) * 100)));
+                    setProgress(pct);
+                }
+            }
+            
+            function setProgress(pct) {
+                const bar = document.getElementById('shift-progress-bar');
+                const label = document.getElementById('shift-progress-percent');
+                if (bar) bar.style.width = pct + '%';
+                if (label) label.textContent = pct + '%';
+            }
+            
+            updateProgress();
+            setInterval(updateProgress, 60000);
+        } else {
+            // Default shift
+            document.getElementById('shift-progress-bar').style.width = '100%';
+            document.getElementById('shift-progress-percent').textContent = '100% (Continuous)';
+        }
+    });
+    </script>
+    <style>
+        .pulsating-pulse {
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+            animation: pulse-warn 1.8s infinite;
+        }
+        @keyframes pulse-warn {
+            70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        }
+    </style>
+    {% endif %}
+
     <!-- Scanner Row -->
     <div class="row g-4 mb-4">
         <!-- Interactive QR Barcode Scanner -->

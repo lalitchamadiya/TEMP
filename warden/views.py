@@ -8,6 +8,9 @@ from room.models import HostelBlock, Floor, Room
 @login_required
 @role_required('Warden', 'Super Admin')
 def warden_dashboard(request):
+    from hms.models import DutyAssignment
+    assignment = DutyAssignment.objects.select_related('duty', 'building', 'block', 'floor').filter(staff__user=request.user, is_active=True).first()
+    
     warden_profile = None
     assigned_blocks = HostelBlock.objects.none()
     
@@ -19,15 +22,29 @@ def warden_dashboard(request):
 
     # Get students in assigned blocks
     students = Student.objects.filter(bed__room__floor__block__in=assigned_blocks).distinct()
+    rooms_qs = Room.objects.filter(floor__block__in=assigned_blocks)
     
+    # Apply Duty location-scoped filtering override
+    if assignment:
+        if assignment.building:
+            students = students.filter(bed__room__floor__building=assignment.building)
+            rooms_qs = rooms_qs.filter(floor__building=assignment.building)
+        if assignment.block:
+            students = students.filter(bed__room__floor__block=assignment.block)
+            rooms_qs = rooms_qs.filter(floor__block=assignment.block)
+        if assignment.floor:
+            students = students.filter(bed__room__floor=assignment.floor)
+            rooms_qs = rooms_qs.filter(floor=assignment.floor)
+
     # Counts
     total_students = students.count()
-    total_rooms = Room.objects.filter(floor__block__in=assigned_blocks).count()
+    total_rooms = rooms_qs.count()
     
     context = {
         'assigned_blocks': assigned_blocks,
         'total_students': total_students,
         'total_rooms': total_rooms,
         'recent_students': students.order_by('-admission_date')[:10],
+        'active_duty_assignment': assignment,
     }
     return render(request, 'warden/warden_dashboard.html', context)
