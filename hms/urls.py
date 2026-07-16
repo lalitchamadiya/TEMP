@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path("", views.dashboard, name='dashboard'),
     path("superadmin/", views.superadmin_dashboard, name='superadmin_dashboard'),
+    path("superadmin/ajax/live-stats/", views.live_dashboard_stats, name='live_dashboard_stats'),
 
     
     # Staff Management

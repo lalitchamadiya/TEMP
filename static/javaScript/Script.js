@@ -52,3 +52,227 @@
     window.applyThemeMode(localStorage.getItem(THEME_KEY) || 'dark');
   });
 })();
+
+/* =========================================================
+   HMS — AJAX Polling Engine with Exponential Backoff
+   Updates statistics in real-time, respects tab focus logic
+   ========================================================= */
+(function() {
+  // Only execute polling on the superadmin dashboard path
+  if (!window.location.pathname.includes('/superadmin/')) return;
+
+  const POLLING_URL = '/superadmin/ajax/live-stats/';
+  const DEFAULT_INTERVAL = 15000; // 15 seconds
+  let pollInterval = DEFAULT_INTERVAL;
+  let pollTimeout = null;
+  let previousData = {};
+  
+  const refreshStatus = document.getElementById('live-refresh-status');
+  
+  function flashElement(el, colorClass) {
+    if (!el) return;
+    el.classList.remove('glow-update', 'glow-pulse-blue', 'glow-pulse-green', 'glow-pulse-purple', 'glow-pulse-orange', 'glow-pulse-cyan', 'glow-pulse-yellow');
+    void el.offsetWidth; // trigger reflow
+    el.classList.add(colorClass || 'glow-update');
+    setTimeout(() => {
+      el.classList.remove(colorClass || 'glow-update');
+    }, 1500);
+  }
+
+  function animateNumberValue(el, targetVal, formatRupee = false) {
+    if (!el) return;
+    let startVal = parseFloat(el.textContent.replace(/[^\d.]/g, '')) || 0;
+    if (startVal === targetVal) {
+      if (formatRupee) el.textContent = '₹' + targetVal.toLocaleString();
+      else el.textContent = targetVal.toLocaleString();
+      return;
+    }
+    
+    let duration = 800; // 0.8s animate timing
+    let startTime = null;
+
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      let progress = Math.min((timestamp - startTime) / duration, 1);
+      // easeOutQuad
+      let eased = progress * (2 - progress);
+      let current = Math.floor(startVal + eased * (targetVal - startVal));
+      
+      if (formatRupee) el.textContent = '₹' + current.toLocaleString();
+      else el.textContent = current.toLocaleString();
+      
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        if (formatRupee) el.textContent = '₹' + targetVal.toLocaleString();
+        else el.textContent = targetVal.toLocaleString();
+      }
+    }
+    window.requestAnimationFrame(step);
+  }
+
+  function updateDashboard(data) {
+    // 1. Total Students
+    const elStudents = document.getElementById('kpi-total-students');
+    if (elStudents && previousData.total_students !== data.total_students) {
+      animateNumberValue(elStudents, data.total_students);
+      flashElement(elStudents, 'glow-pulse-blue');
+    }
+    const elStudentsSub = document.getElementById('kpi-students-sub');
+    if (elStudentsSub) {
+      elStudentsSub.textContent = `${data.active_students} active · ${data.inactive_students} inactive`;
+    }
+
+    // 2. Occupied Beds
+    const elBeds = document.getElementById('kpi-occupied-beds');
+    if (elBeds && previousData.occupied_beds !== data.occupied_beds) {
+      animateNumberValue(elBeds, data.occupied_beds);
+      flashElement(elBeds, 'glow-pulse-green');
+    }
+    const elProgress = document.getElementById('kpi-occupancy-progress');
+    if (elProgress) {
+      elProgress.setAttribute('data-width', data.occupancy_pct);
+      elProgress.style.width = data.occupancy_pct + '%';
+    }
+    const elBedsSub = document.getElementById('kpi-occupancy-sub');
+    if (elBedsSub) {
+      elBedsSub.textContent = `${data.occupancy_pct}% occupancy · ${data.vacant_beds} vacant`;
+    }
+
+    // 3. Monthly Revenue
+    const elRevenue = document.getElementById('kpi-monthly-revenue');
+    if (elRevenue && previousData.monthly_revenue !== data.monthly_revenue) {
+      animateNumberValue(elRevenue, data.monthly_revenue, true);
+      flashElement(elRevenue, 'glow-pulse-purple');
+    }
+    const elRevenueSub = document.getElementById('kpi-revenue-sub');
+    if (elRevenueSub) {
+      elRevenueSub.textContent = `₹${data.today_revenue} today`;
+    }
+
+    // 4. Open Complaints
+    const elComplaints = document.getElementById('kpi-open-complaints');
+    if (elComplaints && previousData.open_complaints !== data.open_complaints) {
+      animateNumberValue(elComplaints, data.open_complaints);
+      flashElement(elComplaints, 'glow-pulse-orange');
+    }
+    const elComplaintsSub = document.getElementById('kpi-complaints-sub');
+    if (elComplaintsSub) {
+      elComplaintsSub.textContent = `${data.resolved_complaints} resolved total`;
+    }
+
+    // 5. Visitors Today
+    const elVisitors = document.getElementById('kpi-visitors-today');
+    if (elVisitors && previousData.total_visitors_today !== data.total_visitors_today) {
+      animateNumberValue(elVisitors, data.total_visitors_today);
+      flashElement(elVisitors, 'glow-pulse-cyan');
+    }
+    const elVisitorsSub = document.getElementById('kpi-visitors-sub');
+    if (elVisitorsSub) {
+      elVisitorsSub.textContent = `${data.pending_visitors} pending approval`;
+    }
+
+    // 6. Total Staff
+    const elStaff = document.getElementById('kpi-total-staff');
+    if (elStaff && previousData.total_staff !== data.total_staff) {
+      animateNumberValue(elStaff, data.total_staff);
+      flashElement(elStaff, 'glow-pulse-yellow');
+    }
+    const elStaffSub = document.getElementById('kpi-staff-sub');
+    if (elStaffSub) {
+      elStaffSub.textContent = `${data.active_staff} active · ${data.total_guards} guards`;
+    }
+
+    // Lower KPIs
+    const elTotalUsers = document.getElementById('kpi-total-users');
+    if (elTotalUsers && previousData.total_users !== data.total_users) {
+      animateNumberValue(elTotalUsers, data.total_users);
+    }
+    const elActiveUsers = document.getElementById('kpi-active-users');
+    if (elActiveUsers && previousData.active_users !== data.active_users) {
+      animateNumberValue(elActiveUsers, data.active_users);
+    }
+    const elPendingLeaves = document.getElementById('kpi-pending-leaves');
+    if (elPendingLeaves && previousData.pending_leaves !== data.pending_leaves) {
+      animateNumberValue(elPendingLeaves, data.pending_leaves);
+    }
+    const elOos = document.getElementById('kpi-oos');
+    if (elOos && previousData.low_stock_items !== data.low_stock_items) {
+      animateNumberValue(elOos, data.low_stock_items);
+    }
+
+    // Disk health
+    const elDiskText = document.getElementById('kpi-disk-text');
+    if (elDiskText) {
+      elDiskText.textContent = `Disk: ${data.disk_used_gb} GB / ${data.disk_total_gb} GB`;
+    }
+    const elDiskPctText = document.getElementById('kpi-disk-pct-text');
+    if (elDiskPctText) {
+      elDiskPctText.textContent = `${data.disk_pct}%`;
+    }
+    const elDiskProgress = document.getElementById('kpi-disk-progress');
+    if (elDiskProgress) {
+      elDiskProgress.setAttribute('data-width', data.disk_pct);
+      elDiskProgress.style.width = data.disk_pct + '%';
+    }
+
+    previousData = data;
+    if (refreshStatus) {
+      const now = new Date();
+      refreshStatus.textContent = `Live Stats: updated ${now.toLocaleTimeString()}`;
+    }
+  }
+
+  function fetchStats() {
+    // If window is hidden, defer polling to save battery and resource costs
+    if (document.visibilityState === 'hidden') {
+      pollTimeout = setTimeout(fetchStats, DEFAULT_INTERVAL);
+      return;
+    }
+
+    fetch(POLLING_URL, {
+      headers: {
+        'x-requested-with': 'XMLHttpRequest'
+      }
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('HTTP Status ' + response.status);
+      return response.json();
+    })
+    .then(data => {
+      updateDashboard(data);
+      pollInterval = DEFAULT_INTERVAL; // Reset polling backoff on success
+      
+      const badge = document.querySelector('.badge-live');
+      if (badge) {
+        badge.style.background = 'rgba(34,197,94,0.2)';
+        badge.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:6px;"></i>LIVE';
+      }
+    })
+    .catch(error => {
+      console.warn('Real-time Polling failed:', error);
+      // Exponential backoff up to 2 minutes maximum
+      pollInterval = Math.min(pollInterval * 1.5, 120000);
+      
+      const badge = document.querySelector('.badge-live');
+      if (badge) {
+        badge.style.background = 'rgba(239,68,68,0.2)';
+        badge.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1" style="font-size:8px;"></i>RECONNECTING';
+      }
+    })
+    .finally(() => {
+      pollTimeout = setTimeout(fetchStats, pollInterval);
+    });
+  }
+
+  // Handle sudden focus gain
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      clearTimeout(pollTimeout);
+      fetchStats();
+    }
+  });
+
+  // Start initial polling
+  pollTimeout = setTimeout(fetchStats, DEFAULT_INTERVAL);
+})();

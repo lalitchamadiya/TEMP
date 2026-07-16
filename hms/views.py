@@ -282,6 +282,89 @@ def superadmin_dashboard(request):
     return render(request, 'hms/superadmin_dashboard.html', context)
 
 
+@login_required(login_url='/authentication/login')
+def live_dashboard_stats(request):
+    if not _is_admin(request.user):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    today = timezone.now().date()
+    
+    # Students
+    total_students = Student.objects.count()
+    active_students = Student.objects.filter(status='Active').count()
+    inactive_students = total_students - active_students
+    
+    # Rooms & Beds
+    total_beds = Bed.objects.count()
+    occupied_beds = Bed.objects.filter(student__isnull=False).count()
+    vacant_beds = total_beds - occupied_beds
+    occupancy_pct = round((occupied_beds / total_beds * 100) if total_beds else 0)
+
+    # Financials
+    month_start = today.replace(day=1)
+    monthly_revenue = Payment.objects.filter(
+        transaction_status='SUCCESSFUL', created_at__date__gte=month_start
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    today_revenue = Payment.objects.filter(
+        transaction_status='SUCCESSFUL', created_at__date=today
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    # Complaints
+    open_complaints = ComplaintTicket.objects.filter(status__in=['pending', 'assigned', 'in_progress']).count()
+    resolved_complaints = ComplaintTicket.objects.filter(status='resolved').count()
+
+    # Visitors
+    total_visitors_today = Visitor.objects.filter(visit_date=today).count()
+    pending_visitors = Visitor.objects.filter(status='pending').count()
+
+    # HMS Staff
+    total_staff = StaffProfile.objects.count()
+    active_staff = StaffProfile.objects.filter(status='active').count()
+    total_guards = SecurityGuard.objects.filter(status='active').count()
+
+    # Users
+    total_users = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+
+    # Leaves
+    pending_leaves = HostelLeave.objects.filter(status='pending').count()
+    
+    # Inventory
+    low_stock_items = InventoryItem.objects.filter(status='oos').count()
+
+    # System Health
+    disk = shutil.disk_usage('/')
+    disk_total_gb = round(disk.total / (1024 ** 3), 1)
+    disk_used_gb = round(disk.used / (1024 ** 3), 1)
+    disk_pct = round(disk.used / disk.total * 100, 1)
+
+    return JsonResponse({
+        'total_students': total_students,
+        'active_students': active_students,
+        'inactive_students': inactive_students,
+        'total_beds': total_beds,
+        'occupied_beds': occupied_beds,
+        'vacant_beds': vacant_beds,
+        'occupancy_pct': occupancy_pct,
+        'monthly_revenue': float(monthly_revenue),
+        'today_revenue': float(today_revenue),
+        'open_complaints': open_complaints,
+        'resolved_complaints': resolved_complaints,
+        'total_visitors_today': total_visitors_today,
+        'pending_visitors': pending_visitors,
+        'total_staff': total_staff,
+        'active_staff': active_staff,
+        'total_guards': total_guards,
+        'total_users': total_users,
+        'active_users': active_users,
+        'pending_leaves': pending_leaves,
+        'low_stock_items': low_stock_items,
+        'disk_pct': disk_pct,
+        'disk_used_gb': disk_used_gb,
+        'disk_total_gb': disk_total_gb,
+    })
+
+
 # ──────────────────────────────────────────────────────
 # STAFF MANAGEMENT
 # ──────────────────────────────────────────────────────

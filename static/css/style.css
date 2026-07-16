@@ -989,3 +989,133 @@ main[role="main"] {
     border-bottom: 2px solid var(--border-light) !important;
 }
 
+/* ============================================================
+   HMS PREMIUM ANIMATIONS SYSTEM
+   Sleek entry animations, value counters, skeleton loaders,
+   and fluid micro-interactions
+   ============================================================ */
+
+/* 1. Sleek Page Load Staggered Entrance (Global) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Page content elements, cards, and tables */
+main[role="main"] > *,
+.sa-header,
+.kpi-card,
+.panel-card,
+.shortcut-card,
+.table-responsive,
+.health-row,
+.pro-card {
+  opacity: 0;
+  animation: fadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Apply staggered animation delays globally using nth-child on main container content/cards */
+main[role="main"] > *:nth-child(1), .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+main[role="main"] > *:nth-child(2), .kpi-card:nth-child(2) { animation-delay: 0.1s; }
+main[role="main"] > *:nth-child(3), .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+main[role="main"] > *:nth-child(4), .kpi-card:nth-child(4) { animation-delay: 0.2s; }
+main[role="main"] > *:nth-child(5), .kpi-card:nth-child(5) { animation-delay: 0.25s; }
+main[role="main"] > *:nth-child(6), .kpi-card:nth-child(6) { animation-delay: 0.3s; }
+main[role="main"] > *:nth-child(7) { animation-delay: 0.35s; }
+main[role="main"] > *:nth-child(8) { animation-delay: 0.4s; }
+
+.shortcut-card:nth-child(1) { animation-delay: 0.05s; }
+.shortcut-card:nth-child(2) { animation-delay: 0.1s; }
+.shortcut-card:nth-child(3) { animation-delay: 0.15s; }
+.shortcut-card:nth-child(4) { animation-delay: 0.2s; }
+.shortcut-card:nth-child(5) { animation-delay: 0.25s; }
+.shortcut-card:nth-child(6) { animation-delay: 0.30s; }
+.shortcut-card:nth-child(7) { animation-delay: 0.35s; }
+.shortcut-card:nth-child(8) { animation-delay: 0.40s; }
+
+/* 2. Premium Springs & scale transitions */
+.btn,
+.nav-link,
+.card,
+.panel-card,
+.shortcut-card,
+.kpi-card {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* 3. Responsive Hover Grow + Glassmorphic Glow Glow-up */
+.kpi-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.03) !important;
+}
+html[data-theme="dark"] .kpi-card:hover {
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.05),
+              0 0 15px rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+html[data-theme="light"] .kpi-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06),
+              0 0 15px rgba(0, 0, 0, 0.01) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 4. Live Updates Flashing/Pulse Glows */
+@keyframes glowFade {
+  0% {
+    filter: brightness(1.2);
+    box-shadow: 0 0 15px currentColor;
+    background: currentColor;
+    color: #ffffff;
+  }
+}
+
+.glow-pulse-blue   { animation: glowFade 1.2s ease-out; color: #4f9cf9 !important; }
+.glow-pulse-green  { animation: glowFade 1.2s ease-out; color: #22c55e !important; }
+.glow-pulse-purple { animation: glowFade 1.2s ease-out; color: #a855f7 !important; }
+.glow-pulse-orange { animation: glowFade 1.2s ease-out; color: #f97316 !important; }
+.glow-pulse-cyan   { animation: glowFade 1.2s ease-out; color: #06b6d4 !important; }
+.glow-pulse-yellow { animation: glowFade 1.2s ease-out; color: #eab308 !important; }
+
+/* 5. Skeleton Loading State Pulse */
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 0.5;
+    background-color: var(--border-light);
+  }
+  50% {
+    opacity: 0.95;
+    background-color: var(--surface-hover);
+  }
+}
+.skeleton-loader {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+  border-radius: 4px;
+  display: inline-block;
+  height: 1.2em;
+  width: 100%;
+}
+
+/* Progress-bar animation transition */
+.mini-progress-bar {
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Modal pop entry transition */
+.modal.fade .modal-dialog {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* Interactive hover color sync inside sidebar */
+.sidebar-pro .nav-link:hover .material-symbols-outlined,
+.sidebar-pro .nav-link:hover .bi {
+  transform: scale(1.15) rotate(5deg);
+  color: var(--primary) !important;
+}
+
+

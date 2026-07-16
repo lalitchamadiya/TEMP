@@ -147,3 +147,16 @@ class SuperAdminDashboardAuditLogTests(TestCase):
         self.assertIn('has_next', data)
         self.assertIn('Test user creation logs text', data['html'])
 
+    def test_live_dashboard_stats_ajax_endpoint(self):
+        """Verify the AJAX stats endpoint returns JSON with all required keys."""
+        response = self.client.get(reverse('live_dashboard_stats'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        data = response.json()
+        self.assertIn('total_students', data)
+        self.assertIn('active_students', data)
+        self.assertIn('occupied_beds', data)
+        self.assertIn('monthly_revenue', data)
+        self.assertIn('open_complaints', data)
+        self.assertIn('disk_pct', data)
+
