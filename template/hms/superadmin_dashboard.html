@@ -1001,6 +1001,16 @@ new Chart(bCtx, {
     let hasNext = {% if recent_logs.has_next %}true{% else %}false{% endif %};
     let loading = false;
 
+    // Helper to dynamically move modals to body (avoids backdrop z-index overlay issue)
+    function moveNewModalsToBody() {
+      tableBody.querySelectorAll('.modal').forEach(function(modal) {
+        document.body.appendChild(modal);
+      });
+    }
+
+    // Move initial dashboard log modals
+    moveNewModalsToBody();
+
     // Hide pagination controls if JS is active
     const paginationEl = document.getElementById('audit-logs-pagination');
     if (paginationEl) {
@@ -1040,6 +1050,7 @@ new Chart(bCtx, {
         .then(data => {
           if (data.html) {
             tableBody.insertAdjacentHTML('beforeend', data.html);
+            moveNewModalsToBody();
           }
           hasNext = data.has_next;
           nextPage++;
