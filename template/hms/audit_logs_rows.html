@@ -40,12 +40,12 @@
     <!-- Modal details inside loop to avoid fetching latency -->
     <div class="modal fade" id="logModal{{ log.id }}" tabindex="-1" aria-hidden="true" style="text-align: left;">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-white bg-dark border-secondary">
-          <div class="modal-header border-secondary">
+        <div class="modal-content" style="background: var(--card-bg) !important; color: var(--text-main); border: 1px solid var(--border-light) !important; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
+          <div class="modal-header" style="border-bottom: 1px solid var(--border-light) !important;">
             <h5 class="modal-title d-flex align-items-center gap-2">
               <i class="bi bi-file-earmark-text text-primary"></i> Audit Log Details (ID: {{ log.id }})
             </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" style="filter: var(--close-btn-filter);" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body" style="font-size: 0.85rem;">
             <div class="mb-3">
@@ -61,34 +61,34 @@
             </div>
             <div class="mb-3">
               <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">TIMESTAMP</small>
-              <span class="text-white opacity-80">{{ log.timestamp|date:"Y-m-d H:i:s" }}</span>
+              <span class="opacity-80">{{ log.timestamp|date:"Y-m-d H:i:s" }}</span>
             </div>
             <div class="row g-2 mb-3">
-              <div class="col-6">
+              <div class="col-12 col-sm-6">
                  <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">ACTOR</small>
-                 <span class="text-white">{% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %}</span>
+                 <span>{% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %}</span>
               </div>
-              <div class="col-6">
+              <div class="col-12 col-sm-6">
                  <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">ACTOR IP</small>
-                 <span class="text-white" style="font-family:monospace;">{{ log.ip_address|default:"–" }}</span>
+                 <span style="font-family:monospace;">{{ log.ip_address|default:"–" }}</span>
               </div>
             </div>
             <div class="mb-3">
               <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">AFFECTED USER (TARGET)</small>
-              <span class="text-white">{% if log.target_user %}{{ log.target_user.username }}{% else %}None{% endif %}</span>
+              <span>{% if log.target_user %}{{ log.target_user.username }}{% else %}None{% endif %}</span>
             </div>
             {% if log.hostel %}
             <div class="mb-3">
               <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">HOSTEL SCOPE</small>
-              <span class="text-white">{{ log.hostel.name }}</span>
+              <span>{{ log.hostel.name }}</span>
             </div>
             {% endif %}
-            <div class="p-3 rounded bg-secondary bg-opacity-10 border border-secondary">
+            <div class="p-3 rounded" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-light);">
               <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">LOG DETAILS TEXT</small>
-              <p class="mb-0 text-white opacity-85" style="white-space: pre-wrap; font-family: monospace; font-size:0.8rem;">{{ log.details|default:"No details provided." }}</p>
+              <p class="mb-0 opacity-85" style="white-space: pre-wrap; word-break: break-all; font-family: monospace; font-size:0.8rem;">{{ log.details|default:"No details provided." }}</p>
             </div>
           </div>
-          <div class="modal-footer border-secondary">
+          <div class="modal-footer" style="border-top: 1px solid var(--border-light) !important;">
             <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
