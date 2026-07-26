@@ -575,19 +575,27 @@ html[data-theme="dark"] .sidebar-pro .nav-link:hover {
     color: #60a5fa !important;
 }
 
-/* Active State (Blue Left Indicator Bar, Light Blue Background, Medium Weight, Subtle Shadow) */
+/* Active State (SaaS Glowing Pill Gradient Style) */
 .sidebar-pro .nav-link.active {
     font-weight: 600 !important;
-    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1) !important;
 }
 
 html[data-theme="light"] .sidebar-pro .nav-link.active {
-    color: var(--primary, #3B82F6) !important;
-    background: #EAF2FF !important;
+    color: #1d4ed8 !important;
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12) !important;
 }
 html[data-theme="dark"] .sidebar-pro .nav-link.active {
-    color: #60a5fa !important;
-    background: rgba(59, 130, 246, 0.15) !important;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.4) 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.35) !important;
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.sidebar-pro .nav-link.active .material-symbols-outlined,
+.sidebar-pro .nav-link.active .bi {
+    color: inherit !important;
 }
 
 /* Left Blue Indicator Bar (3px) */

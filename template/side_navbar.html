@@ -70,8 +70,16 @@
 <div class="d-none d-md-block p-0 sidebar-wrapper">
     <nav id="sidebarMenu" class="sidebar-pro">
         
-        <!-- Empty brand placeholder for top padding -->
-        <div class="pt-3"></div>
+        <!-- Brand Header (64px Height with Glowing Gradient Logo Box) -->
+        <div class="sidebar-brand">
+            <div class="brand-icon rounded-3 bg-gradient-primary d-flex align-items-center justify-content-center text-white shadow-sm" style="width:36px; height:36px;">
+                <span class="material-symbols-outlined fs-5" style="color: #ffffff !important;">apartment</span>
+            </div>
+            <div class="d-flex flex-column ms-2 sidebar-label">
+                <span class="fw-bold fs-6 lh-1" style="color: var(--text-main, #2B2F38);">Apex Hostel</span>
+                <span class="mt-1" style="font-size: 0.68rem; color: var(--text-muted, #6B7280);">Management System</span>
+            </div>
+        </div>
 
         <ul class="nav flex-column mb-auto">
             {% if is_superadmin or user.profile.role.name == 'Admin' or user.profile.role.name == 'Staff' %}
