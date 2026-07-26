@@ -1,8 +1,64 @@
+from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from student.models import Student
+
+
+class RoomForm(forms.Form):
+    building = forms.ChoiceField(
+        choices=[(1, 'Boys Hostel Block A'), (2, 'Girls Hostel Block B')],
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_building'})
+    )
+    block = forms.ChoiceField(
+        choices=[('A', 'Block A'), ('B', 'Block B')],
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_block'})
+    )
+    floor = forms.ChoiceField(
+        choices=[(1, '1st Floor'), (2, '2nd Floor'), (3, '3rd Floor')],
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_floor'})
+    )
+    room_number = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_room_number', 'placeholder': 'e.g. 101'})
+    )
+    room_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_room_name', 'placeholder': 'e.g. Deluxe Suite'})
+    )
+    room_type = forms.ChoiceField(
+        choices=[
+            ('DOUBLE', '2 Beds Double Sharing'),
+            ('SINGLE', '1 Bed Single Room'),
+            ('TRIPLE', '3 Beds Triple Sharing'),
+            ('DORMITORY', 'Dormitory'),
+        ],
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_room_type'})
+    )
+    category = forms.ChoiceField(
+        choices=[('GENERAL', 'General Student'), ('DELUXE', 'Deluxe Premium'), ('STAFF', 'Staff / Warden')],
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_category'})
+    )
+    status = forms.ChoiceField(
+        choices=[('AVAILABLE', 'Available / Active'), ('MAINTENANCE', 'Under Maintenance')],
+        widget=forms.Select(attrs={'class': 'form-select', 'name': 'status', 'id': 'id_status'})
+    )
+    monthly_rent = forms.CharField(
+        initial='2500.00',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_monthly_rent'})
+    )
+    is_ac = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_is_ac'})
+    )
+    capacity = forms.IntegerField(
+        initial=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'id_capacity', 'min': 1, 'max': 20})
+    )
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'id': 'id_description', 'rows': 2})
+    )
 
 
 def _is_admin(user):
@@ -160,16 +216,19 @@ def room_auto_allocate_execute(request):
 @login_required(login_url='/authentication/login')
 def create_room(request):
     if request.method == 'POST':
-        messages.success(request, 'New room created successfully.')
-        return redirect('room_manage')
+        form = RoomForm(request.POST)
+        if form.is_valid():
+            messages.success(request, 'New room created successfully.')
+            return redirect('room_manage')
+    else:
+        form = RoomForm()
 
-    buildings = [
-        {'id': 1, 'name': 'Boys Hostel Block A'},
-        {'id': 2, 'name': 'Girls Hostel Block B'},
-    ]
     context = {
         'page_title': 'Create New Room',
-        'buildings': buildings,
+        'action': 'Create',
+        'form': form,
+        'base_rents_json': '{"DOUBLE": 2500, "SINGLE": 4000, "TRIPLE": 2000, "DORMITORY": 1500}',
+        'category_multipliers_json': '{"GENERAL": 1.0, "DELUXE": 1.5, "STAFF": 0.0}',
     }
     return render(request, 'room/create_room.html', context)
 
@@ -177,10 +236,57 @@ def create_room(request):
 # ── Edit / Delete / Change Room ──
 @login_required(login_url='/authentication/login')
 def edit_room(request, pk):
+    try:
+        pk_int = int(pk)
+    except (ValueError, TypeError):
+        pk_int = 1
+
+    is_girls = pk_int >= 100
+    unit_idx = pk_int - 100 if is_girls else pk_int
+    if is_girls:
+        room_num = f"20{unit_idx}" if unit_idx < 10 else f"2{unit_idx}"
+    else:
+        room_num = f"10{unit_idx}" if unit_idx < 10 else f"1{unit_idx}"
+
+    initial_data = {
+        'building': 2 if is_girls else 1,
+        'block': 'B' if is_girls else 'A',
+        'floor': 1,
+        'room_number': room_num,
+        'room_name': f"Unit #{room_num}",
+        'room_type': 'DOUBLE',
+        'category': 'GENERAL',
+        'status': 'AVAILABLE',
+        'monthly_rent': '2500.00',
+        'is_ac': False,
+        'capacity': 2,
+        'description': f'Hostel Room Unit #{room_num}',
+    }
+
     if request.method == 'POST':
-        messages.success(request, f'Room {pk} updated successfully.')
-        return redirect('room_manage')
-    return redirect('room_manage')
+        form = RoomForm(request.POST)
+        if form.is_valid():
+            messages.success(request, f'Room Unit #{room_num} updated successfully.')
+            return redirect('room_manage')
+    else:
+        form = RoomForm(initial=initial_data)
+
+    room_dict = {
+        'pk': pk,
+        'id': pk,
+        'room_number': room_num,
+        'room_name': f"Unit #{room_num}",
+    }
+
+    context = {
+        'page_title': f'Edit Room #{room_num}',
+        'action': 'Edit',
+        'room': room_dict,
+        'form': form,
+        'base_rents_json': '{"DOUBLE": 2500, "SINGLE": 4000, "TRIPLE": 2000, "DORMITORY": 1500}',
+        'category_multipliers_json': '{"GENERAL": 1.0, "DELUXE": 1.5, "STAFF": 0.0}',
+    }
+    return render(request, 'room/create_room.html', context)
 
 
 @login_required(login_url='/authentication/login')
