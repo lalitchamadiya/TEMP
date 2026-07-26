@@ -63,15 +63,6 @@ class Command(BaseCommand):
                 'parent_code': ''
             },
             {
-                'code': 'visitor',
-                'name': 'Visitor Management',
-                'menu_label': 'Visitor Pass',
-                'icon': 'bi-person-badge',
-                'url_name': 'visitor_list',
-                'order': 60,
-                'parent_code': ''
-            },
-            {
                 'code': 'staff',
                 'name': 'Staff Coordinator',
                 'menu_label': 'Staff Coordinator',
@@ -96,24 +87,6 @@ class Command(BaseCommand):
                 'icon': 'bi-exclamation-triangle',
                 'url_name': 'complaint_list',
                 'order': 80,
-                'parent_code': ''
-            },
-            {
-                'code': 'inventory',
-                'name': 'Inventory & Stock',
-                'menu_label': 'Inventory Stock',
-                'icon': 'bi-archive',
-                'url_name': 'inventory_list',
-                'order': 90,
-                'parent_code': ''
-            },
-            {
-                'code': 'security',
-                'name': 'Gate & Security Logs',
-                'menu_label': 'Security Gate Logs',
-                'icon': 'bi-lock',
-                'url_name': 'security_list',
-                'order': 100,
                 'parent_code': ''
             },
             {

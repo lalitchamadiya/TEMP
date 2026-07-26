@@ -169,17 +169,17 @@
             {% if error_msg %}
                 <span class="status-highlight status-invalid mb-3"><i class="bi bi-x-circle-fill me-2"></i>Pass Invalid / Terminated</span>
                 <div class="text-danger my-2"><i class="bi bi-shield-x display-3"></i></div>
-                <h4 class="fw-bold text-dark mt-2">Validation Defect</h4>
+                <h4 class="fw-bold mt-2">Validation Defect</h4>
                 <p class="text-muted small mb-0">This QR token is not approved for gate transit.</p>
             {% elif success_msg %}
                 <span class="status-highlight status-valid mb-3"><i class="bi bi-check-circle-fill me-2"></i>Action Processed</span>
                 <div class="text-success my-2"><i class="bi bi-shield-checkbox display-3"></i></div>
-                <h4 class="fw-bold text-dark mt-2">Transit Logged</h4>
+                <h4 class="fw-bold mt-2">Transit Logged</h4>
                 <p class="text-muted small mb-0">The gating checkout/checkin record has been updated successfully.</p>
             {% else %}
                 <span class="status-highlight status-valid mb-3"><i class="bi bi-shield-fill-check me-2"></i>Pass Active & Valid</span>
                 <img src="{% if student.photo %}{{ student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="large-avatar" alt="Student photo">
-                <h4 class="fw-bold text-dark mb-1">{{ student.name }}</h4>
+                <h4 class="fw-bold mb-1">{{ student.name }}</h4>
                 <span class="badge bg-light text-muted border px-3 rounded-pill fw-semibold" style="font-size: 0.75rem;">
                     {{ student.roll }}
                 </span>
@@ -211,7 +211,7 @@
             {% endif %}
 
             <!-- Gate Pass Metadata -->
-            <div class="p-3 bg-light rounded-4 mb-4">
+            <div class="p-3 border rounded-4 mb-4" style="background-color: var(--input-bg);">
                 <div class="gate-detail-row">
                     <span class="gate-label">Pass Type</span>
                     <span class="gate-value text-primary fw-bold">{{ qr.pass_type }} Pass</span>
@@ -251,7 +251,7 @@
                     </form>
                 {% endif %}
                 
-                <a href="{% url 'security_dashboard' %}" class="btn btn-light rounded-3 fw-bold py-3 mt-1 text-slate-700">
+                <a href="{% url 'security_dashboard' %}" class="btn btn-outline-secondary rounded-3 fw-bold py-3 mt-1">
                     <i class="bi bi-arrow-left me-2"></i> Return to Security Dashboard
                 </a>
             </div>

@@ -22,27 +22,10 @@ urlpatterns = [
     path("staff/duties/definitions/<int:pk>/delete/", views.duty_delete_definition, name='duty_delete_definition'),
     path("staff/duties/ajax/get-floors/", views.get_floors_for_building, name='get_floors_for_building'),
     
-    # Visitor Management
-    path("visitors/", views.visitor_list, name='visitor_list'),
-    path("visitors/create/", views.visitor_create, name='visitor_create'),
-    path("visitors/<int:pk>/status/<str:status>/", views.visitor_update_status, name='visitor_update_status'),
-    path("visitors/<int:pk>/checkout/", views.visitor_checkout, name='visitor_checkout'),
-    
-    # Inventory Management
-    path("inventory/", views.inventory_list, name='inventory_list'),
-    path("inventory/create/", views.inventory_create, name='inventory_create'),
-    path("inventory/<int:pk>/edit/", views.inventory_edit, name='inventory_edit'),
-    path("inventory/<int:pk>/delete/", views.inventory_delete, name='inventory_delete'),
-    
     # Complaint Management
     path("complaints/", views.complaint_list, name='complaint_list'),
     path("complaints/<int:pk>/assign/", views.complaint_assign, name='complaint_assign'),
     path("complaints/<int:pk>/resolve/", views.complaint_resolve, name='complaint_resolve'),
-    
-    # Security Management
-    path("security/", views.security_list, name='security_list'),
-    path("security/guard/create/", views.security_guard_create, name='security_guard_create'),
-    path("security/incident/create/", views.incident_report_create, name='incident_report_create'),
     
     # Hostel Logistics Manager (Rooms and Beds CRUD)
     path("hostel/", views.hostel_manager, name='hostel_manager'),

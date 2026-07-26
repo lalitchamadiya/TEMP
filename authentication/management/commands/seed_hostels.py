@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from authentication.models import Hostel
 from room.models import HostelBuilding, Room
 from student.models import Student
-from hms.models import StaffProfile, SecurityGuard
+from hms.models import StaffProfile
 from paybill.models import Payment, FeeStructure, InstallmentConfig
 
 class Command(BaseCommand):
@@ -40,9 +40,7 @@ class Command(BaseCommand):
         staff_updated = StaffProfile.objects.filter(hostel__isnull=True).update(hostel=default_hostel)
         self.stdout.write(f"Updated {staff_updated} StaffProfiles.")
 
-        # Update guards
-        guards_updated = SecurityGuard.objects.filter(hostel__isnull=True).update(hostel=default_hostel)
-        self.stdout.write(f"Updated {guards_updated} SecurityGuards.")
+
 
         # Update payments
         payments_updated = Payment.objects.filter(hostel__isnull=True).update(hostel=default_hostel)

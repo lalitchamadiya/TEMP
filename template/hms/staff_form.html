@@ -52,15 +52,15 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small text-secondary">Designation *</label>
-                                <select name="designation" class="form-select" required>
+                                <select name="designation" id="designationSelect" class="form-select" required>
                                     {% for val, lbl in designations %}
                                     <option value="{{ val }}" {% if staff.designation == val %}selected{% endif %}>{{ lbl }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold small text-secondary">Working Shift</label>
-                                <select name="shift" class="form-select">
+                                <label class="form-label fw-semibold small text-secondary">Working Shift <span id="shiftAdminBadge" class="badge bg-secondary bg-opacity-10 text-secondary border small ms-1 d-none">N/A for Admin</span></label>
+                                <select name="shift" id="shiftSelect" class="form-select">
                                     {% for val, lbl in shifts %}
                                     <option value="{{ val }}" {% if staff.shift == val %}selected{% endif %}>{{ lbl }}</option>
                                     {% endfor %}
@@ -83,10 +83,10 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold small text-secondary">Salary (₹)</label>
+                                <label class="form-label fw-semibold small text-secondary">Salary (₹) <span id="salaryAdminBadge" class="badge bg-secondary bg-opacity-10 text-secondary border small ms-1 d-none">N/A for Admin</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light text-muted">₹</span>
-                                    <input type="number" name="salary" class="form-control" value="{{ staff.salary|default:'0' }}" step="0.01">
+                                    <input type="number" name="salary" id="salaryInput" class="form-control" value="{{ staff.salary|default:'0' }}" step="0.01">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -121,10 +121,10 @@
                             
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small text-secondary">System Role {% if not staff %}*{% endif %}</label>
-                                <select name="role" class="form-select bg-light" {% if not staff %}required{% endif %}>
+                                <select name="role" id="roleSelect" class="form-select bg-light" {% if not staff %}required{% endif %}>
                                     <option value="" disabled {% if not staff %}selected{% endif %}>Select System Role...</option>
                                     {% for r in roles %}
-                                    <option value="{{ r.id }}" {% if staff.user.profile.role.id == r.id %}selected{% endif %}>{{ r.name }}</option>
+                                    <option value="{{ r.id }}" data-role-name="{{ r.name }}" {% if staff.user.profile.role.id == r.id %}selected{% endif %}>{{ r.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -204,6 +204,61 @@
             }
             reader.readAsDataURL(e.target.files[0]);
         }
+    });
+
+    // Admin Role Shift & Salary Restriction Handler
+    document.addEventListener("DOMContentLoaded", function() {
+        const designationSelect = document.getElementById('designationSelect');
+        const roleSelect = document.getElementById('roleSelect');
+        const shiftSelect = document.getElementById('shiftSelect');
+        const salaryInput = document.getElementById('salaryInput');
+        const shiftBadge = document.getElementById('shiftAdminBadge');
+        const salaryBadge = document.getElementById('salaryAdminBadge');
+
+        function toggleAdminRestrictions() {
+            const designationVal = designationSelect ? designationSelect.value : '';
+            let selectedRoleName = '';
+            if (roleSelect && roleSelect.selectedIndex >= 0) {
+                const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+                selectedRoleName = selectedOption ? (selectedOption.getAttribute('data-role-name') || selectedOption.text || '') : '';
+            }
+
+            const isAdminDesignation = (designationVal === 'admin');
+            const isAdminRole = selectedRoleName.toLowerCase().includes('admin');
+
+            if (isAdminDesignation || isAdminRole) {
+                // Disable shift and salary
+                if (shiftSelect) {
+                    shiftSelect.disabled = true;
+                }
+                if (salaryInput) {
+                    salaryInput.disabled = true;
+                    salaryInput.value = '0';
+                }
+                if (shiftBadge) shiftBadge.classList.remove('d-none');
+                if (salaryBadge) salaryBadge.classList.remove('d-none');
+            } else {
+                // Re-enable shift and salary
+                if (shiftSelect) {
+                    shiftSelect.disabled = false;
+                }
+                if (salaryInput) {
+                    salaryInput.disabled = false;
+                }
+                if (shiftBadge) shiftBadge.classList.add('d-none');
+                if (salaryBadge) salaryBadge.classList.add('d-none');
+            }
+        }
+
+        if (designationSelect) {
+            designationSelect.addEventListener('change', toggleAdminRestrictions);
+        }
+        if (roleSelect) {
+            roleSelect.addEventListener('change', toggleAdminRestrictions);
+        }
+
+        // Run initial check
+        toggleAdminRestrictions();
     });
 </script>
 {% endblock %}

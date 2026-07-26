@@ -48,60 +48,6 @@ class StaffProfile(models.Model):
         return f"{self.name} - {self.get_designation_display()}"
 
 
-class Visitor(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending Approval'),
-        ('approved', 'Approved Entry'),
-        ('denied', 'Entry Denied'),
-        ('completed', 'Checked Out'),
-    ]
-    name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=20)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='visitors')
-    relation = models.CharField(max_length=50, help_text="Relation to the student")
-    visit_date = models.DateField(default=timezone.now)
-    purpose = models.CharField(max_length=255)
-    entry_time = models.TimeField(null=True, blank=True)
-    exit_time = models.TimeField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    pass_code = models.CharField(max_length=20, unique=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        if not self.pass_code:
-            import random
-            self.pass_code = f"VIS-{random.randint(100000, 999999)}"
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.name} - Visiting {self.student.name}"
-
-
-class InventoryItem(models.Model):
-    CATEGORY_CHOICES = [
-        ('furniture', 'Furniture'),
-        ('assets', 'Assets/Appliances'),
-        ('stock', 'Stock/Ration'),
-        ('consumables', 'Consumables/Cleaning'),
-    ]
-    STATUS_CHOICES = [
-        ('good', 'Good Condition'),
-        ('damaged', 'Damaged'),
-        ('maintenance', 'Under Maintenance'),
-        ('oos', 'Out of Stock'),
-    ]
-    name = models.CharField(max_length=150)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    quantity = models.IntegerField(default=1)
-    available_quantity = models.IntegerField(default=1)
-    vendor_name = models.CharField(max_length=150, blank=True)
-    vendor_contact = models.CharField(max_length=50, blank=True)
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='good')
-    purchase_date = models.DateField(default=timezone.now)
-    purchase_order_no = models.CharField(max_length=100, blank=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.get_category_display()})"
-
 
 class ComplaintTicket(models.Model):
     CATEGORY_CHOICES = [
@@ -130,44 +76,6 @@ class ComplaintTicket(models.Model):
 
     def __str__(self):
         return f"#{self.id or 'New'} - {self.title} ({self.get_status_display()})"
-
-
-class SecurityGuard(models.Model):
-    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='guards', null=True, blank=True)
-    name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=20)
-    gate_no = models.CharField(max_length=50, default='Main Gate 1')
-    shift = models.CharField(max_length=50, default='morning')
-    status = models.CharField(max_length=20, default='active')
-
-    def __str__(self):
-        return f"Guard: {self.name} ({self.gate_no})"
-
-
-class IncidentReport(models.Model):
-    TITLE_CHOICES = [
-        ('theft', 'Theft Alert'),
-        ('trespassing', 'Unauthorized Entry'),
-        ('damage', 'Property Damage'),
-        ('disorder', 'Disorderly Conduct'),
-        ('medical', 'Medical Emergency'),
-        ('fire', 'Fire Alarm'),
-        ('other', 'Other Incident'),
-    ]
-    SEVERITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High/Critical'),
-    ]
-    title = models.CharField(max_length=50, choices=TITLE_CHOICES, default='other')
-    description = models.TextField()
-    guard = models.ForeignKey(SecurityGuard, on_delete=models.SET_NULL, null=True, blank=True)
-    date = models.DateField(default=timezone.now)
-    severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, default='low')
-    action_taken = models.TextField(blank=True)
-
-    def __str__(self):
-        return f"{self.get_title_display()} - {self.date}"
 
 
 class Duty(models.Model):

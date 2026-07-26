@@ -4,103 +4,352 @@
 {% block title %} | Role Management{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-1">Role Management</h2>
-            <p class="text-muted small mb-0">Create and configure dynamic system roles and permissions.</p>
-        </div>
-        <div>
-            <a href="{% url 'role_create' %}" class="btn btn-primary rounded-pill px-4 shadow-sm">
-                <i class="bi bi-plus-lg me-2"></i> Create New Role
-            </a>
-        </div>
-    </div>
+<style>
+:root {
+  --glass-bg: rgba(255,255,255,0.04);
+  --glass-border: rgba(255,255,255,0.1);
+  --card-bg: #161b22;
+  --title-color: #f0f6ff;
+  --sub-color: rgba(255,255,255,0.5);
+  --table-border: rgba(255,255,255,0.06);
+}
 
-    {% include '_messages.html' %}
+html[data-theme="light"] {
+  --glass-bg: rgba(0, 0, 0, 0.02);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --card-bg: #ffffff;
+  --title-color: #0f172a;
+  --sub-color: #64748b;
+  --table-border: rgba(0, 0, 0, 0.06);
+}
 
-    <!-- Roles Table -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light border-bottom">
-                    <tr>
-                        <th class="ps-4 py-3 text-uppercase fs-xs fw-bold text-secondary">Role Name</th>
-                        <th class="py-3 text-uppercase fs-xs fw-bold text-secondary">Description</th>
-                        <th class="py-3 text-uppercase fs-xs fw-bold text-secondary">Status</th>
-                        <th class="py-3 text-uppercase fs-xs fw-bold text-secondary">Created Date</th>
-                        <th class="pe-4 py-3 text-end text-uppercase fs-xs fw-bold text-secondary">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for role in roles %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-sm rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                    <i class="bi bi-shield-check fs-5"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0 fw-semibold">{{ role.name }}</h6>
-                                    {% if role.is_superadmin %}
-                                    <span class="badge bg-danger-subtle text-danger rounded-pill fs-xs">System Role</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <p class="text-muted small mb-0 text-truncate" style="max-width: 300px;">{{ role.description|default:"No description provided." }}</p>
-                        </td>
-                        <td>
-                            {% if role.is_active %}
-                            <span class="badge bg-success-subtle text-success rounded-pill px-3">Active</span>
-                            {% else %}
-                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">Inactive</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="text-muted small">{{ role.created_at|date:"M d, Y" }}</span>
-                        </td>
-                        <td class="pe-4 text-end">
-                            <div class="d-flex justify-content-end gap-2">
-                                <form action="{% url 'role_clone' role.pk %}" method="post" class="d-inline clone-form">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="name" class="clone-name-input">
-                                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3 clone-btn" data-role-name="{{ role.name }}">
-                                        <i class="bi bi-files me-1"></i> Clone
-                                    </button>
-                                </form>
-                                <a href="{% url 'role_edit' role.pk %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                    <i class="bi bi-pencil-square me-1"></i> Edit
-                                </a>
-                                {% if not role.is_superadmin %}
-                                <form action="{% url 'role_delete' role.pk %}" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this role?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                                        <i class="bi bi-trash me-1"></i> Delete
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="py-5 text-center text-muted">
-                            <i class="bi bi-shield-slash display-4 opacity-25 mb-3 d-block"></i>
-                            <p class="mb-0">No roles defined yet.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+.role-page-container {
+  padding: 1.25rem 0;
+}
+
+/* Compact Header */
+.role-header {
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.role-header-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--title-color);
+  margin-bottom: 2px;
+}
+
+.role-header-sub {
+  font-size: 0.8rem;
+  color: var(--sub-color);
+  margin-bottom: 0;
+}
+
+/* Search & Filter Toolbar */
+.role-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.role-search-box {
+  position: relative;
+  min-width: 260px;
+  max-width: 380px;
+  flex-grow: 1;
+}
+
+.role-search-box input {
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--title-color);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem 0.4rem 2.2rem;
+  font-size: 0.82rem;
+  transition: all 0.2s ease;
+}
+
+.role-search-box input:focus {
+  outline: none;
+  border-color: #4f9cf9;
+  box-shadow: 0 0 0 3px rgba(79,156,249,0.15);
+  background: var(--card-bg);
+  color: var(--title-color);
+}
+
+.role-search-box i {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sub-color);
+  font-size: 0.85rem;
+}
+
+/* Compact Card & Table */
+.role-card {
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+
+.role-table {
+  width: 100%;
+  margin-bottom: 0;
+  color: var(--title-color);
+  font-size: 0.82rem;
+}
+
+.role-table thead th {
+  background: var(--glass-bg);
+  color: var(--sub-color);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--glass-border);
+  white-space: nowrap;
+}
+
+.role-table tbody td {
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid var(--table-border);
+  vertical-align: middle;
+}
+
+.role-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.role-table tbody tr:hover {
+  background: var(--glass-bg);
+}
+
+.role-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(79,156,249,0.12);
+  color: #4f9cf9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.role-name {
+  font-weight: 600;
+  color: var(--title-color);
+  font-size: 0.85rem;
+}
+
+/* Dot Status Badges */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.status-pill.active {
+  background: rgba(34,197,94,0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34,197,94,0.25);
+}
+
+.status-pill.inactive {
+  background: rgba(148,163,184,0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148,163,184,0.25);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-pill.active .status-dot { background: #22c55e; }
+.status-pill.inactive .status-dot { background: #94a3b8; }
+
+/* System Role Badge */
+.sys-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.25);
+  margin-left: 6px;
+}
+
+/* Compact Action Buttons */
+.action-btn-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-icon-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.btn-icon-sm i {
+  font-size: 0.8rem;
+}
+</style>
+
+<div class="container-fluid role-page-container">
+
+  <!-- Header -->
+  <div class="role-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h2 class="role-header-title d-flex align-items-center gap-2">
+          <i class="bi bi-shield-lock-fill text-primary" style="font-size: 1.1rem;"></i>
+          Role Management
+          <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle fs-xs ms-1">
+            {{ roles|length }} Roles
+          </span>
+        </h2>
+        <p class="role-header-sub">Configure dynamic system roles, access scopes, and granular permissions.</p>
+      </div>
+      <a href="{% url 'role_create' %}" class="btn btn-primary btn-sm px-3 rounded-2 fw-semibold">
+        <i class="bi bi-plus-lg me-1"></i> Create Role
+      </a>
     </div>
+  </div>
+
+  {% include '_messages.html' %}
+
+  <!-- Toolbar: Search -->
+  <div class="role-toolbar">
+    <div class="role-search-box">
+      <i class="bi bi-search"></i>
+      <input type="text" id="roleSearchInput" class="form-control form-control-sm" placeholder="Filter roles by name or description...">
+    </div>
+    <div class="text-muted fs-xs">
+      Showing <span id="visibleRoleCount">{{ roles|length }}</span> of {{ roles|length }} roles
+    </div>
+  </div>
+
+  <!-- Roles Table -->
+  <div class="role-card">
+    <div class="table-responsive">
+      <table class="table role-table align-middle" id="roleTable">
+        <thead>
+          <tr>
+            <th class="ps-3" style="width: 25%;">Role Name</th>
+            <th style="width: 35%;">Description</th>
+            <th style="width: 12%;">Status</th>
+            <th style="width: 13%;">Created Date</th>
+            <th class="pe-3 text-end" style="width: 15%;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for role in roles %}
+          <tr class="role-row">
+            <td class="ps-3">
+              <div class="d-flex align-items-center gap-2.5">
+                <div class="role-avatar">
+                  <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                  <span class="role-name">{{ role.name }}</span>
+                  {% if role.is_superadmin %}
+                  <span class="sys-badge">System</span>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="text-muted small text-truncate d-inline-block search-desc" style="max-width: 320px; vertical-align: middle;">
+                {{ role.description|default:"No description provided." }}
+              </span>
+            </td>
+            <td>
+              {% if role.is_active %}
+              <span class="status-pill active"><span class="status-dot"></span>Active</span>
+              {% else %}
+              <span class="status-pill inactive"><span class="status-dot"></span>Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="text-muted small">{{ role.created_at|date:"M d, Y" }}</span>
+            </td>
+            <td class="pe-3 text-end">
+              <div class="action-btn-group">
+                <!-- Clone -->
+                <form action="{% url 'role_clone' role.pk %}" method="post" class="d-inline clone-form">
+                  {% csrf_token %}
+                  <input type="hidden" name="name" class="clone-name-input">
+                  <button type="submit" class="btn btn-icon-sm btn-outline-success border-0 bg-success-subtle text-success clone-btn" data-role-name="{{ role.name }}" title="Clone Role">
+                    <i class="bi bi-copy"></i>
+                    <span>Clone</span>
+                  </button>
+                </form>
+
+                <!-- Edit -->
+                <a href="{% url 'role_edit' role.pk %}" class="btn btn-icon-sm btn-outline-primary border-0 bg-primary-subtle text-primary" title="Edit Permissions">
+                  <i class="bi bi-pencil"></i>
+                  <span>Edit</span>
+                </a>
+
+                <!-- Delete -->
+                {% if not role.is_superadmin %}
+                <form action="{% url 'role_delete' role.pk %}" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete the role &quot;{{ role.name }}&quot;?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-icon-sm btn-outline-danger border-0 bg-danger-subtle text-danger" title="Delete Role">
+                    <i class="bi bi-trash3"></i>
+                    <span>Delete</span>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="py-5 text-center text-muted">
+              <i class="bi bi-shield-slash fs-2 opacity-30 mb-2 d-block"></i>
+              <p class="mb-0 small">No roles defined yet.</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Clone role prompt logic
     const cloneForms = document.querySelectorAll('.clone-form');
     cloneForms.forEach(form => {
         const btn = form.querySelector('.clone-btn');
@@ -121,10 +370,29 @@ document.addEventListener('DOMContentLoaded', function() {
             input.value = trimmed;
         });
     });
+
+    // Real-time table filter logic
+    const searchInput = document.getElementById('roleSearchInput');
+    const roleRows = document.querySelectorAll('#roleTable tbody tr.role-row');
+    const visibleCountEl = document.getElementById('visibleRoleCount');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            let count = 0;
+            roleRows.forEach(row => {
+                const name = row.querySelector('.role-name')?.textContent.toLowerCase() || '';
+                const desc = row.querySelector('.search-desc')?.textContent.toLowerCase() || '';
+                if (name.includes(query) || desc.includes(query)) {
+                    row.style.display = '';
+                    count++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            if (visibleCountEl) visibleCountEl.textContent = count;
+        });
+    }
 });
 </script>
-
-<style>
-    .fs-xs { font-size: 0.75rem; }
-</style>
 {% endblock %}

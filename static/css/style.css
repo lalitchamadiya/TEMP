@@ -967,7 +967,7 @@ main[role="main"] {
     }
 }
 
-/* ---- GLOBAL DASHBOARD CONTRAST OVERRIDES ---- */
+/* ---- GLOBAL DASHBOARD & THEME CONTRAST OVERRIDES ---- */
 .pro-card {
     background-color: var(--card-bg) !important;
     border: 1px solid var(--border-light) !important;
@@ -994,6 +994,101 @@ main[role="main"] {
     color: var(--text-muted) !important;
     border-bottom: 2px solid var(--border-light) !important;
 }
+
+/* Glass Card Component */
+.glass-card {
+    background: var(--card-bg) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-light) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-sm) !important;
+    padding: 1.5rem;
+    color: var(--text-main) !important;
+    transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Scanner & Security Component Overrides */
+.scanner-view-container {
+    border: 2px dashed var(--primary);
+    border-radius: 1.25rem;
+    background-color: var(--input-bg) !important;
+    color: var(--text-main) !important;
+    overflow: hidden;
+    position: relative;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.student-item {
+    transition: all 0.2s ease;
+    border-radius: 1rem;
+    border: 1px solid var(--border-light) !important;
+    padding: 1rem;
+    background-color: var(--card-bg) !important;
+    margin-bottom: 1rem;
+    color: var(--text-main) !important;
+}
+
+.student-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* Bootstrap Dark Mode Overrides */
+html[data-theme="dark"] .text-dark {
+    color: var(--text-main) !important;
+}
+
+html[data-theme="dark"] .bg-light,
+html[data-theme="dark"] .bg-white {
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
+}
+
+html[data-theme="dark"] .input-group-text {
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .modal-content {
+    background-color: var(--modal-bg) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-light) !important;
+}
+
+html[data-theme="dark"] .text-warning-emphasis {
+    color: #fde047 !important;
+}
+
+html[data-theme="dark"] .text-success-emphasis {
+    color: #86efac !important;
+}
+
+html[data-theme="dark"] .text-danger-emphasis {
+    color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .text-primary-emphasis {
+    color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .text-info-emphasis {
+    color: #67e8f9 !important;
+}
+
+/* Form Input Placeholders Theme Sync */
+.form-control::placeholder,
+textarea::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.7;
+}
+
 
 /* ============================================================
    HMS PREMIUM ANIMATIONS SYSTEM

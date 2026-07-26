@@ -10,8 +10,8 @@
 <style>
     body {
         font-family: 'Outfit', sans-serif;
-        background-color: var(--body-bg, #f8fafc);
-        color: var(--text-main, #0f172a);
+        background-color: var(--bg-color);
+        color: var(--text-main);
     }
 
     .dashboard-header {
@@ -19,24 +19,26 @@
         color: white;
         border-radius: 1.5rem;
         padding: 2.25rem 2rem;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        box-shadow: var(--shadow-md);
         margin-bottom: 2rem;
     }
 
     .glass-card {
-        background: var(--card-bg, rgba(255, 255, 255, 0.8));
+        background: var(--card-bg) !important;
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.5));
+        border: 1px solid var(--border-light) !important;
         border-radius: 1.5rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        box-shadow: var(--shadow-sm);
         padding: 1.5rem;
+        color: var(--text-main) !important;
     }
 
     .scanner-view-container {
-        border: 2px dashed #4f46e5;
+        border: 2px dashed var(--primary);
         border-radius: 1.25rem;
-        background-color: var(--light-bg, #fafafa);
+        background-color: var(--input-bg) !important;
+        color: var(--text-main) !important;
         overflow: hidden;
         position: relative;
         min-height: 250px;
@@ -60,21 +62,22 @@
         background: transparent;
     }
     .dashboard-column::-webkit-scrollbar-thumb {
-        background: var(--border-color, #e2e8f0);
+        background: var(--border-light);
         border-radius: 10px;
     }
 
     .student-item {
         transition: all 0.2s ease;
         border-radius: 1rem;
-        border: 1px solid var(--border-color, #e2e8f0);
+        border: 1px solid var(--border-light) !important;
         padding: 1rem;
-        background-color: var(--card-bg, white);
+        background-color: var(--card-bg) !important;
         margin-bottom: 1rem;
+        color: var(--text-main) !important;
     }
     .student-item:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0,0,0,0.03);
+        box-shadow: var(--shadow-md);
     }
 
     .small-avatar {
@@ -104,7 +107,7 @@
                 <span class="badge bg-danger px-3 py-1 text-white fw-bold">GATE CONTROL</span>
                 <span class="text-white text-opacity-50 small"><i class="bi bi-clock me-1"></i>Real-time scanning active</span>
             </div>
-            <h2 class="fw-bold mb-0">Hostel Security Gate Checkpoint</h2>
+            <h2 class="fw-bold mb-0 text-white">Hostel Security Gate Checkpoint</h2>
             <p class="text-white text-opacity-75 small mb-0 mt-1">Scan student passes or enter tokens manually to verify hostel exits and entries.</p>
         </div>
         <div class="bg-white bg-opacity-10 p-3 rounded-4 d-flex align-items-center gap-3">
@@ -125,7 +128,7 @@
                 <div class="row g-3 align-items-center">
                     <div class="col-lg-3 border-end border-white border-opacity-10 py-2">
                         <span class="badge bg-warning text-dark font-uppercase fw-bold mb-2 shadow-sm" style="font-size: 0.65rem;">Active Assignment</span>
-                        <h4 class="fw-bold mb-1">{{ active_duty_assignment.duty_title }}</h4>
+                        <h4 class="fw-bold mb-1 text-white">{{ active_duty_assignment.duty_title }}</h4>
                         <p class="text-white opacity-75 small mb-0"><i class="bi bi-building-fill me-1"></i>Scope: 
                             {% if active_duty_assignment.building %}{{ active_duty_assignment.building.name }}{% endif %}
                             {% if active_duty_assignment.block %}, {{ active_duty_assignment.block.name }}{% endif %}
@@ -231,7 +234,7 @@
         <!-- Interactive QR Barcode Scanner -->
         <div class="col-lg-6">
             <div class="glass-card h-100">
-                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-qr-code-scan text-primary me-2"></i>Rapid Digital Gate Scanner</h5>
+                <h5 class="fw-bold mb-3"><i class="bi bi-qr-code-scan text-primary me-2"></i>Rapid Digital Gate Scanner</h5>
                 
                 <div class="scanner-view-container p-3 text-center" id="scanner-wrapper">
                     <!-- Scanner camera stream will render inside here -->
@@ -252,14 +255,14 @@
         <div class="col-lg-6">
             <div class="glass-card h-100 d-flex flex-column justify-content-between">
                 <div>
-                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-keyboard text-primary me-2"></i>Manual Pass Verification</h5>
+                    <h5 class="fw-bold mb-3"><i class="bi bi-keyboard text-primary me-2"></i>Manual Pass Verification</h5>
                     <p class="text-muted small">If the student is unable to scan their QR code, manually enter their alphanumeric UUID token printed on the pass below to execute verification.</p>
                     
                     <form id="manual-token-form" class="mt-4">
                         <div class="mb-3">
                             <label class="form-label text-muted small fw-bold text-uppercase">Security Pass Token (UUID)</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-light"><i class="bi bi-shield-lock"></i></span>
+                                <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
                                 <input type="text" id="manual-token-input" class="form-control form-control-lg rounded-end-3" placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000" required>
                             </div>
                         </div>
@@ -285,7 +288,7 @@
         <div class="col-lg-4">
             <div class="glass-card h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-door-open text-primary me-2"></i>Approved Exits</h5>
+                    <h5 class="fw-bold mb-0"><i class="bi bi-door-open text-primary me-2"></i>Approved Exits</h5>
                     <span class="badge bg-primary rounded-pill">{{ pending_exits.count }}</span>
                 </div>
                 <p class="text-muted small mb-4">Students authorized to leave; waiting exit verification at gate.</p>
@@ -297,7 +300,7 @@
                             <img src="{% if leave.student.photo %}{{ leave.student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="small-avatar" alt="Avatar">
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="fw-bold text-dark mb-1 small">{{ leave.student.name }}</h6>
+                                    <h6 class="fw-bold mb-1 small">{{ leave.student.name }}</h6>
                                     <span class="sec-badge {% if leave.qr_status == 'Active' %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %}">
                                         {{ leave.qr_status }}
                                     </span>
@@ -324,7 +327,7 @@
         <div class="col-lg-4">
             <div class="glass-card h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-geo text-warning me-2"></i>Students Outside</h5>
+                    <h5 class="fw-bold mb-0"><i class="bi bi-geo text-warning me-2"></i>Students Outside</h5>
                     <span class="badge bg-warning text-dark rounded-pill">{{ students_outside.count }}</span>
                 </div>
                 <p class="text-muted small mb-4">Students currently checked out and away from the hostel premises.</p>
@@ -336,7 +339,7 @@
                             <img src="{% if leave.student.photo %}{{ leave.student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="small-avatar" alt="Avatar">
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="fw-bold text-dark mb-1 small">{{ leave.student.name }}</h6>
+                                    <h6 class="fw-bold mb-1 small">{{ leave.student.name }}</h6>
                                     <span class="sec-badge {% if leave.current_status == 'Overdue' %}bg-danger text-white{% else %}bg-warning bg-opacity-10 text-warning-emphasis{% endif %}">
                                         {{ leave.current_status }}
                                     </span>
@@ -344,7 +347,7 @@
                                 <div class="text-muted x-small mb-2">Exited: {{ leave.exit_time|date:"d M, H:i" }}</div>
                                 <div class="d-flex justify-content-between align-items-center small text-muted border-top pt-2">
                                     <span>Expected Return:</span>
-                                    <span class="fw-bold text-dark">{{ leave.leave_to|default:"Today" }}</span>
+                                    <span class="fw-bold">{{ leave.leave_to|default:"Today" }}</span>
                                 </div>
                             </div>
                         </div>
@@ -363,7 +366,7 @@
         <div class="col-lg-4">
             <div class="glass-card h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-shield-fill-check text-success me-2"></i>Returned Today</h5>
+                    <h5 class="fw-bold mb-0"><i class="bi bi-shield-fill-check text-success me-2"></i>Returned Today</h5>
                     <span class="badge bg-success rounded-pill">{{ returned_students.count }}</span>
                 </div>
                 <p class="text-muted small mb-4">Students who safely checked back into their rooms today.</p>
@@ -374,7 +377,7 @@
                         <div class="d-flex gap-3">
                             <img src="{% if leave.student.photo %}{{ leave.student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="small-avatar" alt="Avatar">
                             <div class="flex-grow-1">
-                                <h6 class="fw-bold text-dark mb-1 small">{{ leave.student.name }}</h6>
+                                <h6 class="fw-bold mb-1 small">{{ leave.student.name }}</h6>
                                 <div class="text-muted x-small mb-1">Returned: {{ leave.entry_time|date:"H:i" }} (Today)</div>
                                 <div class="d-flex justify-content-between align-items-center small text-muted border-top pt-2">
                                     <span>Total Duration Out:</span>

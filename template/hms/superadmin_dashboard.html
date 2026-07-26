@@ -362,19 +362,6 @@ html[data-theme="light"] {
         <div class="kpi-sub" id="kpi-complaints-sub">{{ resolved_complaints }} resolved total</div>
       </div>
     </div>
-    <!-- Visitors -->
-    <div class="col-6 col-md-4 col-xl-2">
-      <div class="kpi-card kpi-cyan h-100">
-        <div class="d-flex align-items-center gap-3 mb-2">
-          <div class="kpi-icon cyan"><i class="bi bi-person-badge-fill"></i></div>
-          <div>
-            <div class="kpi-value" id="kpi-visitors-today">{{ total_visitors_today }}</div>
-            <div class="kpi-label">Visitors Today</div>
-          </div>
-        </div>
-        <div class="kpi-sub" id="kpi-visitors-sub">{{ pending_visitors }} pending approval</div>
-      </div>
-    </div>
     <!-- Staff -->
     <div class="col-6 col-md-4 col-xl-2">
       <div class="kpi-card kpi-yellow h-100">
@@ -385,7 +372,7 @@ html[data-theme="light"] {
             <div class="kpi-label">Total Staff</div>
           </div>
         </div>
-        <div class="kpi-sub" id="kpi-staff-sub">{{ active_staff }} active · {{ total_guards }} guards</div>
+        <div class="kpi-sub" id="kpi-staff-sub">{{ active_staff }} active</div>
       </div>
     </div>
   </div>
@@ -440,21 +427,17 @@ html[data-theme="light"] {
         <hr style="border-color: var(--glass-border);">
 
         <div class="row g-2 text-center mt-1">
-          <div class="col-6">
+          <div class="col-4">
             <div class="kpi-value" id="kpi-total-users" style="font-size:1.5rem; color: var(--accent-blue);">{{ total_users }}</div>
             <div class="kpi-sub">Total Users</div>
           </div>
-          <div class="col-6">
+          <div class="col-4">
             <div class="kpi-value" id="kpi-active-users" style="font-size:1.5rem; color: var(--accent-green);">{{ active_users }}</div>
             <div class="kpi-sub">Active Users</div>
           </div>
-          <div class="col-6">
+          <div class="col-4">
             <div class="kpi-value" id="kpi-pending-leaves" style="font-size:1.5rem; color: var(--accent-orange);">{{ pending_leaves }}</div>
             <div class="kpi-sub">Pending Leaves</div>
-          </div>
-          <div class="col-6">
-            <div class="kpi-value" id="kpi-oos" style="font-size:1.5rem; color: var(--accent-red);">{{ low_stock_items }}</div>
-            <div class="kpi-sub">Out of Stock</div>
           </div>
         </div>
 
@@ -579,28 +562,6 @@ html[data-theme="light"] {
       </a>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'visitor_list' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(6,182,212,0.15); color:var(--accent-cyan);">
-          <i class="bi bi-person-badge-fill"></i>
-        </div>
-        <div>
-          <div style="font-size:0.85rem; font-weight:600;">Visitors</div>
-          <div class="kpi-sub">{{ pending_visitors }} pending</div>
-        </div>
-      </a>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'inventory_list' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(168,85,247,0.15); color:var(--accent-purple);">
-          <i class="bi bi-boxes"></i>
-        </div>
-        <div>
-          <div style="font-size:0.85rem; font-weight:600;">Inventory</div>
-          <div class="kpi-sub">{{ low_stock_items }} out of stock</div>
-        </div>
-      </a>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
       <a href="{% url 'complaint_list' %}" class="shortcut-card">
         <div class="shortcut-icon" style="background:rgba(249,115,22,0.15); color:var(--accent-orange);">
           <i class="bi bi-ticket-perforated-fill"></i>
@@ -608,17 +569,6 @@ html[data-theme="light"] {
         <div>
           <div style="font-size:0.85rem; font-weight:600;">Complaints</div>
           <div class="kpi-sub">{{ open_complaints }} open</div>
-        </div>
-      </a>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'security_list' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(239,68,68,0.15); color:var(--accent-red);">
-          <i class="bi bi-shield-fill-check"></i>
-        </div>
-        <div>
-          <div style="font-size:0.85rem; font-weight:600;">Security</div>
-          <div class="kpi-sub">{{ total_guards }} active guards</div>
         </div>
       </a>
     </div>
@@ -732,66 +682,6 @@ html[data-theme="light"] {
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Row 7: Visitors + Incidents ── -->
-  <div class="row g-3 mb-4">
-    <!-- Recent Visitors -->
-    <div class="col-12 col-lg-6">
-      <div class="panel-card">
-        <div class="panel-title">
-          <i class="bi bi-person-lines-fill"></i> Recent Visitors
-          <a href="{% url 'visitor_list' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
-        </div>
-        <div class="table-responsive">
-          <table class="table sa-table mb-0">
-            <thead>
-              <tr><th>Visitor</th><th>Student</th><th>Date</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              {% for v in recent_visitors %}
-              <tr>
-                <td>{{ v.name }}</td>
-                <td>{{ v.student.name|truncatechars:16 }}</td>
-                <td>{{ v.visit_date|date:"d M" }}</td>
-                <td>
-                  <span class="badge-status {% if v.status == 'approved' %}s-success{% elif v.status == 'pending' %}s-warning{% elif v.status == 'denied' %}s-danger{% else %}s-info{% endif %}">
-                    {{ v.get_status_display }}
-                  </span>
-                </td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="4" class="text-center text-muted py-3">No visitors today</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recent Incidents -->
-    <div class="col-12 col-lg-6">
-      <div class="panel-card">
-        <div class="panel-title">
-          <i class="bi bi-exclamation-octagon-fill" style="color:var(--accent-red);"></i> Security Incidents
-          <a href="{% url 'security_list' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
-        </div>
-        {% if recent_incidents %}
-        {% for incident in recent_incidents %}
-        <div class="health-row">
-          <span class="badge-status {% if incident.severity == 'high' %}s-danger{% elif incident.severity == 'medium' %}s-warning{% else %}s-info{% endif %} me-2">{{ incident.severity|upper }}</span>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">{{ incident.get_title_display }}</span>
-          <small class="text-muted">{{ incident.date|date:"d M" }}</small>
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="text-center text-muted py-3" style="font-size:0.85rem;">
-          <i class="bi bi-shield-check fs-3 d-block mb-2" style="color:var(--accent-green); opacity:0.5;"></i>
-          No recent incidents
-        </div>
-        {% endif %}
       </div>
     </div>
   </div>

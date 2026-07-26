@@ -161,17 +161,6 @@
       elComplaintsSub.textContent = `${data.resolved_complaints} resolved total`;
     }
 
-    // 5. Visitors Today
-    const elVisitors = document.getElementById('kpi-visitors-today');
-    if (elVisitors && previousData.total_visitors_today !== data.total_visitors_today) {
-      animateNumberValue(elVisitors, data.total_visitors_today);
-      flashElement(elVisitors, 'glow-pulse-cyan');
-    }
-    const elVisitorsSub = document.getElementById('kpi-visitors-sub');
-    if (elVisitorsSub) {
-      elVisitorsSub.textContent = `${data.pending_visitors} pending approval`;
-    }
-
     // 6. Total Staff
     const elStaff = document.getElementById('kpi-total-staff');
     if (elStaff && previousData.total_staff !== data.total_staff) {
@@ -180,7 +169,7 @@
     }
     const elStaffSub = document.getElementById('kpi-staff-sub');
     if (elStaffSub) {
-      elStaffSub.textContent = `${data.active_staff} active · ${data.total_guards} guards`;
+      elStaffSub.textContent = `${data.active_staff} active`;
     }
 
     // Lower KPIs
@@ -195,10 +184,6 @@
     const elPendingLeaves = document.getElementById('kpi-pending-leaves');
     if (elPendingLeaves && previousData.pending_leaves !== data.pending_leaves) {
       animateNumberValue(elPendingLeaves, data.pending_leaves);
-    }
-    const elOos = document.getElementById('kpi-oos');
-    if (elOos && previousData.low_stock_items !== data.low_stock_items) {
-      animateNumberValue(elOos, data.low_stock_items);
     }
 
     // Disk health
