@@ -94,8 +94,11 @@
     <!-- Primary Nav Row -->
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-2 glass-card {% if buildings %}room-nav-rounded-top{% else %}room-nav-rounded-all{% endif %}">
         <div class="room-nav-pills d-flex gap-1 flex-wrap">
+            <a href="{% url 'room_base' %}" class="nav-link {% if request.resolver_match.url_name == 'room_base' %}active{% endif %}">
+                <i class="bi bi-grid-1x2 me-1"></i>Overview
+            </a>
             <a href="{% url 'room_manage' %}" class="nav-link {% if request.resolver_match.url_name == 'room_manage' %}active{% endif %}">
-                <i class="bi bi-grid-3x3-gap me-1"></i>Overview
+                <i class="bi bi-door-open me-1"></i>Room Management
             </a>
             <a href="{% url 'room_allocate' %}" class="nav-link {% if request.resolver_match.url_name == 'room_allocate' %}active{% endif %}">
                 <i class="bi bi-person-plus me-1"></i>Allocate
