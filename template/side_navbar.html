@@ -232,6 +232,64 @@
                     <div class="collapse {% if '/room/' in request.path or '/student/' in request.path or '/paybill/' in request.path or '/leave/' in request.path or '/staff/' in request.path or '/visitors/' in request.path or '/inventory/' in request.path or '/complaints/' in request.path or '/security/' in request.path or '/reports/' in request.path or '/hostel/' in request.path or '/fees/' in request.path %}show{% endif %}" id="modulesCollapse">
                         <ul class="collapse-submenu-list">
                             {% for module in visible_modules %}
+                            {% if module.url_name == 'room_base' or module.url_name == 'room_manage' or module.code == 'room' %}
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-collapse {% if not '/room' in request.path %}collapsed{% endif %} {% if '/room' in request.path %}active{% endif %}" 
+                                   data-bs-toggle="collapse" href="#roomBedsSubCollapse" role="button" 
+                                   aria-expanded="{% if '/room' in request.path %}true{% else %}false{% endif %}" 
+                                   aria-controls="roomBedsSubCollapse" title="Rooms & Beds">
+                                    <span class="material-symbols-outlined fs-6 me-2">bed</span>
+                                    <span class="sidebar-label">Rooms & Beds</span>
+                                    <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
+                                </a>
+                                <div class="collapse {% if '/room' in request.path %}show{% endif %}" id="roomBedsSubCollapse">
+                                    <ul class="collapse-submenu-list">
+                                        <li class="nav-item">
+                                            <a class="nav-link {% if request.resolver_match.url_name == 'room_base' %}active{% endif %}" href="{% url 'room_base' %}" title="Overview">
+                                                <i class="bi bi-grid-1x2 opacity-75 fs-6 me-2"></i>
+                                                <span class="sidebar-label">Overview</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link {% if request.resolver_match.url_name == 'room_manage' %}active{% endif %}" href="{% url 'room_manage' %}" title="Room Management">
+                                                <i class="bi bi-door-open opacity-75 fs-6 me-2"></i>
+                                                <span class="sidebar-label">Room Management</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link {% if request.resolver_match.url_name == 'room_allocate' %}active{% endif %}" href="{% url 'room_allocate' %}" title="Allocate">
+                                                <i class="bi bi-person-plus opacity-75 fs-6 me-2"></i>
+                                                <span class="sidebar-label">Allocate</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link {% if request.resolver_match.url_name == 'room_auto_allocate' %}active{% endif %}" href="{% url 'room_auto_allocate' %}" title="Auto Allocate">
+                                                <i class="bi bi-gear-wide-connected opacity-75 fs-6 me-2"></i>
+                                                <span class="sidebar-label">Auto Allocate</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link {% if request.resolver_match.url_name == 'create_room' %}active{% endif %}" href="{% url 'create_room' %}" title="New Room">
+                                                <i class="bi bi-plus-circle opacity-75 fs-6 me-2"></i>
+                                                <span class="sidebar-label">New Room</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link {% if request.resolver_match.url_name == 'building_list' or 'buildings' in request.path %}active{% endif %}" href="{% url 'building_list' %}" title="Buildings">
+                                                <i class="bi bi-building opacity-75 fs-6 me-2"></i>
+                                                <span class="sidebar-label">Buildings</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link {% if request.resolver_match.url_name == 'student_details_list' %}active{% endif %}" href="{% url 'student_details_list' %}" title="Residents">
+                                                <i class="bi bi-people opacity-75 fs-6 me-2"></i>
+                                                <span class="sidebar-label">Residents</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </li>
+                            {% else %}
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name or module.code in request.path %}active{% endif %}" href="{% safe_url module.url_name %}" title="{{ module.menu_label }}">
                                     {% if "bi-" in module.icon %}
@@ -242,6 +300,7 @@
                                     <span class="sidebar-label">{{ module.menu_label }}</span>
                                 </a>
                             </li>
+                            {% endif %}
                             {% endfor %}
                         </ul>
                     </div>
@@ -252,6 +311,64 @@
                     <span class="section-title">HMS Modules</span>
                 </li>
                 {% for module in visible_modules %}
+                {% if module.url_name == 'room_base' or module.url_name == 'room_manage' or module.code == 'room' %}
+                <li class="nav-item">
+                    <a class="nav-link nav-link-collapse {% if not '/room' in request.path %}collapsed{% endif %} {% if '/room' in request.path %}active{% endif %}" 
+                       data-bs-toggle="collapse" href="#roomBedsCollapse" role="button" 
+                       aria-expanded="{% if '/room' in request.path %}true{% else %}false{% endif %}" 
+                       aria-controls="roomBedsCollapse" title="Rooms & Beds">
+                        <span class="material-symbols-outlined fs-5 me-2">bed</span>
+                        <span class="sidebar-label">Rooms & Beds</span>
+                        <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
+                    </a>
+                    <div class="collapse {% if '/room' in request.path %}show{% endif %}" id="roomBedsCollapse">
+                        <ul class="collapse-submenu-list">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'room_base' %}active{% endif %}" href="{% url 'room_base' %}" title="Overview">
+                                    <i class="bi bi-grid-1x2 opacity-75 fs-6 me-2"></i>
+                                    <span class="sidebar-label">Overview</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'room_manage' %}active{% endif %}" href="{% url 'room_manage' %}" title="Room Management">
+                                    <i class="bi bi-door-open opacity-75 fs-6 me-2"></i>
+                                    <span class="sidebar-label">Room Management</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'room_allocate' %}active{% endif %}" href="{% url 'room_allocate' %}" title="Allocate">
+                                    <i class="bi bi-person-plus opacity-75 fs-6 me-2"></i>
+                                    <span class="sidebar-label">Allocate</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'room_auto_allocate' %}active{% endif %}" href="{% url 'room_auto_allocate' %}" title="Auto Allocate">
+                                    <i class="bi bi-gear-wide-connected opacity-75 fs-6 me-2"></i>
+                                    <span class="sidebar-label">Auto Allocate</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'create_room' %}active{% endif %}" href="{% url 'create_room' %}" title="New Room">
+                                    <i class="bi bi-plus-circle opacity-75 fs-6 me-2"></i>
+                                    <span class="sidebar-label">New Room</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'building_list' or 'buildings' in request.path %}active{% endif %}" href="{% url 'building_list' %}" title="Buildings">
+                                    <i class="bi bi-building opacity-75 fs-6 me-2"></i>
+                                    <span class="sidebar-label">Buildings</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'student_details_list' %}active{% endif %}" href="{% url 'student_details_list' %}" title="Residents">
+                                    <i class="bi bi-people opacity-75 fs-6 me-2"></i>
+                                    <span class="sidebar-label">Residents</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                {% else %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name or module.code in request.path %}active{% endif %}" href="{% safe_url module.url_name %}" title="{{ module.menu_label }}">
                         {% if "bi-" in module.icon %}
@@ -262,6 +379,7 @@
                         <span class="sidebar-label">{{ module.menu_label }}</span>
                     </a>
                 </li>
+                {% endif %}
                 {% endfor %}
                 {% endif %}
             {% endif %}
