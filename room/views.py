@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.db.models import Q
 from student.models import Student
 from .models import HostelBuilding, Room, Bed
 
@@ -109,9 +110,12 @@ def room_base(request):
     boys_rooms = Room.objects.filter(building_id__in=active_b_ids, gender='Boys').count()
     girls_rooms = Room.objects.filter(building_id__in=active_b_ids, gender='Girls').count()
 
-    active_students = Student.objects.filter(status='Active').count()
-    gender_male = Student.objects.filter(status='Active', gender='Male').count()
-    gender_female = Student.objects.filter(status='Active', gender='Female').count()
+    total_beds = Bed.objects.filter(room__building_id__in=active_b_ids).count()
+    allocated_beds = Bed.objects.filter(room__building_id__in=active_b_ids, student__isnull=False).count()
+    vacant_beds = max(0, total_beds - allocated_beds)
+
+    boys_allocated = Bed.objects.filter(room__building_id__in=active_b_ids, student__isnull=False, room__gender='Boys').count()
+    girls_allocated = Bed.objects.filter(room__building_id__in=active_b_ids, student__isnull=False, room__gender='Girls').count()
 
     context = {
         'page_title': 'Room Management Dashboard',
@@ -119,12 +123,12 @@ def room_base(request):
         'total_availabel_room': total_rooms,
         'total_boys_rooms': boys_rooms,
         'total_girls_rooms': girls_rooms,
-        'total_allocated_beds': active_students,
-        'total_unallocated_beds': max(0, 100 - active_students),
+        'total_allocated_beds': allocated_beds,
+        'total_unallocated_beds': vacant_beds,
         'total_maintenance_rooms': Room.objects.filter(building_id__in=active_b_ids, status='MAINTENANCE').count(),
         'total_reserved_beds': 0,
-        'total_boys_allocated': gender_male,
-        'total_girls_allocated': gender_female,
+        'total_boys_allocated': boys_allocated,
+        'total_girls_allocated': girls_allocated,
         'upcoming_vacancies': 0,
     }
     return render(request, 'room/room_base.html', context)
@@ -818,13 +822,43 @@ def get_students_by_gender(request):
 @login_required(login_url='/authentication/login')
 def search_unallocated_students(request):
     q = request.GET.get('q', '').strip()
-    qs = Student.objects.filter(status='Active')
+    assigned_st_ids = Bed.objects.filter(student__isnull=False).values_list('student_id', flat=True)
+    qs = Student.objects.filter(status='Active').exclude(student_id__in=assigned_st_ids)
     if q:
-        qs = qs.filter(name__icontains=q)
-    data = [{'id': s.student_id, 'text': f"{s.name} ({s.roll})"} for s in qs[:20]]
-    return JsonResponse({'results': data})
+        qs = qs.filter(Q(name__icontains=q) | Q(student_id__icontains=q) | Q(roll__icontains=q))
+
+    students_data = [
+        {
+            'id': s.student_id,
+            'name': s.name,
+            'roll': s.roll or f'STU{s.student_id}',
+            'phone': s.phone_number or '',
+            'photo': s.photo.url if (s.photo and hasattr(s.photo, 'url')) else '/static/image/User.jpg'
+        }
+        for s in qs[:20]
+    ]
+    return JsonResponse({'students': students_data})
 
 
 @login_required(login_url='/authentication/login')
 def allocate_bed_ajax(request):
-    return JsonResponse({'status': 'success', 'message': 'Bed allocated successfully.'})
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            bed_id = data.get('bed_id')
+            student_id = data.get('student_id')
+
+            bed_obj = Bed.objects.filter(pk=bed_id).first()
+            st_obj = Student.objects.filter(student_id=student_id).first()
+
+            if bed_obj and st_obj:
+                bed_obj.student = st_obj
+                bed_obj.save()
+                messages.success(request, f"{st_obj.name} successfully allocated to Room #{bed_obj.room.room_number} Bed #{bed_obj.bed_number}.")
+                return JsonResponse({'status': 'success', 'message': f'Allocated {st_obj.name} to Bed #{bed_obj.bed_number}'})
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Invalid bed or student specified.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
