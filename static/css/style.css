@@ -1212,6 +1212,17 @@ html[data-theme="light"] .kpi-card:hover {
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
+/* Fix Bootstrap modal backdrop stacking context globally */
+.modal-backdrop {
+  z-index: 1040 !important;
+}
+.modal {
+  z-index: 1060 !important;
+}
+.modal-dialog {
+  z-index: 1070 !important;
+}
+
 /* Interactive hover color sync inside sidebar */
 .sidebar-pro .nav-link:hover .material-symbols-outlined,
 .sidebar-pro .nav-link:hover .bi {
