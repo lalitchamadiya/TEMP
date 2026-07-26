@@ -596,8 +596,8 @@
 
     // Fetch stats and tree concurrently
     Promise.all([
-      fetch(`/hms/api/buildings/${currentBuildingId}/`).then(res => res.json()),
-      fetch(`/hms/api/buildings/${currentBuildingId}/tree/`).then(res => res.json())
+      fetch(`/api/buildings/${currentBuildingId}/`).then(res => res.json()),
+      fetch(`/api/buildings/${currentBuildingId}/tree/`).then(res => res.json())
     ]).then(([statsRes, treeRes]) => {
       showSkeleton(false);
 
@@ -860,7 +860,7 @@
   function submitAddBuilding(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    fetch('/hms/api/buildings/create/', {
+    fetch('/api/buildings/create/', {
       method: 'POST',
       body: formData,
       headers: { 'X-CSRFToken': getCsrfToken() }
@@ -882,7 +882,7 @@
   function submitEditBuilding(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    fetch(`/hms/api/buildings/${currentBuildingId}/update/`, {
+    fetch(`/api/buildings/${currentBuildingId}/update/`, {
       method: 'POST',
       body: formData,
       headers: { 'X-CSRFToken': getCsrfToken() }
@@ -901,7 +901,7 @@
     e.preventDefault();
     const formData = new FormData(e.target);
     formData.set('building_id', currentBuildingId);
-    fetch('/hms/api/blocks/create/', {
+    fetch('/api/blocks/create/', {
       method: 'POST',
       body: formData,
       headers: { 'X-CSRFToken': getCsrfToken() }
@@ -919,7 +919,7 @@
   function submitAddFloor(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    fetch('/hms/api/floors/create/', {
+    fetch('/api/floors/create/', {
       method: 'POST',
       body: formData,
       headers: { 'X-CSRFToken': getCsrfToken() }
@@ -937,7 +937,7 @@
   function submitAddRoom(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    fetch('/hms/api/rooms/create/', {
+    fetch('/api/rooms/create/', {
       method: 'POST',
       body: formData,
       headers: { 'X-CSRFToken': getCsrfToken() }
@@ -955,7 +955,7 @@
   function submitAddBed(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    fetch('/hms/api/beds/create/', {
+    fetch('/api/beds/create/', {
       method: 'POST',
       body: formData,
       headers: { 'X-CSRFToken': getCsrfToken() }
@@ -974,7 +974,7 @@
     if (currentBuildingId === 0) return;
     if (!confirm('Are you sure you want to archive this building?')) return;
 
-    fetch(`/hms/api/buildings/${currentBuildingId}/delete/`, {
+    fetch(`/api/buildings/${currentBuildingId}/delete/`, {
       method: 'POST',
       headers: { 'X-CSRFToken': getCsrfToken() }
     }).then(res => res.json()).then(data => {
