@@ -73,19 +73,7 @@ class Payment(models.Model):
         super().save(*args, **kwargs)
         
         if is_new_success and self.student:
-            from decimal import Decimal
-            from room.models import Bed
-            bed = Bed.objects.filter(student=self.student).first()
-            if bed:
-                base_paid = self.amount
-                if self.fee_breakdown and 'base_amount' in self.fee_breakdown:
-                    try:
-                        base_paid = Decimal(str(self.fee_breakdown['base_amount']))
-                    except Exception:
-                        pass
-                bed.paid_amount = (bed.paid_amount or 0) + base_paid
-                bed.remaining_amount = max(0, bed.total_amount - bed.paid_amount)
-                bed.save()
+            pass
 
     def __str__(self):
         return f"{self.enrollment_number} - {self.amount} - {self.transaction_status}"

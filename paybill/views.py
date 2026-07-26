@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
 from django.db.models import Q, Sum
-from room.models import Room, Bed
 from student.models import Student
 from .models import FeeStructure, Payment
 from django.urls import reverse
@@ -18,14 +17,10 @@ from django.core.exceptions import PermissionDenied
 @login_required(login_url='/authentication/login')
 @permission_required('paybill', 'view')
 def paybill_base(request):
-    total_remaining = Bed.objects.aggregate(total=Sum('remaining_amount'))['total'] or 0
-    total_count = Bed.objects.filter(student__isnull=False).count()
-    beds = Bed.objects.select_related('room', 'student').all()
-    total_pending_amount = sum(bed.remaining_amount for bed in beds if bed.student)
     return render(request, 'paybill/paybill_base.html', {
-        'total_remaining': total_remaining, 
-        'total_count': total_count,  
-        'total_pending_amount': total_pending_amount
+        'total_remaining': 0, 
+        'total_count': 0,  
+        'total_pending_amount': 0
     })
 
 @login_required(login_url='/authentication/login')
@@ -42,9 +37,7 @@ def pay_salary(request):
 @permission_required('paybill', 'view')
 def pending_fees(request):
     students = Student.objects.all()
-    rooms = Room.objects.all()
-    beds = Bed.objects.select_related('room', 'student').all()
-    return render(request, 'paybill/pending_fees.html', {'students': students, 'rooms': rooms, 'beds': beds})
+    return render(request, 'paybill/pending_fees.html', {'students': students})
 
 @login_required(login_url='/authentication/login')
 @permission_required('paybill', 'view')
@@ -267,27 +260,19 @@ logger = logging.getLogger(__name__)
 @permission_required('paybill', 'view')
 def check_enrollment(request):
     student_details = None
-    room_details = None
-    bed_details = None
     error_message = None
 
     if request.method == 'POST':
         enrollment_number = request.POST.get('enrollment_number')
         try:
             student_details = Student.objects.get(roll=enrollment_number)
-            bed_details = Bed.objects.get(student=student_details)
-            room_details = bed_details.room
         except Student.DoesNotExist:
             error_message = "Student Record not found"
-        except Bed.DoesNotExist:
-            error_message = "No bed assigned to this student"
         except Exception as e:
             error_message = str(e)
 
     return render(request, 'paybill/collect_fees.html', {
         'student_details': student_details,
-        'room_details': room_details,
-        'bed_details': bed_details,
         'error_message': error_message,
     })
 
@@ -318,9 +303,8 @@ def process_payment(request):
 
         try:
             student = Student.objects.get(roll=enrollment_number)
-            bed = Bed.objects.get(student=student)
-        except (Student.DoesNotExist, Bed.DoesNotExist):
-            messages.error(request, 'Student or Bed record not found.')
+        except Student.DoesNotExist:
+            messages.error(request, 'Student record not found.')
             return redirect('collect_fees')
 
         transaction_id = generate_unique_transaction_id()

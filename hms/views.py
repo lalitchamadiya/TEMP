@@ -13,7 +13,6 @@ from .models import (
     DutyAssignment, Duty, DutyPermission
 )
 from student.models import Student
-from room.models import HostelBuilding, HostelBlock, Floor, Room, Bed
 from paybill.models import Payment, FeeStructure
 from leave.models import HostelLeave
 from django.contrib.auth.models import Group
@@ -802,472 +801,7 @@ def complaint_resolve(request, pk):
     return redirect('complaint_list')
 
 
-# ──────────────────────────────────────────────────────
-# HOSTEL LOGISTICS MANAGER
-# ──────────────────────────────────────────────────────
-@login_required(login_url='/authentication/login')
-def hostel_manager(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    buildings = HostelBuilding.objects.filter(is_archived=False).order_by('name')
-    wardens = User.objects.filter(is_active=True).order_by('username')
-    context = {
-        'buildings': buildings,
-        'wardens': wardens,
-        'total_buildings': buildings.count(),
-        'total_rooms': Room.objects.count(),
-        'total_beds': Bed.objects.count(),
-        'occupied_beds': Bed.objects.filter(status='occupied').count(),
-        'page_title': 'Hostel Infrastructure Manager',
-    }
-    return render(request, 'hms/hostel_manager.html', context)
 
-
-# ──────────────────────────────────────────────────────
-# BUILDING & INFRASTRUCTURE JSON APIs
-# ──────────────────────────────────────────────────────
-
-@login_required(login_url='/authentication/login')
-def api_building_list(request):
-    """Returns JSON list of all active buildings with key metrics."""
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-    
-    buildings = HostelBuilding.objects.filter(is_archived=False).order_by('name')
-    data = []
-    for b in buildings:
-        data.append({
-            'id': b.id,
-            'name': b.name,
-            'code': b.code or '',
-            'gender': b.gender,
-            'description': b.description or '',
-            'total_floors': b.total_floors,
-            'is_active': b.is_active,
-            'warden': b.warden.get_full_name() or b.warden.username if b.warden else 'Unassigned',
-            'warden_id': b.warden_id,
-            'blocks_count': b.total_blocks_count,
-            'floors_count': b.total_floors_count,
-            'rooms_count': b.total_rooms_count,
-            'beds_count': b.total_beds_count,
-            'occupied_count': b.occupied_beds_count,
-            'vacant_count': b.vacant_beds_count,
-            'occupancy_pct': b.occupancy_percentage,
-            'created_at': b.created_at.strftime('%b %d, %Y') if b.created_at else '',
-        })
-    return JsonResponse({'status': 'success', 'buildings': data})
-
-
-@login_required(login_url='/authentication/login')
-def api_building_detail(request, pk):
-    """Returns detailed statistics and metadata for a specific building or 0 for All."""
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-
-    if pk == 0:
-        # Aggregate totals for ALL buildings
-        all_rooms = Room.objects.all()
-        all_beds = Bed.objects.all()
-        occupied = all_beds.filter(status='occupied').count()
-        total_b = all_beds.count()
-        occ_pct = round((occupied / total_b * 100), 1) if total_b > 0 else 0.0
-
-        stats = {
-            'id': 0,
-            'name': 'All Buildings',
-            'code': 'ALL',
-            'gender': 'MIXED',
-            'description': 'Global infrastructure overview across all hostel buildings.',
-            'total_blocks': HostelBlock.objects.filter(is_active=True).count(),
-            'total_floors': Floor.objects.filter(is_active=True).count(),
-            'total_rooms': all_rooms.count(),
-            'total_beds': total_b,
-            'occupied_beds': occupied,
-            'vacant_beds': all_beds.filter(status='available').count(),
-            'occupancy_pct': occ_pct,
-            'maintenance_rooms': all_rooms.filter(status='MAINTENANCE').count(),
-            'available_rooms': all_rooms.filter(status='ACTIVE').count(),
-            'inactive_rooms': all_rooms.filter(status='INACTIVE').count(),
-        }
-    else:
-        building = get_object_or_404(HostelBuilding, pk=pk)
-        stats = {
-            'id': building.id,
-            'name': building.name,
-            'code': building.code or '',
-            'gender': building.get_gender_display(),
-            'description': building.description or '',
-            'total_blocks': building.total_blocks_count,
-            'total_floors': building.total_floors_count,
-            'total_rooms': building.total_rooms_count,
-            'total_beds': building.total_beds_count,
-            'occupied_beds': building.occupied_beds_count,
-            'vacant_beds': building.vacant_beds_count,
-            'occupancy_pct': building.occupancy_percentage,
-            'maintenance_rooms': building.maintenance_rooms_count,
-            'available_rooms': building.available_rooms_count,
-            'inactive_rooms': building.inactive_rooms_count,
-            'warden': building.warden.get_full_name() or building.warden.username if building.warden else 'Unassigned',
-            'warden_id': building.warden_id,
-            'is_active': building.is_active,
-            'created_at': building.created_at.strftime('%b %d, %Y') if building.created_at else '',
-        }
-    return JsonResponse({'status': 'success', 'data': stats})
-
-
-@login_required(login_url='/authentication/login')
-def api_building_tree(request, pk):
-    """
-    Returns full hierarchy JSON tree for a building:
-    Blocks -> Floors -> Rooms -> Beds
-    If pk == 0, returns blocks across all buildings.
-    """
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-
-    if pk == 0:
-        blocks = HostelBlock.objects.filter(is_active=True).prefetch_related('floors__rooms__beds__student').select_related('building')
-    else:
-        building = get_object_or_404(HostelBuilding, pk=pk)
-        blocks = HostelBlock.objects.filter(building=building, is_active=True).prefetch_related('floors__rooms__beds__student')
-
-    blocks_data = []
-    for b in blocks:
-        floors_data = []
-        for f in b.floors.all():
-            rooms_data = []
-            for r in f.rooms.all():
-                beds_data = []
-                for bed in r.beds.all():
-                    beds_data.append({
-                        'id': bed.id,
-                        'bed_number': bed.bed_number,
-                        'status': bed.status,
-                        'total_amount': float(bed.total_amount),
-                        'student_name': bed.student.name if bed.student else None,
-                        'student_roll': bed.student.roll if bed.student else None,
-                    })
-                rooms_data.append({
-                    'id': r.id,
-                    'room_number': r.room_number,
-                    'room_name': r.room_name or '',
-                    'room_type': r.get_room_type_display(),
-                    'category': r.get_category_display(),
-                    'gender': r.get_gender_display(),
-                    'status': r.status,
-                    'is_ac': r.is_ac,
-                    'monthly_rent': float(r.monthly_rent),
-                    'beds': beds_data,
-                })
-            floors_data.append({
-                'id': f.id,
-                'floor_number': f.floor_number,
-                'capacity': f.capacity,
-                'cleaning_status': f.get_cleaning_status_display(),
-                'rooms': rooms_data,
-            })
-        blocks_data.append({
-            'id': b.id,
-            'name': b.name,
-            'building_id': b.building_id,
-            'building_name': b.building.name if b.building else 'Unassigned',
-            'description': b.description or '',
-            'floors': floors_data,
-        })
-
-    return JsonResponse({'status': 'success', 'building_id': pk, 'blocks': blocks_data})
-
-
-@login_required(login_url='/authentication/login')
-def api_building_create(request):
-    """API endpoint to create a new HostelBuilding."""
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-
-    if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        code = request.POST.get('code', '').strip()
-        gender = request.POST.get('gender', 'MIXED')
-        desc = request.POST.get('description', '').strip()
-        floors = int(request.POST.get('total_floors', 1))
-        warden_id = request.POST.get('warden_id') or None
-
-        if not name:
-            return JsonResponse({'status': 'error', 'message': 'Building name is required.'}, status=400)
-
-        warden = User.objects.filter(pk=warden_id).first() if warden_id else None
-
-        building = HostelBuilding.objects.create(
-            name=name,
-            code=code,
-            gender=gender,
-            description=desc,
-            total_floors=floors,
-            warden=warden,
-        )
-        return JsonResponse({
-            'status': 'success',
-            'message': f'Building "{building.name}" created successfully.',
-            'building_id': building.id,
-        })
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-@login_required(login_url='/authentication/login')
-def api_building_update(request, pk):
-    """API endpoint to update an existing HostelBuilding."""
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-
-    building = get_object_or_404(HostelBuilding, pk=pk)
-    if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        code = request.POST.get('code', '').strip()
-        gender = request.POST.get('gender', 'MIXED')
-        desc = request.POST.get('description', '').strip()
-        warden_id = request.POST.get('warden_id') or None
-
-        if name:
-            building.name = name
-        building.code = code
-        building.gender = gender
-        building.description = desc
-        building.warden = User.objects.filter(pk=warden_id).first() if warden_id else None
-        building.save()
-
-        return JsonResponse({'status': 'success', 'message': f'Building "{building.name}" updated.'})
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-@login_required(login_url='/authentication/login')
-def api_building_delete(request, pk):
-    """API endpoint to delete/archive a HostelBuilding."""
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-
-    building = get_object_or_404(HostelBuilding, pk=pk)
-    if request.method == 'POST':
-        name = building.name
-        building.is_archived = True
-        building.save()
-        return JsonResponse({'status': 'success', 'message': f'Building "{name}" archived.'})
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-@login_required(login_url='/authentication/login')
-def api_block_create(request):
-    """API endpoint to create a block linked to a building."""
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-
-    if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        building_id = request.POST.get('building_id')
-        desc = request.POST.get('description', '').strip()
-
-        if not name:
-            return JsonResponse({'status': 'error', 'message': 'Block name is required.'}, status=400)
-
-        building = HostelBuilding.objects.filter(pk=building_id).first() if building_id and building_id != '0' else None
-
-        block, created = HostelBlock.objects.get_or_create(
-            building=building,
-            name=name,
-            defaults={'description': desc}
-        )
-        return JsonResponse({
-            'status': 'success',
-            'message': f'Block "{block.name}" created.',
-            'block_id': block.id,
-        })
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-@login_required(login_url='/authentication/login')
-def api_floor_create(request):
-    """API endpoint to create a floor inside a block."""
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-
-    if request.method == 'POST':
-        block_id = request.POST.get('block_id')
-        floor_number = request.POST.get('floor_number')
-
-        if not block_id or floor_number is None:
-            return JsonResponse({'status': 'error', 'message': 'Block and Floor number are required.'}, status=400)
-
-        block = get_object_or_404(HostelBlock, pk=block_id)
-        floor, created = Floor.objects.get_or_create(
-            block=block,
-            floor_number=int(floor_number),
-            defaults={'building': block.building}
-        )
-        return JsonResponse({
-            'status': 'success',
-            'message': f'Floor {floor.floor_number} created under Block {block.name}.',
-            'floor_id': floor.id,
-        })
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-@login_required(login_url='/authentication/login')
-def api_room_create(request):
-    """API endpoint to create a room inside a floor."""
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-
-    if request.method == 'POST':
-        floor_id = request.POST.get('floor_id')
-        room_number = request.POST.get('room_number', '').strip()
-        room_type = request.POST.get('room_type', 'DOUBLE')
-        gender = request.POST.get('gender', 'BOY')
-        category = request.POST.get('category', 'GENERAL')
-
-        if not floor_id or not room_number:
-            return JsonResponse({'status': 'error', 'message': 'Floor and Room number are required.'}, status=400)
-
-        floor = get_object_or_404(Floor, pk=floor_id)
-        building = floor.building or (floor.block.building if floor.block else None)
-
-        room = Room.objects.create(
-            building=building,
-            floor=floor,
-            room_number=room_number,
-            room_type=room_type,
-            gender=gender,
-            category=category,
-        )
-        return JsonResponse({
-            'status': 'success',
-            'message': f'Room {room.room_number} added.',
-            'room_id': room.id,
-        })
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-@login_required(login_url='/authentication/login')
-def api_bed_create(request):
-    """API endpoint to create a bed inside a room."""
-    if not _is_admin(request.user):
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-
-    if request.method == 'POST':
-        room_id = request.POST.get('room_id')
-        bed_number = request.POST.get('bed_number', '').strip()
-        amount = float(request.POST.get('total_amount', 0))
-
-        if not room_id or not bed_number:
-            return JsonResponse({'status': 'error', 'message': 'Room and Bed number are required.'}, status=400)
-
-        room = get_object_or_404(Room, pk=room_id)
-        bed = Bed.objects.create(
-            room=room,
-            bed_number=bed_number,
-            total_amount=amount,
-            remaining_amount=amount,
-        )
-        return JsonResponse({
-            'status': 'success',
-            'message': f'Bed {bed.bed_number} added to Room {room.room_number}.',
-            'bed_id': bed.id,
-        })
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-@login_required(login_url='/authentication/login')
-def hostel_block_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        HostelBlock.objects.get_or_create(
-            name=request.POST['name'],
-            defaults={'description': request.POST.get('description', '')}
-        )
-        messages.success(request, 'Block created.')
-    return redirect('hostel_manager')
-
-
-
-@login_required(login_url='/authentication/login')
-def hostel_floor_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        block = get_object_or_404(HostelBlock, pk=request.POST['block_id'])
-        Floor.objects.get_or_create(block=block, floor_number=int(request.POST['floor_number']))
-        messages.success(request, 'Floor added.')
-    return redirect('hostel_manager')
-
-
-@login_required(login_url='/authentication/login')
-def hostel_room_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        data = request.POST
-        floor = get_object_or_404(Floor, pk=data['floor_id'])
-        Room.objects.create(
-            room_number=data['room_number'],
-            room_type=data['room_type'],
-            gender=data['gender'],
-            floor=floor,
-        )
-        messages.success(request, 'Room added.')
-    return redirect('hostel_manager')
-
-
-@login_required(login_url='/authentication/login')
-def hostel_bed_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        data = request.POST
-        room = get_object_or_404(Room, pk=data['room_id'])
-        Bed.objects.create(
-            room=room,
-            bed_number=data['bed_number'],
-            total_amount=float(data.get('total_amount', 0)),
-            remaining_amount=float(data.get('total_amount', 0)),
-        )
-        messages.success(request, 'Bed added.')
-    return redirect('hostel_manager')
-
-
-@login_required(login_url='/authentication/login')
-def hostel_allocate_bed(request, pk):
-    if not _is_admin(request.user):
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        return redirect('dashboard')
-    bed = get_object_or_404(Bed, pk=pk)
-    if request.method == 'POST':
-        student = get_object_or_404(Student, pk=request.POST['student_id'])
-        bed.student = student
-        bed.save()
-        msg = f'Bed allocated to {student.name}.'
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'success', 'message': msg})
-        messages.success(request, msg)
-    next_url = request.GET.get('next') or 'hostel_manager'
-    return redirect(next_url)
-
-
-@login_required(login_url='/authentication/login')
-def hostel_deallocate_bed(request, pk):
-    if not _is_admin(request.user):
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        return redirect('dashboard')
-    bed = get_object_or_404(Bed, pk=pk)
-    if request.method == 'POST':
-        bed.student = None
-        bed.save()
-        msg = 'Bed deallocated.'
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'success', 'message': msg})
-        messages.success(request, msg)
-    next_url = request.GET.get('next') or 'hostel_manager'
-    return redirect(next_url)
 
 
 # ──────────────────────────────────────────────────────
@@ -1401,20 +935,17 @@ from authentication.decorators import permission_required, api_permission_requir
 
 @login_required(login_url='/authentication/login')
 @permission_required('duty_management', 'view')
+@login_required(login_url='/authentication/login')
+@permission_required('duty_management', 'view')
 def duty_list(request):
-    assignments = DutyAssignment.objects.select_related('staff', 'building', 'block', 'floor', 'duty').filter(is_active=True).order_by('-assigned_date')
+    assignments = DutyAssignment.objects.select_related('staff', 'duty').filter(is_active=True).order_by('-assigned_date')
     staff_members = StaffProfile.objects.filter(status='active').order_by('name')
-    buildings = HostelBuilding.objects.filter(is_active=True).order_by('name')
-    blocks = HostelBlock.objects.all().order_by('name')
     duties = Duty.objects.prefetch_related('permissions').all().order_by('name')
     
-    # We will pass the list of assignments, active staff, buildings, blocks, duties
     context = {
         'page_title': 'Staff Duty Assignments',
         'assignments': assignments,
         'staff_members': staff_members,
-        'buildings': buildings,
-        'blocks': blocks,
         'duties': duties,
     }
     return render(request, 'hms/duty_list.html', context)
@@ -1428,18 +959,12 @@ def duty_assign(request):
         staff_id = data.get('staff_id')
         duty_id = data.get('duty_id')
         duty_title = data.get('duty_title', '').strip()
-        building_id = data.get('building_id')
-        block_id = data.get('block_id')
-        floor_id = data.get('floor_id')
         specific_location = data.get('specific_location', '').strip()
         shift_start = data.get('shift_start') or None
         shift_end = data.get('shift_end') or None
         description = data.get('description', '').strip()
         
         staff = get_object_or_404(StaffProfile, pk=staff_id)
-        building = HostelBuilding.objects.filter(pk=building_id).first() if building_id else None
-        block = HostelBlock.objects.filter(pk=block_id).first() if block_id else None
-        floor = Floor.objects.filter(pk=floor_id).first() if floor_id else None
         
         duty = None
         if duty_id:
@@ -1456,9 +981,6 @@ def duty_assign(request):
             duty=duty,
             staff=staff,
             duty_title=duty_title,
-            building=building,
-            block=block,
-            floor=floor,
             specific_location=specific_location,
             shift_start=shift_start,
             shift_end=shift_end,
@@ -1477,18 +999,12 @@ def duty_edit(request, pk):
         staff_id = data.get('staff_id')
         duty_id = data.get('duty_id')
         duty_title = data.get('duty_title', '').strip()
-        building_id = data.get('building_id')
-        block_id = data.get('block_id')
-        floor_id = data.get('floor_id')
         specific_location = data.get('specific_location', '').strip()
         shift_start = data.get('shift_start') or None
         shift_end = data.get('shift_end') or None
         description = data.get('description', '').strip()
         
         staff = get_object_or_404(StaffProfile, pk=staff_id)
-        building = HostelBuilding.objects.filter(pk=building_id).first() if building_id else None
-        block = HostelBlock.objects.filter(pk=block_id).first() if block_id else None
-        floor = Floor.objects.filter(pk=floor_id).first() if floor_id else None
         
         duty = None
         if duty_id:
@@ -1499,9 +1015,6 @@ def duty_edit(request, pk):
         assignment.duty = duty
         assignment.staff = staff
         assignment.duty_title = duty_title
-        assignment.building = building
-        assignment.block = block
-        assignment.floor = floor
         assignment.specific_location = specific_location
         assignment.shift_start = shift_start
         assignment.shift_end = shift_end
@@ -1509,6 +1022,7 @@ def duty_edit(request, pk):
         assignment.save()
         messages.success(request, f"Duty assignment for {staff.name} updated.")
     return redirect('duty_list')
+
 
 
 @login_required(login_url='/authentication/login')

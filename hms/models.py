@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 from student.models import Student
-from room.models import HostelBuilding, HostelBlock, Floor, Room, Bed
 from django.utils import timezone
 
 class StaffProfile(models.Model):
@@ -131,9 +130,6 @@ class DutyAssignment(models.Model):
     duty = models.ForeignKey(Duty, on_delete=models.SET_NULL, null=True, blank=True, related_name='assignments')
     staff = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, related_name='duties')
     duty_title = models.CharField(max_length=100, help_text="e.g. Floor Supervisor, Guard, Kitchen Help")
-    building = models.ForeignKey(HostelBuilding, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_duties')
-    block = models.ForeignKey(HostelBlock, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_duties')
-    floor = models.ForeignKey(Floor, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_duties')
     specific_location = models.CharField(max_length=150, blank=True, help_text="e.g. Main Gate 1, Kitchen, Mess hall")
     shift_start = models.TimeField(null=True, blank=True)
     shift_end = models.TimeField(null=True, blank=True)
@@ -146,14 +142,7 @@ class DutyAssignment(models.Model):
         ordering = ['-assigned_date', 'staff__name']
 
     def __str__(self):
-        dest = ""
-        if self.building:
-            dest += f" {self.building.name}"
-        if self.block:
-            dest += f" Block {self.block.name}"
-        if self.floor:
-            dest += f" Floor {self.floor.floor_number}"
-        if self.specific_location:
-            dest += f" ({self.specific_location})"
-        return f"{self.staff.name} - {self.duty_title}:{dest or ' General'}"
+        dest = f" ({self.specific_location})" if self.specific_location else ""
+        return f"{self.staff.name} - {self.duty_title}{dest or ' General'}"
+
 

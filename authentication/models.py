@@ -82,7 +82,6 @@ class UserProfile(models.Model):
 
 class WardenProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='warden_profile')
-    assigned_blocks = models.ManyToManyField('room.HostelBlock', blank=True)
 
     def __str__(self):
         return f"Warden: {self.user.username}"
