@@ -432,6 +432,16 @@ html[data-theme="dark"] .dropdown-menu .dropdown-item.text-danger:hover {
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     padding-bottom: 12px;
+    -ms-overflow-style: none !important;  /* IE & Edge */
+    scrollbar-width: none !important;  /* Firefox */
+}
+
+/* Hide visual scrollbar track for Chrome, Safari, Opera, Edge */
+.sidebar-menu-body::-webkit-scrollbar,
+.sidebar-pro::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 /* Collapsed Sidebar Tooltips on Hover */

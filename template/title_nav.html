@@ -2,11 +2,68 @@
 
 {% block content %}
 <style>
-    /* CSS overrides for Breadcrumbs and dynamic panels */
+    /* Premium Top Navbar Styling */
+    .top-nav {
+        background: var(--nav-bg, rgba(15, 23, 42, 0.85)) !important;
+        backdrop-filter: blur(20px) saturation(180%);
+        -webkit-backdrop-filter: blur(20px) saturation(180%);
+        border-bottom: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
+        height: 56px;
+        padding: 0 16px !important;
+    }
+    
+    /* Command Search Pill */
+    .nav-search-wrapper {
+        position: relative;
+        width: 280px;
+        transition: all 0.2s ease;
+    }
+    .nav-search-input {
+        background: var(--bg-hover, rgba(255, 255, 255, 0.06)) !important;
+        border: 1px solid var(--border-light, rgba(255, 255, 255, 0.1)) !important;
+        border-radius: 20px !important;
+        padding: 6px 12px 6px 36px !important;
+        font-size: 0.825rem !important;
+        color: var(--text-main, #F8FAFC) !important;
+        width: 100%;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .nav-search-input:focus {
+        background: var(--bg-card, rgba(15, 23, 42, 0.95)) !important;
+        border-color: var(--primary, #3B82F6) !important;
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.25) !important;
+        outline: none;
+        width: 320px;
+    }
+    .nav-search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted, #94A3B8);
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+    .nav-search-shortcut {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--bg-badge, rgba(255, 255, 255, 0.1));
+        border: 1px solid var(--border-light, rgba(255, 255, 255, 0.15));
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--text-muted, #94A3B8);
+        pointer-events: none;
+    }
+    
+    /* Dynamic Breadcrumbs */
     .breadcrumb-item + .breadcrumb-item::before {
         content: var(--bs-breadcrumb-divider, "/");
         color: var(--text-muted);
-        opacity: 0.5;
+        opacity: 0.4;
     }
     .breadcrumb-item a {
         transition: color 0.15s ease;
@@ -15,11 +72,11 @@
         color: var(--primary) !important;
     }
     
-    /* Premium circular buttons styles */
+    /* Premium Action Icon Buttons */
     .btn-nav-action-circle {
-        background: var(--btn-nav-action-bg);
-        border: 1px solid var(--header-border) !important;
-        color: var(--text-main) !important;
+        background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+        border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08)) !important;
+        color: var(--text-main, #F8FAFC) !important;
         width: 36px;
         height: 36px;
         padding: 0 !important;
@@ -30,59 +87,69 @@
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .btn-nav-action-circle:hover {
-        background: var(--btn-nav-action-hover);
+        background: rgba(59, 130, 246, 0.12);
+        border-color: rgba(59, 130, 246, 0.3) !important;
         transform: translateY(-1px);
-        color: var(--primary) !important;
+        color: #3B82F6 !important;
     }
     
     .profile-trigger {
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        border: 2px solid var(--header-border);
+        border: 2px solid var(--primary, #3B82F6);
         padding: 0;
         overflow: hidden;
         transition: all 0.2s ease;
+        position: relative;
     }
     .profile-trigger:hover {
         transform: scale(1.05);
-        border-color: var(--primary);
-        box-shadow: 0 0 10px var(--primary-glow);
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
     }
 </style>
 
 <div class="d-flex align-items-center w-100 justify-content-between">
   
+  <!-- Left Side: Toggle Button + Search + Breadcrumbs -->
   <div class="d-flex align-items-center">
     {% if not no_sidebar %}
-    <!-- Sidebar toggle button - works on ALL screen sizes -->
-    <button id="sidebarToggleBtn" class="btn btn-sm btn-nav-action me-2 ms-1" type="button" title="Toggle Sidebar" aria-label="Toggle Sidebar">
-      <i class="bi bi-layout-sidebar fs-5"></i>
+    <!-- Sidebar Toggle Button -->
+    <button id="sidebarToggleBtn" class="btn btn-sm btn-nav-action-circle me-3" type="button" title="Toggle Sidebar (Ctrl+B)" aria-label="Toggle Sidebar">
+      <i class="bi bi-layout-sidebar fs-6"></i>
     </button>
     {% endif %}
     
+    <!-- Quick Command Search Pill (Ctrl+K) -->
+    <div class="nav-search-wrapper d-none d-md-flex me-3">
+        <i class="bi bi-search nav-search-icon"></i>
+        <input type="text" id="globalNavSearch" class="nav-search-input" placeholder="Search rooms, students, reports..." autocomplete="off">
+        <kbd class="nav-search-shortcut">⌘K</kbd>
+    </div>
+
     <!-- Dynamic Breadcrumb Navigation -->
-    <nav aria-label="breadcrumb" class="d-none d-lg-block ms-2 mb-0">
+    <nav aria-label="breadcrumb" class="d-none d-lg-block ms-1 mb-0">
         <ol class="breadcrumb mb-0 align-items-center" id="dynamicBreadcrumbSelector" style="font-size: 0.8rem; font-weight: 500;"></ol>
     </nav>
   </div>
 
+  <!-- Right Side: Action Icons + User Avatar -->
   <div class="d-flex align-items-center">
     
-    <!-- Theme Switcher Direct Toggle Button -->
-    <button class="btn btn-nav-action-circle me-2" id="themeToggleBtn" type="button" onclick="themeToggleHandler()" title="Toggle Theme">
-        <i class="bi bi-moon-fill" id="themeIcon" style="font-size:0.95rem;"></i>
+    <!-- Theme Switcher Toggle -->
+    <button class="btn btn-nav-action-circle me-2" id="themeToggleBtn" type="button" onclick="themeToggleHandler()" title="Toggle Dark/Light Theme">
+        <i class="bi bi-moon-fill" id="themeIcon" style="font-size:0.9rem;"></i>
     </button>
 
     <!-- Messages Dropdown -->
     <div class="dropdown me-2">
         <button class="btn btn-nav-action-circle position-relative" type="button" id="msgDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Messages">
-            <i class="bi bi-chat-right-text" style="font-size:0.95rem;"></i>
-            <span class="position-absolute translate-middle badge rounded-pill bg-primary border-0" style="top: 4px; start: 76%; font-size:0.55rem; padding: 2px 4px; box-shadow: 0 0 6px rgba(79, 156, 249, 0.5);">
+            <i class="bi bi-chat-right-text" style="font-size:0.9rem;"></i>
+            <span class="position-absolute translate-middle badge rounded-pill bg-primary border-0" style="top: 4px; start: 78%; font-size:0.55rem; padding: 2px 4px; box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);">
                 2
             </span>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end shadow border border-opacity-10 py-1" aria-labelledby="msgDropdownBtn" style="width: 260px; font-size: 0.8rem; border-radius: 12px;">
+        <ul class="dropdown-menu dropdown-menu-end shadow border border-opacity-10 py-1" aria-labelledby="msgDropdownBtn" style="width: 270px; font-size: 0.8rem; border-radius: 12px;">
             <li class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
                 <span class="fw-bold">Messages</span>
                 <span class="badge bg-primary bg-opacity-15 text-primary" style="font-size:0.65rem;">2 New</span>
@@ -114,8 +181,8 @@
     <!-- Notification Dropdown -->
     <div class="dropdown me-3">
         <button class="btn btn-nav-action-circle position-relative" type="button" id="notifDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
-            <i class="bi bi-bell" style="font-size:0.95rem;"></i>
-            <span class="position-absolute translate-middle badge rounded-pill bg-danger border-0" style="top: 4px; start: 76%; font-size:0.55rem; padding: 2px 4px; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);">
+            <i class="bi bi-bell" style="font-size:0.9rem;"></i>
+            <span class="position-absolute translate-middle badge rounded-pill bg-danger border-0" style="top: 4px; start: 78%; font-size:0.55rem; padding: 2px 4px; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);">
                 3
             </span>
         </button>
@@ -157,7 +224,7 @@
               <img src="{% static 'image/User.jpg' %}" style="width: 100%; height: 100%; object-fit: cover;" alt="User">
             {% endif %}
         </button>
-        <ul class="dropdown-menu dropdown-menu-end shadow border border-opacity-10 py-1" aria-labelledby="profileDropdownBtn" style="width: 200px; font-size: 0.8rem; border-radius: 12px;">
+        <ul class="dropdown-menu dropdown-menu-end shadow border border-opacity-10 py-1" aria-labelledby="profileDropdownBtn" style="width: 210px; font-size: 0.8rem; border-radius: 12px;">
             <li class="px-3 py-2 border-bottom">
                 <span class="fw-bold d-block text-main lh-1 text-truncate">{{ request.user.username }}</span>
                 {% if is_superadmin %}
@@ -188,4 +255,15 @@
   </div>
 
 </div>
-{% endblock  %}
+
+<!-- Global Keyboard Shortcut for Search (Ctrl+K) -->
+<script>
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    var searchInput = document.getElementById('globalNavSearch');
+    if (searchInput) searchInput.focus();
+  }
+});
+</script>
+{% endblock %}
