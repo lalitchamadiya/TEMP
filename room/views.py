@@ -262,18 +262,68 @@ def student_details_list(request):
 
 @login_required(login_url='/authentication/login')
 def student_allocated_view(request, room_id):
-    room_detail = {
+    try:
+        room_id = int(room_id)
+    except (ValueError, TypeError):
+        room_id = 1
+
+    is_girls_room = room_id >= 100
+    if is_girls_room:
+        unit_index = room_id - 100
+        room_num = f"20{unit_index}" if unit_index < 10 else f"2{unit_index}"
+        building_name = "Girls Hostel Block B"
+        gender_disp = "Girls Wing"
+        room_gender = "Female"
+    else:
+        unit_index = room_id
+        room_num = f"10{unit_index}" if unit_index < 10 else f"1{unit_index}"
+        building_name = "Boys Hostel Block A"
+        gender_disp = "Boys Wing"
+        room_gender = "Male"
+
+    all_students = list(Student.objects.filter(status='Active', gender=room_gender))
+
+    st_index = (unit_index - 1) * 2
+    st1 = all_students[st_index] if st_index < len(all_students) else None
+    st2 = all_students[st_index + 1] if (st_index + 1) < len(all_students) else None
+
+    beds = [
+        {
+            'id': (room_id * 10) + 1,
+            'bed_number': '1',
+            'student': st1,
+            'remaining_amount': 0
+        },
+        {
+            'id': (room_id * 10) + 2,
+            'bed_number': '2',
+            'student': st2,
+            'remaining_amount': 0
+        }
+    ]
+
+    occupied_count = (1 if st1 else 0) + (1 if st2 else 0)
+    total_beds = 2
+    vacant_count = total_beds - occupied_count
+
+    room_obj = {
         'id': room_id,
-        'room_number': f'{room_id}',
-        'room_name': f'Unit #{room_id}',
-        'building': {'name': 'Main Hostel Building'},
-        'room_type': 2,
-        'gender': 'Boys',
-        'beds': {'all': []}
+        'room_number': room_num,
+        'room_name': f'Unit #{room_num}',
+        'building': {'name': building_name},
+        'floor': {'floor_number': '1'},
+        'get_room_type_display': '2 Beds Double Sharing',
+        'get_gender_display': gender_disp,
     }
+
     context = {
-        'page_title': f'Room #{room_id} Details',
-        'room': room_detail,
+        'page_title': f'Room #{room_num} Details',
+        'room_number': room_num,
+        'room': room_obj,
+        'total_beds': total_beds,
+        'occupied_beds': occupied_count,
+        'vacant_beds': vacant_count,
+        'beds': beds,
     }
     return render(request, 'room/student_allocated_view.html', context)
 
