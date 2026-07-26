@@ -159,12 +159,12 @@
                             </div>
                         </td>
                         <td>
-                            {% with total=roomDetails.room_type occupied=roomDetails.beds.all|length %}
+                            {% with total=roomDetails.room_type occupied=roomDetails.occupied_count|default:0 %}
                                 <div class="progress mb-1" style="height: 6px; width: 100px; border-radius: 10px; background: #f1f5f9;">
-                                    {% widthratio roomDetails.beds.all|length roomDetails.room_type 100 as percentage %}
-                                    <div class="progress-bar {% if percentage == '100' %}bg-danger{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ percentage }}%; border-radius: 10px;"></div>
+                                    {% widthratio occupied total 100 as percentage %}
+                                    <div class="progress-bar {% if percentage == '100' %}bg-danger{% elif percentage == '0' %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ percentage }}%; border-radius: 10px;"></div>
                                 </div>
-                                <span class="text-muted x-small fw-bold">{{ roomDetails.beds.all|length }}/{{ roomDetails.room_type }} FILLED</span>
+                                <span class="text-muted x-small fw-bold">{{ occupied }}/{{ total }} FILLED</span>
                             {% endwith %}
                         </td>
                         {% if request.user|has_element_perm:'item_live_bed_map' %}

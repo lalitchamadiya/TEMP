@@ -58,6 +58,7 @@ def room_manage(request):
         b_st_2 = students.pop(0) if students else None
         boys_beds.append({'bed_number': '1', 'student': b_st_1})
         boys_beds.append({'bed_number': '2', 'student': b_st_2})
+        occupied_boys = (1 if b_st_1 else 0) + (1 if b_st_2 else 0)
 
         rooms.append({
             'id': i,
@@ -69,6 +70,7 @@ def room_manage(request):
             'room_type': 2,
             'gender': 'Boys',
             'beds': {'all': boys_beds},
+            'occupied_count': occupied_boys,
         })
 
         # Girls room
@@ -77,6 +79,7 @@ def room_manage(request):
         g_st_2 = students.pop(0) if students else None
         girls_beds.append({'bed_number': '1', 'student': g_st_1})
         girls_beds.append({'bed_number': '2', 'student': g_st_2})
+        occupied_girls = (1 if g_st_1 else 0) + (1 if g_st_2 else 0)
 
         rooms.append({
             'id': 100 + i,
@@ -88,6 +91,7 @@ def room_manage(request):
             'room_type': 2,
             'gender': 'Girls',
             'beds': {'all': girls_beds},
+            'occupied_count': occupied_girls,
         })
 
     if search_query:
