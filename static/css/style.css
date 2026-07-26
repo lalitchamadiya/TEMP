@@ -357,9 +357,9 @@ html[data-theme="dark"] .dropdown-menu .dropdown-item.text-danger:hover {
     position: sticky;
     top: 56px;
     z-index: 1020;
-    width: 250px !important;
-    min-width: 250px !important;
-    max-width: 250px !important;
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
     flex-shrink: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -375,6 +375,48 @@ html[data-theme="dark"] .dropdown-menu .dropdown-item.text-danger:hover {
     width: 72px !important;
     min-width: 72px !important;
     max-width: 72px !important;
+}
+
+/* Mobile Responsive Sidebar Drawer & Touch Scrollability */
+@media (max-width: 767.98px) {
+    .sidebar-wrapper {
+        position: fixed !important;
+        top: 56px !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        height: calc(100vh - 56px) !important;
+        width: 260px !important;
+        min-width: 260px !important;
+        max-width: 260px !important;
+        z-index: 1045 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    .sidebar-wrapper.sidebar-mobile-open {
+        transform: translateX(0) !important;
+        display: flex !important;
+    }
+    .sidebar-overlay {
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 1040;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 250ms ease, visibility 250ms ease;
+    }
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
 }
 
 .sidebar-pro {
