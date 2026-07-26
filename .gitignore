@@ -42,3 +42,6 @@ Thumbs.db
 # Node (if any frontend tooling)
 node_modules/
 npm-debug.log
+
+# Persistent state
+room/hostel_state.json

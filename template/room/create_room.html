@@ -365,6 +365,7 @@
 
 <script>
 // ── Capacity defaults per room type ──────────────────────────────────────────
+// ── Capacity defaults per room type ──────────────────────────────────────────
 const CAPACITY_MAP = {
     '2_BED': 2, '4_BED': 4, 'CUSTOM': 0
 };
@@ -377,25 +378,24 @@ function handleRoomTypeChange() {
     const val = roomTypeEl.value;
     if (val === '2_BED') {
         capInput.value = 2;
-        capInput.disabled = true;
         capInput.readOnly = true;
         updateBedPreview(2);
     } else if (val === '4_BED') {
         capInput.value = 4;
-        capInput.disabled = true;
         capInput.readOnly = true;
         updateBedPreview(4);
     } else { // CUSTOM
-        capInput.disabled = false;
         capInput.readOnly = false;
-        updateBedPreview(capInput.value || 2);
+        if (!capInput.value || capInput.value < 1) {
+            capInput.value = 5;
+        }
+        updateBedPreview(capInput.value);
     }
     calculateSuggestedRent();
     updateSummary();
 }
 
 document.getElementById('id_room_type').addEventListener('change', handleRoomTypeChange);
-handleRoomTypeChange();
 
 // ── Pricing calculation logic ─────────────────────────────────────────────────
 const BASE_RENTS = {{ base_rents_json|safe }};
@@ -492,21 +492,16 @@ function updateBedPreview(capacity) {
     label.textContent = n > 0 ? `${n} bed${n !== 1 ? 's' : ''} will be created` : '— Enter capacity above —';
 }
 
-// ── Auto-set capacity when room type changes ──────────────────────────────────
-document.getElementById('id_room_type').addEventListener('change', function () {
-    const defaultCap = CAPACITY_MAP[this.value];
-    if (defaultCap !== undefined && defaultCap > 0) {
-        document.getElementById('id_capacity').value = defaultCap;
-        updateBedPreview(defaultCap);
-    }
-    calculateSuggestedRent();
-    updateSummary();
-});
-
-document.getElementById('id_capacity').addEventListener('input', function () {
-    updateBedPreview(this.value);
-    updateSummary();
-});
+// ── Bind capacity events for live preview update ──────────────────────────────────
+const capEl = document.getElementById('id_capacity');
+if (capEl) {
+    ['input', 'change', 'keyup'].forEach(evt => {
+        capEl.addEventListener(evt, function () {
+            updateBedPreview(this.value);
+            updateSummary();
+        });
+    });
+}
 
 const categoryEl = document.getElementById('id_category') || document.querySelector('[name="category"]');
 if (categoryEl) {
@@ -633,6 +628,7 @@ document.querySelectorAll('#createRoomForm select, #createRoomForm input').forEa
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
+    handleRoomTypeChange();
     const cap = document.getElementById('id_capacity').value;
     if (cap) updateBedPreview(cap);
     calculateSuggestedRent();

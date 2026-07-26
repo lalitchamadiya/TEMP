@@ -66,15 +66,17 @@ class RoomForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         buildings_data = kwargs.pop('buildings_data', None)
+        if buildings_data is None:
+            buildings_data = _get_session_buildings()
         super().__init__(*args, **kwargs)
         if buildings_data:
-            active_b = [(b['id'], b['name']) for b in buildings_data.values() if b.get('is_active', True)]
+            active_b = [(str(b['id']), b['name']) for b in buildings_data.values() if b.get('is_active', True)]
             if active_b:
                 self.fields['building'].choices = active_b
             else:
-                self.fields['building'].choices = [(1, 'Boys Hostel Block A'), (2, 'Girls Hostel Block B')]
+                self.fields['building'].choices = [('1', 'Boys Hostel Block A'), ('2', 'Girls Hostel Block B')]
         else:
-            self.fields['building'].choices = [(1, 'Boys Hostel Block A'), (2, 'Girls Hostel Block B')]
+            self.fields['building'].choices = [('1', 'Boys Hostel Block A'), ('2', 'Girls Hostel Block B')]
 
 
 class BuildingForm(forms.Form):
