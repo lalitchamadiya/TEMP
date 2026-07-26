@@ -476,6 +476,7 @@ def staff_create(request):
             if role_obj and 'admin' in role_obj.name.lower():
                 is_admin_role = True
 
+        errors = []
         if designation == 'admin' or is_admin_role:
             salary = 0.00
             shift = 'morning'
@@ -597,6 +598,7 @@ def staff_edit(request, pk):
             if role_obj and 'admin' in role_obj.name.lower():
                 is_admin_role = True
 
+        errors = []
         if designation == 'admin' or is_admin_role:
             salary = 0.00
             shift = 'morning'
@@ -1277,6 +1279,205 @@ def get_floors_for_building(request):
     floors = Floor.objects.filter(building_id=building_id).order_by('floor_number')
     data = [{'id': f.id, 'floor_number': f.floor_number} for f in floors]
     return JsonResponse({'floors': data})
+
+
+@login_required(login_url='/authentication/login')
+def hostel_3d_manager(request):
+    """Renders the Interactive 3D Digital Twin Hostel Infrastructure Manager."""
+    return render(request, 'hms/hostel_3d_manager.html')
+
+
+@login_required(login_url='/authentication/login')
+def api_hostel_3d_data(request):
+    """
+    Returns complete hierarchical JSON for 3D Campus rendering:
+    Buildings -> Blocks -> Floors -> Rooms -> Beds + Student Info & Statistics.
+    """
+    from room.models import HostelBuilding, HostelBlock, Floor, Room, Bed
+    from student.models import Student
+
+    buildings_data = []
+    buildings = HostelBuilding.objects.filter(is_active=True).prefetch_related(
+        'blocks__floors__rooms__beds__student'
+    )
+
+    total_buildings = buildings.count()
+    total_blocks = 0
+    total_floors = 0
+    total_rooms = 0
+    total_beds = 0
+    occupied_beds = 0
+    vacant_beds = 0
+    reserved_beds = 0
+    maintenance_beds = 0
+
+    for b in buildings:
+        b_blocks = []
+        for block in b.blocks.filter(is_active=True):
+            total_blocks += 1
+            b_floors = []
+            for fl in block.floors.filter(is_active=True).order_by('floor_number'):
+                total_floors += 1
+                fl_rooms = []
+                for rm in fl.rooms.all():
+                    total_rooms += 1
+                    rm_beds = []
+                    for bd in rm.beds.all():
+                        total_beds += 1
+                        st = bd.student
+                        st_info = None
+                        if st:
+                            st_info = {
+                                'id': st.id,
+                                'name': st.name or st.user.get_full_name() or st.user.username,
+                                'admission_no': getattr(st, 'admission_number', 'N/A'),
+                                'department': getattr(st, 'department', 'N/A'),
+                            }
+
+                        st_code = bd.status.lower()
+                        if st_code == 'occupied':
+                            occupied_beds += 1
+                        elif st_code == 'reserved':
+                            reserved_beds += 1
+                        elif st_code == 'maintenance':
+                            maintenance_beds += 1
+                        else:
+                            vacant_beds += 1
+
+                        rm_beds.append({
+                            'id': bd.id,
+                            'bed_number': bd.bed_number,
+                            'status': bd.status,
+                            'student': st_info,
+                        })
+
+                    fl_rooms.append({
+                        'id': rm.id,
+                        'room_number': rm.room_number,
+                        'room_type': rm.room_type,
+                        'category': rm.category,
+                        'capacity': rm.capacity,
+                        'is_ac': rm.is_ac,
+                        'attached_bathroom': rm.attached_bathroom,
+                        'status': rm.status,
+                        'rent': float(rm.monthly_rent),
+                        'beds': rm.beds,
+                    })
+
+                b_floors.append({
+                    'id': fl.id,
+                    'floor_number': fl.floor_number,
+                    'cleaning_status': fl.cleaning_status,
+                    'rooms': fl_rooms,
+                })
+
+            b_blocks.append({
+                'id': block.id,
+                'name': block.name,
+                'floors': b_floors,
+            })
+
+        buildings_data.append({
+            'id': b.id,
+            'name': b.name,
+            'gender': b.gender,
+            'total_floors': b.total_floors,
+            'blocks': b_blocks,
+        })
+
+    occ_rate = round((occupied_beds / total_beds * 100), 1) if total_beds > 0 else 0.0
+
+    return JsonResponse({
+        'status': 'success',
+        'stats': {
+            'buildings': total_buildings,
+            'blocks': total_blocks,
+            'floors': total_floors,
+            'rooms': total_rooms,
+            'beds': total_beds,
+            'occupied_beds': occupied_beds,
+            'vacant_beds': vacant_beds,
+            'reserved_beds': reserved_beds,
+            'maintenance_beds': maintenance_beds,
+            'occupancy_rate': occ_rate,
+        },
+        'buildings': buildings_data,
+    })
+
+
+@login_required(login_url='/authentication/login')
+def api_hostel_3d_create_building(request):
+    """API to dynamically create a new 3D Hostel Building & Floors."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid HTTP method.'}, status=405)
+
+    import json
+    try:
+        data = json.loads(request.body)
+        name = data.get('name', '').strip()
+        gender = data.get('gender', 'MIXED')
+        floors_count = int(data.get('total_floors', 3))
+
+        if not name:
+            return JsonResponse({'status': 'error', 'message': 'Building name is required.'}, status=400)
+
+        from room.models import HostelBuilding, HostelBlock, Floor
+        from authentication.models import Hostel
+
+        hostel = Hostel.objects.first()
+        building = HostelBuilding.objects.create(
+            hostel=hostel,
+            name=name,
+            gender=gender,
+            total_floors=floors_count
+        )
+
+        block = HostelBlock.objects.create(
+            building=building,
+            name='Main Block'
+        )
+
+        for i in range(floors_count):
+            Floor.objects.create(
+                block=block,
+                building=building,
+                floor_number=i,
+                capacity=10
+            )
+
+        return JsonResponse({'status': 'success', 'message': f'Building "{name}" created.', 'building_id': building.id})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required(login_url='/authentication/login')
+def api_hostel_3d_update_bed(request):
+    """API to update bed status dynamically."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid HTTP method.'}, status=405)
+
+    import json
+    try:
+        data = json.loads(request.body)
+        bed_id = data.get('bed_id')
+        new_status = data.get('status')
+
+        if not bed_id or not new_status:
+            return JsonResponse({'status': 'error', 'message': 'bed_id and status are required.'}, status=400)
+
+        from room.models import Bed
+        bed = Bed.objects.get(pk=bed_id)
+        bed.status = new_status
+        if new_status != 'occupied':
+            bed.student = None
+        bed.save()
+
+        return JsonResponse({'status': 'success', 'message': f'Bed {bed.bed_number} status updated to {new_status}.'})
+    except Bed.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Bed not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 
 
 

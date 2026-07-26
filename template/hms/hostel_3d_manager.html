@@ -1,0 +1,857 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | 3D Hostel Digital Twin Manager{% endblock %}
+
+{% block content %}
+<!-- Load Three.js & OrbitControls from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<style>
+:root {
+  --twin-bg: #0b0f17;
+  --panel-bg: rgba(18, 24, 38, 0.85);
+  --panel-border: rgba(255, 255, 255, 0.1);
+  --accent-blue: #3b82f6;
+  --accent-green: #22c55e;
+  --accent-red: #ef4444;
+  --accent-yellow: #eab308;
+  --accent-gray: #64748b;
+  --text-main: #f8fafc;
+  --text-sub: #94a3b8;
+}
+
+html[data-theme="light"] {
+  --twin-bg: #f1f5f9;
+  --panel-bg: rgba(255, 255, 255, 0.9);
+  --panel-border: rgba(0, 0, 0, 0.1);
+  --text-main: #0f172a;
+  --text-sub: #64748b;
+}
+
+.twin-container {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 75px);
+  background: var(--twin-bg);
+  color: var(--text-main);
+  overflow: hidden;
+  font-size: 0.82rem;
+}
+
+/* 3D WebGL Canvas */
+#webgl-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Top Toolbar */
+.twin-topbar {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  height: 52px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 10;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+
+.twin-search-box {
+  position: relative;
+  width: 320px;
+}
+
+.twin-search-box input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--panel-border);
+  color: var(--text-main);
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem 0.35rem 2.2rem;
+  font-size: 0.8rem;
+  width: 100%;
+}
+
+.twin-search-box i {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-sub);
+}
+
+.twin-tool-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--panel-border);
+  color: var(--text-main);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.twin-tool-btn:hover, .twin-tool-btn.active {
+  background: var(--accent-blue);
+  color: #fff;
+  border-color: var(--accent-blue);
+}
+
+/* Left Sidebar - Campus Hierarchy */
+.twin-sidebar-left {
+  position: absolute;
+  top: 74px;
+  left: 16px;
+  width: 260px;
+  bottom: 60px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 14px;
+  z-index: 10;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.tree-node {
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-sub);
+  transition: background 0.15s;
+}
+
+.tree-node:hover, .tree-node.active {
+  background: rgba(59,130,246,0.15);
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.tree-sub {
+  margin-left: 18px;
+  border-left: 1px dashed var(--panel-border);
+  padding-left: 8px;
+}
+
+/* Right Sidebar - Inspector & Stats */
+.twin-sidebar-right {
+  position: absolute;
+  top: 74px;
+  right: 16px;
+  width: 320px;
+  bottom: 60px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 14px;
+  z-index: 10;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+/* Stats Cards */
+.twin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.twin-stat-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.twin-stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.twin-stat-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.twin-stat-lbl {
+  font-size: 0.68rem;
+  color: var(--text-sub);
+}
+
+/* Room Inspector Details */
+.inspector-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+/* Bottom Controls */
+.twin-bottombar {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  right: 16px;
+  height: 42px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 10;
+}
+
+.status-dot-lg {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Floor Slicer View Overlay */
+.floor-slicer-box {
+  position: absolute;
+  bottom: 64px;
+  left: 290px;
+  right: 350px;
+  height: 160px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+}
+</style>
+
+<div class="twin-container">
+  <!-- 3D WebGL Canvas Viewport -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Top Toolbar -->
+  <div class="twin-topbar">
+    <div class="d-flex align-items-center gap-3">
+      <div class="fw-bold d-flex align-items-center gap-2">
+        <i class="bi bi-buildings-fill text-primary fs-5"></i>
+        <span>3D Hostel Digital Twin</span>
+      </div>
+      <button class="twin-tool-btn" data-bs-toggle="modal" data-bs-target="#addBuildingModal">
+        <i class="bi bi-plus-circle-fill text-success"></i> + Add Building
+      </button>
+      <select id="buildingSelector" class="form-select form-select-sm border-0 bg-dark text-white opacity-90" style="width: 140px; font-size:0.78rem;">
+        <option value="ALL">All Buildings</option>
+      </select>
+      <select id="floorSelector" class="form-select form-select-sm border-0 bg-dark text-white opacity-90" style="width: 130px; font-size:0.78rem;">
+        <option value="ALL">All Floors</option>
+      </select>
+    </div>
+
+    <!-- Search Box -->
+    <div class="twin-search-box">
+      <i class="bi bi-search"></i>
+      <input type="text" id="twinSearch" placeholder="Search (Room 105, Bed B-12, Student...)">
+    </div>
+
+    <!-- Action Tools -->
+    <div class="d-flex align-items-center gap-1">
+      <button class="twin-tool-btn active" id="toolSelect"><i class="bi bi-cursor-fill"></i> Select</button>
+      <button class="twin-tool-btn" id="toolSlice"><i class="bi bi-layers-half"></i> Floor Slice</button>
+      <button class="twin-tool-btn" id="toolResetCam" title="Reset View"><i class="bi bi-arrow-counterclockwise"></i></button>
+    </div>
+  </div>
+
+  <!-- Left Sidebar: Campus Tree -->
+  <div class="twin-sidebar-left">
+    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom border-secondary border-opacity-25">
+      <span class="fw-bold text-uppercase fs-xs opacity-75">Campus Hierarchy</span>
+      <span class="badge bg-primary-subtle text-primary rounded-pill" id="treeBuildingCount">0 Bldgs</span>
+    </div>
+    <div id="campusTree">
+      <!-- Tree loaded dynamically via JS -->
+      <div class="text-center text-muted py-3">Loading campus model...</div>
+    </div>
+  </div>
+
+  <!-- Right Sidebar: Live Inspector & Stats -->
+  <div class="twin-sidebar-right">
+    <!-- Live Stats -->
+    <div class="fw-bold fs-xs text-uppercase opacity-75 pb-1 border-bottom border-secondary border-opacity-25">Live Campus Stats</div>
+    <div class="twin-stat-grid">
+      <div class="twin-stat-card">
+        <div class="twin-stat-icon bg-primary bg-opacity-15 text-primary"><i class="bi bi-building"></i></div>
+        <div>
+          <div class="twin-stat-val" id="statBuildings">0</div>
+          <div class="twin-stat-lbl">Buildings</div>
+        </div>
+      </div>
+      <div class="twin-stat-card">
+        <div class="twin-stat-icon bg-info bg-opacity-15 text-info"><i class="bi bi-door-open"></i></div>
+        <div>
+          <div class="twin-stat-val" id="statRooms">0</div>
+          <div class="twin-stat-lbl">Rooms</div>
+        </div>
+      </div>
+      <div class="twin-stat-card">
+        <div class="twin-stat-icon bg-warning bg-opacity-15 text-warning"><i class="bi bi-box-seam"></i></div>
+        <div>
+          <div class="twin-stat-val" id="statBeds">0</div>
+          <div class="twin-stat-lbl">Total Beds</div>
+        </div>
+      </div>
+      <div class="twin-stat-card">
+        <div class="twin-stat-icon bg-danger bg-opacity-15 text-danger"><i class="bi bi-person-fill-lock"></i></div>
+        <div>
+          <div class="twin-stat-val" id="statOccupied">0</div>
+          <div class="twin-stat-lbl">Occupied</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Occupancy Meter -->
+    <div class="p-2 rounded bg-dark bg-opacity-40 border border-secondary border-opacity-25 text-center">
+      <div class="d-flex justify-content-between fs-xs mb-1">
+        <span>Occupancy Rate</span>
+        <span class="fw-bold text-success" id="statOccRate">0%</span>
+      </div>
+      <div class="progress" style="height: 6px;">
+        <div class="progress-bar bg-success" id="occProgressBar" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <!-- Inspector Box -->
+    <div class="fw-bold fs-xs text-uppercase opacity-75 pb-1 border-bottom border-secondary border-opacity-25 mt-1">
+      <i class="bi bi-info-circle me-1"></i> Object Inspector
+    </div>
+    <div class="inspector-card" id="inspectorPanel">
+      <div class="text-muted text-center py-4 fs-xs">
+        <i class="bi bi-mouse2 display-6 opacity-25 d-block mb-2"></i>
+        Click on any 3D Building, Room, or Bed to view and edit details.
+      </div>
+    </div>
+  </div>
+
+  <!-- Floor Slice Interactive Viewport -->
+  <div class="floor-slicer-box" id="floorSlicerBox" style="display: none;">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <span class="fw-bold" id="sliceTitle">Floor View Blueprint</span>
+      <button class="btn btn-sm btn-close btn-close-white" id="closeSliceBtn"></button>
+    </div>
+    <div class="flex-grow-1 d-flex align-items-center gap-2 overflow-x-auto" id="sliceRoomsContainer">
+      <!-- Rooms rendered dynamically -->
+    </div>
+  </div>
+
+  <!-- Bottom Bar: Layer Control & Legend -->
+  <div class="twin-bottombar">
+    <div class="d-flex align-items-center gap-3 fs-xs">
+      <span class="fw-bold text-uppercase opacity-75 me-1">Status Legend:</span>
+      <span><span class="status-dot-lg" style="background:#22c55e;"></span> Vacant</span>
+      <span><span class="status-dot-lg" style="background:#ef4444;"></span> Occupied</span>
+      <span><span class="status-dot-lg" style="background:#eab308;"></span> Reserved</span>
+      <span><span class="status-dot-lg" style="background:#64748b;"></span> Maintenance</span>
+    </div>
+    <div class="d-flex align-items-center gap-3 fs-xs">
+      <label class="form-check-label"><input type="checkbox" class="form-check-input me-1" id="layerRoof" checked> Roofs</label>
+      <label class="form-check-label"><input type="checkbox" class="form-check-input me-1" id="layerBeds" checked> Beds</label>
+      <label class="form-check-label"><input type="checkbox" class="form-check-input me-1" id="layerGrid" checked> Grid</label>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Building -->
+<div class="modal fade" id="addBuildingModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border border-secondary border-opacity-25">
+      <div class="modal-header border-secondary border-opacity-25">
+        <h5 class="modal-title"><i class="bi bi-building-add text-primary me-2"></i>Create 3D Hostel Building</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createBuildingForm">
+          <div class="mb-3">
+            <label class="form-label fs-xs fw-bold">Building Name</label>
+            <input type="text" id="bldgName" class="form-control bg-secondary bg-opacity-25 border-0 text-white" placeholder="e.g. Block C (Boys Hostel)" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fs-xs fw-bold">Category / Gender</label>
+            <select id="bldgGender" class="form-select bg-secondary bg-opacity-25 border-0 text-white">
+              <option value="BOY">Boys Hostel</option>
+              <option value="GIRL">Girls Hostel</option>
+              <option value="MIXED">Mixed / Staff</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fs-xs fw-bold">Total Floors</label>
+            <input type="number" id="bldgFloors" class="form-control bg-secondary bg-opacity-25 border-0 text-white" value="3" min="1" max="10" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 fw-bold">Generate 3D Building</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3D Engine Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let scene, camera, renderer, controls;
+    let campusData = null;
+    let buildingMeshes = [];
+    let roomMeshes = [];
+    let bedMeshes = [];
+    let raycaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector2();
+    let selectedMesh = null;
+
+    init3DScene();
+    loadCampusData();
+
+    function init3DScene() {
+        const container = document.querySelector('.twin-container');
+        const canvas = document.getElementById('webgl-canvas');
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0f17);
+        scene.fog = new THREE.FogExp2(0x0b0f17, 0.008);
+
+        camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(45, 35, 55);
+
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 180;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        dirLight.position.set(40, 60, 30);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // Ground Plane & Grid
+        const gridHelper = new THREE.GridHelper(160, 40, 0x3b82f6, 0x1e293b);
+        gridHelper.name = 'gridHelper';
+        scene.add(gridHelper);
+
+        const planeGeo = new THREE.PlaneGeometry(160, 160);
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9, metalness: 0.1 });
+        const ground = new THREE.Mesh(planeGeo, planeMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.05;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        window.addEventListener('resize', onWindowResize);
+        canvas.addEventListener('click', onCanvasClick);
+
+        animate();
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+        const container = document.querySelector('.twin-container');
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    function loadCampusData() {
+        fetch('{% url "api_hostel_3d_data" %}')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    campusData = data;
+                    updateStats(data.stats);
+                    buildCampus3D(data.buildings);
+                    renderCampusTree(data.buildings);
+                    populateSelectors(data.buildings);
+                }
+            })
+            .catch(err => console.error("Error loading 3D campus data:", err));
+    }
+
+    function updateStats(stats) {
+        document.getElementById('statBuildings').textContent = stats.buildings;
+        document.getElementById('statRooms').textContent = stats.rooms;
+        document.getElementById('statBeds').textContent = stats.beds;
+        document.getElementById('statOccupied').textContent = stats.occupied_beds;
+        document.getElementById('statOccRate').textContent = stats.occupancy_rate + '%';
+        document.getElementById('occProgressBar').style.width = stats.occupancy_rate + '%';
+        document.getElementById('treeBuildingCount').textContent = stats.buildings + ' Bldgs';
+    }
+
+    function buildCampus3D(buildings) {
+        // Clear previous meshes
+        buildingMeshes.forEach(m => scene.remove(m));
+        roomMeshes.forEach(m => scene.remove(m));
+        bedMeshes.forEach(m => scene.remove(m));
+        buildingMeshes = [];
+        roomMeshes = [];
+        bedMeshes = [];
+
+        if (!buildings || buildings.length === 0) return;
+
+        const gridCols = Math.ceil(Math.sqrt(buildings.length));
+        const spacing = 28;
+
+        buildings.forEach((bldg, idx) => {
+            const row = Math.floor(idx / gridCols);
+            const col = idx % gridCols;
+            const posX = (col - (gridCols - 1) / 2) * spacing;
+            const posZ = (row - (gridCols - 1) / 2) * spacing;
+
+            const floorsCount = bldg.total_floors || 3;
+            const bldgHeight = floorsCount * 4;
+            const bldgWidth = 18;
+            const bldgDepth = 14;
+
+            // Main Building Box Group
+            const bldgGroup = new THREE.Group();
+            bldgGroup.position.set(posX, 0, posZ);
+
+            // Building Exterior Shell
+            const bldgMat = new THREE.MeshStandardMaterial({
+                color: bldg.gender === 'BOY' ? 0x1e3a8a : (bldg.gender === 'GIRL' ? 0x831843 : 0x334155),
+                roughness: 0.4,
+                metalness: 0.2
+            });
+
+            const bodyGeo = new THREE.BoxGeometry(bldgWidth, bldgHeight, bldgDepth);
+            const bodyMesh = new THREE.Mesh(bodyGeo, bldgMat);
+            bodyMesh.position.y = bldgHeight / 2;
+            bodyMesh.castShadow = true;
+            bodyMesh.receiveShadow = true;
+            bodyMesh.userData = { type: 'building', data: bldg };
+            bldgGroup.add(bodyMesh);
+            buildingMeshes.push(bodyMesh);
+
+            // Roof Cap
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+            const roofGeo = new THREE.BoxGeometry(bldgWidth + 0.6, 0.6, bldgDepth + 0.6);
+            const roofMesh = new THREE.Mesh(roofGeo, roofMat);
+            roofMesh.position.y = bldgHeight + 0.3;
+            roofMesh.userData = { type: 'roof' };
+            roofMesh.name = 'roofMesh';
+            bldgGroup.add(roofMesh);
+
+            // Render Floor Slices & Rooms
+            let floorY = 0.5;
+            bldg.blocks.forEach(blk => {
+                blk.floors.forEach(fl => {
+                    fl.rooms.forEach((rm, rmIdx) => {
+                        const rmW = 3.8;
+                        const rmH = 2.8;
+                        const rmD = 5.2;
+
+                        const colIdx = rmIdx % 4;
+                        const rowIdx = Math.floor(rmIdx / 4);
+
+                        const rmX = (colIdx - 1.5) * 4.2;
+                        const rmZ = (rowIdx - 0.5) * 6.0;
+
+                        const rmColor = rm.status === 'ACTIVE' ? 0x22c55e : 0xeab308;
+                        const rmMat = new THREE.MeshStandardMaterial({
+                            color: rmColor,
+                            transparent: true,
+                            opacity: 0.7,
+                            roughness: 0.5
+                        });
+
+                        const rmGeo = new THREE.BoxGeometry(rmW, rmH, rmD);
+                        const rmMesh = new THREE.Mesh(rmGeo, rmMat);
+                        rmMesh.position.set(rmX, floorY + 1.6, rmZ);
+                        rmMesh.userData = { type: 'room', data: rm, buildingName: bldg.name, floorNum: fl.floor_number };
+                        bldgGroup.add(rmMesh);
+                        roomMeshes.push(rmMesh);
+
+                        // Render 3D Beds inside Room
+                        rm.beds.forEach((bd, bdIdx) => {
+                            let bedColor = 0x22c55e; // Vacant
+                            const st = bd.status ? bd.status.toLowerCase() : 'available';
+                            if (st === 'occupied') bedColor = 0xef4444;
+                            else if (st === 'reserved') bedColor = 0xeab308;
+                            else if (st === 'maintenance') bedColor = 0x64748b;
+
+                            const bedMat = new THREE.MeshStandardMaterial({ color: bedColor });
+                            const bedGeo = new THREE.BoxGeometry(1.0, 0.5, 1.8);
+                            const bedMesh = new THREE.Mesh(bedGeo, bedMat);
+
+                            const bedOffsetX = (bdIdx % 2 === 0 ? -1.0 : 1.0);
+                            const bedOffsetZ = (bdIdx > 1 ? 1.2 : -1.2);
+                            bedMesh.position.set(rmX + bedOffsetX, floorY + 0.6, rmZ + bedOffsetZ);
+                            bedMesh.userData = { type: 'bed', data: bd, roomNumber: rm.room_number, buildingName: bldg.name };
+                            bldgGroup.add(bedMesh);
+                            bedMeshes.push(bedMesh);
+                        });
+                    });
+                    floorY += 4.0;
+                });
+            });
+
+            scene.add(bldgGroup);
+        });
+    }
+
+    function renderCampusTree(buildings) {
+        const container = document.getElementById('campusTree');
+        container.innerHTML = '';
+
+        if (!buildings || buildings.length === 0) {
+            container.innerHTML = '<div class="text-muted text-center py-2 fs-xs">No buildings created yet.</div>';
+            return;
+        }
+
+        buildings.forEach(bldg => {
+            const bNode = document.createElement('div');
+            bNode.className = 'tree-node';
+            bNode.innerHTML = `<i class="bi bi-building text-primary"></i> <span>${bldg.name}</span>`;
+            bNode.onclick = () => focusBuilding(bldg);
+
+            const subBox = document.createElement('div');
+            subBox.className = 'tree-sub';
+
+            bldg.blocks.forEach(blk => {
+                blk.floors.forEach(fl => {
+                    const flNode = document.createElement('div');
+                    flNode.className = 'tree-node';
+                    flNode.innerHTML = `<i class="bi bi-layers opacity-75"></i> <span>Floor ${fl.floor_number} (${fl.rooms.length} Rooms)</span>`;
+                    flNode.onclick = (e) => {
+                        e.stopPropagation();
+                        openFloorSlicer(bldg.name, fl);
+                    };
+                    subBox.appendChild(flNode);
+                });
+            });
+
+            container.appendChild(bNode);
+            container.appendChild(subBox);
+        });
+    }
+
+    function populateSelectors(buildings) {
+        const bSel = document.getElementById('buildingSelector');
+        bSel.innerHTML = '<option value="ALL">All Buildings</option>';
+        buildings.forEach(b => {
+            bSel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+        });
+    }
+
+    function onCanvasClick(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects([...buildingMeshes, ...roomMeshes, ...bedMeshes], true);
+
+        if (intersects.length > 0) {
+            const hit = intersects[0].object;
+            const uData = hit.userData;
+
+            if (selectedMesh && selectedMesh.material.emissive) {
+                selectedMesh.material.emissive.setHex(0x000000);
+            }
+
+            selectedMesh = hit;
+            if (selectedMesh.material.emissive) {
+                selectedMesh.material.emissive.setHex(0x3b82f6);
+            }
+
+            inspectObject(uData);
+        }
+    }
+
+    function inspectObject(uData) {
+        const panel = document.getElementById('inspectorPanel');
+        if (!uData || !uData.type) return;
+
+        if (uData.type === 'building') {
+            const b = uData.data;
+            panel.innerHTML = `
+                <div class="fw-bold text-primary mb-1"><i class="bi bi-building me-1"></i> ${b.name}</div>
+                <div class="fs-xs text-muted mb-2">Category: ${b.gender} Hostel • ${b.total_floors} Floors</div>
+                <button class="btn btn-sm btn-primary w-100 fw-bold fs-xs" id="btnFocusBldg">Focus Camera</button>
+            `;
+            document.getElementById('btnFocusBldg').onclick = () => focusBuilding(b);
+        } else if (uData.type === 'room') {
+            const rm = uData.data;
+            panel.innerHTML = `
+                <div class="fw-bold text-success mb-1"><i class="bi bi-door-open me-1"></i> Room ${rm.room_number}</div>
+                <div class="fs-xs text-muted mb-2">${uData.buildingName} • Floor ${uData.floorNum}</div>
+                <div class="d-flex justify-content-between fs-xs py-1 border-bottom border-secondary border-opacity-25">
+                    <span>Type:</span> <span class="fw-bold">${rm.room_type}</span>
+                </div>
+                <div class="d-flex justify-content-between fs-xs py-1 border-bottom border-secondary border-opacity-25">
+                    <span>Capacity:</span> <span class="fw-bold">${rm.capacity} Beds</span>
+                </div>
+                <div class="d-flex justify-content-between fs-xs py-1 mb-2">
+                    <span>AC Status:</span> <span class="fw-bold text-${rm.is_ac ? 'info':'secondary'}">${rm.is_ac ? 'AC Equipped':'Non-AC'}</span>
+                </div>
+                <button class="btn btn-sm btn-outline-light w-100 fw-bold fs-xs" id="btnViewBeds">View ${rm.beds.length} Beds</button>
+            `;
+        } else if (uData.type === 'bed') {
+            const bd = uData.data;
+            const st = bd.student;
+            panel.innerHTML = `
+                <div class="fw-bold text-warning mb-1"><i class="bi bi-box-seam me-1"></i> Bed ${bd.bed_number}</div>
+                <div class="fs-xs text-muted mb-2">Room ${uData.roomNumber} • ${uData.buildingName}</div>
+                <div class="mb-2">
+                    <label class="fs-xs text-muted d-block mb-1">Status:</label>
+                    <select id="inspectBedStatus" class="form-select form-select-sm bg-secondary bg-opacity-25 text-white border-0">
+                        <option value="available" ${bd.status === 'available' ? 'selected':''}>Available (Vacant)</option>
+                        <option value="occupied" ${bd.status === 'occupied' ? 'selected':''}>Occupied</option>
+                        <option value="reserved" ${bd.status === 'reserved' ? 'selected':''}>Reserved</option>
+                        <option value="maintenance" ${bd.status === 'maintenance' ? 'selected':''}>Under Maintenance</option>
+                    </select>
+                </div>
+                ${st ? `
+                    <div class="p-2 rounded bg-primary bg-opacity-10 border border-primary border-opacity-25 mb-2">
+                        <div class="fw-bold fs-xs text-primary">${st.name}</div>
+                        <div class="fs-xs text-muted">Adm: ${st.admission_no} • ${st.department}</div>
+                    </div>
+                `: ''}
+                <button class="btn btn-sm btn-success w-100 fw-bold fs-xs" id="btnSaveBedStatus">Save Bed Status</button>
+            `;
+
+            document.getElementById('btnSaveBedStatus').onclick = () => {
+                const nSt = document.getElementById('inspectBedStatus').value;
+                fetch('{% url "api_hostel_3d_update_bed" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ bed_id: bd.id, status: nSt })
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        loadCampusData();
+                    }
+                });
+            };
+        }
+    }
+
+    function focusBuilding(bldg) {
+        controls.target.set(0, 5, 0);
+        camera.position.set(25, 20, 30);
+    }
+
+    function openFloorSlicer(bldgName, fl) {
+        const box = document.getElementById('floorSlicerBox');
+        const container = document.getElementById('sliceRoomsContainer');
+        document.getElementById('sliceTitle').textContent = `${bldgName} - Floor ${fl.floor_number} Blueprint`;
+
+        container.innerHTML = '';
+        fl.rooms.forEach(rm => {
+            const card = document.createElement('div');
+            card.className = 'p-2 rounded bg-secondary bg-opacity-25 border border-secondary border-opacity-25 text-center';
+            card.style.minWidth = '110px';
+            card.innerHTML = `
+                <div class="fw-bold text-white fs-xs">Room ${rm.room_number}</div>
+                <div class="fs-xs text-muted">${rm.beds.length} Beds</div>
+                <span class="badge bg-${rm.status === 'ACTIVE'?'success':'warning'} rounded-pill mt-1" style="font-size:0.65rem;">${rm.status}</span>
+            `;
+            container.appendChild(card);
+        });
+
+        box.style.display = 'flex';
+    }
+
+    document.getElementById('closeSliceBtn').onclick = () => {
+        document.getElementById('floorSlicerBox').style.display = 'none';
+    };
+
+    // Roof Layer Toggle
+    document.getElementById('layerRoof').onchange = (e) => {
+        scene.traverse(obj => {
+            if (obj.name === 'roofMesh') obj.visible = e.target.checked;
+        });
+    };
+
+    // Grid Toggle
+    document.getElementById('layerGrid').onchange = (e) => {
+        const grid = scene.getObjectByName('gridHelper');
+        if (grid) grid.visible = e.target.checked;
+    };
+
+    // Create Building Form submit
+    document.getElementById('createBuildingForm').onsubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('bldgName').value;
+        const gender = document.getElementById('bldgGender').value;
+        const total_floors = document.getElementById('bldgFloors').value;
+
+        fetch('{% url "api_hostel_3d_create_building" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ name, gender, total_floors })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === 'success') {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addBuildingModal'));
+                if (modal) modal.hide();
+                loadCampusData();
+            }
+        });
+    };
+});
+</script>
+{% endblock %}

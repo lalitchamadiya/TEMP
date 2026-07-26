@@ -29,6 +29,10 @@ urlpatterns = [
     
     # Hostel Logistics Manager (Rooms and Beds CRUD)
     path("hostel/", views.hostel_manager, name='hostel_manager'),
+    path("hostel/3d-manager/", views.hostel_3d_manager, name='hostel_3d_manager'),
+    path("hostel/3d-manager/api/data/", views.api_hostel_3d_data, name='api_hostel_3d_data'),
+    path("hostel/3d-manager/api/building/create/", views.api_hostel_3d_create_building, name='api_hostel_3d_create_building'),
+    path("hostel/3d-manager/api/bed/update/", views.api_hostel_3d_update_bed, name='api_hostel_3d_update_bed'),
     path("hostel/block/create/", views.hostel_block_create, name='hostel_block_create'),
     path("hostel/floor/create/", views.hostel_floor_create, name='hostel_floor_create'),
     path("hostel/room/create/", views.hostel_room_create, name='hostel_room_create'),
