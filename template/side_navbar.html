@@ -147,13 +147,6 @@
                     <span class="sidebar-label">User Accounts</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'hostel_3d_manager' %}active{% endif %}" href="{% url 'hostel_3d_manager' %}" title="3D Campus Digital Twin">
-                    <span class="material-symbols-outlined text-primary">view_in_ar</span>
-                    <span class="sidebar-label">3D Campus</span>
-                    <span class="badge rounded-pill bg-primary bg-opacity-20 text-primary ms-auto px-1.5 py-0.5 sidebar-label" style="font-size:0.6rem; border:1px solid rgba(59,130,246,0.2);">3D Twin</span>
-                </a>
-            </li>
             {% endif %}
 
             {% if user.profile.role.name == 'Warden' %}

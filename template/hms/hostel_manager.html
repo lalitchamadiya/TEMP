@@ -1,135 +1,1024 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}| Hostel Infrastructure Manager{% endblock %}
 {% block content %}
 <style>
-:root{--card-bg:#161b22;--glass-border:rgba(255,255,255,0.1);}
-.mod-header{background:linear-gradient(135deg,#0f1a28,#0d1520);border:1px solid var(--glass-border);border-radius:14px;padding:1.5rem 2rem;margin-bottom:1.5rem;}
-.panel-card{background:var(--card-bg);border:1px solid var(--glass-border);border-radius:14px;overflow:hidden;margin-bottom:1.5rem;}
-.panel-title{font-size:0.9rem;font-weight:600;color:rgba(255,255,255,0.85);padding:1rem 1.25rem;border-bottom:1px solid var(--glass-border);display:flex;align-items:center;gap:8px;}
-.sa-table{color:rgba(255,255,255,0.8);font-size:0.82rem;}
-.sa-table thead th{color:rgba(255,255,255,0.4);font-size:0.72rem;text-transform:uppercase;border-bottom:1px solid var(--glass-border);background:rgba(255,255,255,0.02);padding:0.7rem 1rem;}
-.sa-table tbody td{border-bottom:1px solid rgba(255,255,255,0.04);padding:0.65rem 1rem;vertical-align:middle;}
-.sa-table tbody tr:hover{background:rgba(255,255,255,0.03);}
-.badge-s{font-size:0.68rem;padding:3px 9px;border-radius:20px;font-weight:600;}
-.s-green{background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);}
-.s-red{background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);}
-.modal-content{background:#1a1f35;border:1px solid var(--glass-border);color:#fff;}
-.modal-header,.modal-footer{border-color:var(--glass-border);}
-.form-control,.form-select{background:#0d1117;border:1px solid var(--glass-border);color:#fff;}
-.form-control:focus,.form-select:focus{background:#0d1117;border-color:#4f9cf9;color:#fff;box-shadow:0 0 0 3px rgba(79,156,249,0.15);}
-.stat-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:8px;padding:6px 14px;font-size:0.8rem;color:rgba(255,255,255,0.7);}
+  :root {
+    --infra-bg: #0d1117;
+    --infra-card-bg: #161b22;
+    --infra-border: rgba(255, 255, 255, 0.1);
+    --infra-card-hover: rgba(255, 255, 255, 0.03);
+    --infra-accent: #3b82f6;
+  }
+  
+  html[data-theme="light"] {
+    --infra-bg: #f8fafc;
+    --infra-card-bg: #ffffff;
+    --infra-border: rgba(0, 0, 0, 0.08);
+    --infra-card-hover: rgba(0, 0, 0, 0.02);
+    --infra-accent: #2563eb;
+  }
+
+  .infra-header {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+    border: 1px solid var(--infra-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(10px);
+  }
+
+  html[data-theme="light"] .infra-header {
+    background: linear-gradient(135deg, #ffffff, #f1f5f9);
+  }
+
+  .selector-toolbar {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--infra-border);
+    border-radius: 12px;
+    padding: 0.85rem 1.25rem;
+  }
+
+  html[data-theme="light"] .selector-toolbar {
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .building-select-custom {
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid var(--infra-border);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+  }
+
+  html[data-theme="light"] .building-select-custom {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: #cbd5e1;
+  }
+
+  .building-select-custom:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    border-color: var(--infra-accent);
+  }
+
+  /* KPI Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .kpi-card-compact {
+    background: var(--infra-card-bg);
+    border: 1px solid var(--infra-border);
+    border-radius: 12px;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
+  }
+
+  .kpi-card-compact:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .kpi-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    opacity: 0.6;
+    margin-bottom: 0.35rem;
+  }
+
+  .kpi-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* Details Panel */
+  .details-banner {
+    background: var(--infra-card-bg);
+    border: 1px solid var(--infra-border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Block & Tree Cards */
+  .block-card {
+    background: var(--infra-card-bg);
+    border: 1px solid var(--infra-border);
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+  }
+
+  .block-header {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--infra-border);
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  html[data-theme="light"] .block-header {
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  .floor-section {
+    border-bottom: 1px dashed var(--infra-border);
+    padding: 1rem 1.25rem;
+  }
+
+  .floor-section:last-child {
+    border-bottom: none;
+  }
+
+  .bed-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    margin: 2px 4px 2px 0;
+  }
+
+  .bed-chip.available {
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+  }
+
+  .bed-chip.occupied {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+
+  .bed-chip.maintenance {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+
+  /* Skeleton Loading */
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-wave 1.5s infinite;
+    border-radius: 6px;
+  }
+
+  @keyframes skeleton-wave {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Modals */
+  .modal-content {
+    background: var(--infra-card-bg);
+    border: 1px solid var(--infra-border);
+    color: var(--bs-body-color);
+  }
+
+  /* Toast Notification */
+  #toastContainer {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1090;
+  }
 </style>
 
-<div class="mod-header">
+<!-- HEADER & BUILDING SELECTOR TOOLBAR -->
+<div class="infra-header">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+    <div>
+      <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <span class="material-symbols-outlined text-primary fs-2">domain</span>
+        Hostel Infrastructure Manager
+      </h2>
+      <p class="text-muted mb-0 small">Real-Time Building & Infrastructure Management System</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <a href="{% url 'superadmin_dashboard' %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Dashboard
+      </a>
+      <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalAddBuilding">
+        <i class="bi bi-plus-lg"></i> Add Building
+      </button>
+    </div>
+  </div>
+
+  <!-- SELECTOR BAR -->
+  <div class="selector-toolbar d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-3 flex-grow-1" style="max-width: 600px;">
+      <span class="fs-5 fw-bold d-flex align-items-center gap-1 text-primary">
+        🏢 Select Building:
+      </span>
+      <select id="buildingSelect" class="form-select building-select-custom flex-grow-1" onchange="switchBuilding(this.value)">
+        <option value="0">🌐 All Buildings (Global Combined View)</option>
+        {% for b in buildings %}
+        <option value="{{ b.id }}">🏢 {{ b.name }} {% if b.code %}({{ b.code }}){% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Quick Search Building -->
+    <div class="d-flex align-items-center gap-2">
+      <div class="input-group input-group-sm" style="width: 220px;">
+        <span class="input-group-text bg-transparent border-secondary border-opacity-25 text-muted"><i class="bi bi-search"></i></span>
+        <input type="text" id="buildingSearchInput" class="form-control bg-transparent border-secondary border-opacity-25" placeholder="Filter building..." onkeyup="filterBuildingDropdown(this.value)">
+      </div>
+      <button id="btnEditBuilding" class="btn btn-outline-info btn-sm d-none" onclick="openEditBuildingModal()" title="Edit Building Settings">
+        <i class="bi bi-pencil-square"></i> Edit
+      </button>
+      <button id="btnArchiveBuilding" class="btn btn-outline-danger btn-sm d-none" onclick="archiveCurrentBuilding()" title="Archive Building">
+        <i class="bi bi-archive"></i> Archive
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="reloadBuildingData()" title="Reload Data">
+        <i class="bi bi-arrow-repeat"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- BUILDING DETAILS SUMMARY BANNER -->
+<div id="buildingDetailsBanner" class="details-banner d-none">
   <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
     <div>
-      <h2 class="text-white fw-bold mb-1"><i class="bi bi-building-fill me-2 text-primary"></i>Hostel Infrastructure Manager</h2>
-      <p class="text-white opacity-50 mb-0">Blocks, Floors, Rooms, and Beds CRUD operations</p>
+      <div class="d-flex align-items-center gap-2">
+        <h4 id="bBannerName" class="fw-bold mb-0">Building Name</h4>
+        <span id="bBannerCode" class="badge bg-primary bg-opacity-20 text-primary border border-primary border-opacity-25">Code</span>
+        <span id="bBannerGender" class="badge bg-info bg-opacity-20 text-info border border-info border-opacity-25">Gender</span>
+        <span id="bBannerStatus" class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25">Active</span>
+      </div>
+      <p id="bBannerDesc" class="text-muted mb-0 mt-1 small">Building Description</p>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="{% url 'superadmin_dashboard' %}" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
-      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addBlockModal"><i class="bi bi-plus"></i> Block</button>
-      <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#addFloorModal"><i class="bi bi-plus"></i> Floor</button>
-      <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addRoomModal"><i class="bi bi-plus"></i> Room</button>
-      <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#addBedModal"><i class="bi bi-plus"></i> Bed</button>
+    <div class="d-flex align-items-center gap-4 text-muted small">
+      <div><i class="bi bi-person-badge text-warning me-1"></i>Manager: <strong id="bBannerWarden" class="text-body">Warden Name</strong></div>
+      <div><i class="bi bi-layers text-info me-1"></i>Floors: <strong id="bBannerFloors" class="text-body">0</strong></div>
+      <div><i class="bi bi-calendar3 me-1"></i>Added: <span id="bBannerCreated">Date</span></div>
     </div>
-  </div>
-  <div class="d-flex gap-3 mt-3 flex-wrap">
-    <span class="stat-chip"><i class="bi bi-building text-primary"></i>{{ total_rooms }} Rooms</span>
-    <span class="stat-chip"><i class="bi bi-bed text-success"></i>{{ total_beds }} Beds</span>
-    <span class="stat-chip"><i class="bi bi-person-fill text-warning"></i>{{ occupied_beds }} Occupied</span>
-    <span class="stat-chip"><i class="bi bi-circle text-info"></i>{{ total_beds|add:"-"|add:occupied_beds }} Vacant</span>
   </div>
 </div>
 
-<!-- Blocks list -->
-{% for block in blocks %}
-<div class="panel-card">
-  <div class="panel-title">
-    <i class="bi bi-building-fill text-primary"></i>
-    Block: {{ block.name }}
-    {% if block.description %}<small class="text-muted">({{ block.description }})</small>{% endif %}
-    <span class="ms-auto" style="font-size:0.75rem;color:rgba(255,255,255,0.4);">{{ block.floors.count }} floor(s)</span>
+<!-- 10 LIVE KPI CARDS GRID -->
+<div class="kpi-grid">
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-primary"><i class="bi bi-building me-1"></i>Blocks</div>
+    <div id="kpiBlocks" class="kpi-value text-primary">0</div>
   </div>
-  <div class="p-3">
-    {% for floor in block.floors.all %}
-    <div class="mb-3">
-      <h6 class="text-white-50 mb-2" style="font-size:0.8rem;"><i class="bi bi-layers me-1"></i>Floor {{ floor.floor_number }}</h6>
-      <div class="table-responsive">
-        <table class="table sa-table mb-0">
-          <thead><tr><th>Room No.</th><th>Type</th><th>Gender</th><th>Beds</th></tr></thead>
-          <tbody>
-            {% for room in floor.rooms.all %}
-            <tr>
-              <td class="fw-bold text-white">{{ room.room_number }}</td>
-              <td>{{ room.get_room_type_display }}</td>
-              <td>{{ room.get_gender_display }}</td>
-              <td>
-                {% for bed in room.beds.all %}
-                <span class="badge-s {% if bed.student %}s-red{% else %}s-green{% endif %} me-1">
-                  Bed {{ bed.bed_number }}{% if bed.student %} – {{ bed.student.name|truncatechars:10 }}{% endif %}
-                </span>
-                {% empty %}<span class="text-muted">No beds</span>{% endfor %}
-              </td>
-            </tr>
-            {% empty %}<tr><td colspan="4" class="text-muted text-center py-2">No rooms on this floor</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% empty %}<p class="text-muted p-2">No floors added yet.</p>
-    {% endfor %}
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-info"><i class="bi bi-layers me-1"></i>Floors</div>
+    <div id="kpiFloors" class="kpi-value text-info">0</div>
+  </div>
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-purple" style="color:#a855f7;"><i class="bi bi-door-closed me-1"></i>Total Rooms</div>
+    <div id="kpiTotalRooms" class="kpi-value" style="color:#a855f7;">0</div>
+  </div>
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-primary"><i class="bi bi-bed me-1"></i>Total Beds</div>
+    <div id="kpiTotalBeds" class="kpi-value text-primary">0</div>
+  </div>
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-danger"><i class="bi bi-person-fill me-1"></i>Occupied</div>
+    <div id="kpiOccupiedBeds" class="kpi-value text-danger">0</div>
+  </div>
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-success"><i class="bi bi-circle me-1"></i>Vacant Beds</div>
+    <div id="kpiVacantBeds" class="kpi-value text-success">0</div>
+  </div>
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-warning"><i class="bi bi-pie-chart me-1"></i>Occupancy %</div>
+    <div id="kpiOccupancyPct" class="kpi-value text-warning">0%</div>
+  </div>
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-success"><i class="bi bi-check-circle me-1"></i>Active Rooms</div>
+    <div id="kpiAvailableRooms" class="kpi-value text-success">0</div>
+  </div>
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-warning"><i class="bi bi-tools me-1"></i>Maintenance</div>
+    <div id="kpiMaintenanceRooms" class="kpi-value text-warning">0</div>
+  </div>
+  <div class="kpi-card-compact">
+    <div class="kpi-title text-secondary"><i class="bi bi-slash-circle me-1"></i>Inactive</div>
+    <div id="kpiInactiveRooms" class="kpi-value text-secondary">0</div>
   </div>
 </div>
-{% empty %}
-<div class="panel-card p-5 text-center text-muted">
-  <i class="bi bi-building fs-2 d-block mb-2 opacity-25"></i>No blocks found. Add a block to get started.
+
+<!-- INFRASTRUCTURE TREE ACTION HEADER -->
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+    <i class="bi bi-diagram-3 text-primary"></i>
+    Infrastructure Hierarchy
+    <span id="currentScopeBadge" class="badge bg-secondary bg-opacity-20 text-body border border-secondary border-opacity-25 font-monospace">Global Overview</span>
+  </h5>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-primary btn-sm" onclick="openAddBlockModal()"><i class="bi bi-plus-lg"></i> Add Block</button>
+    <button class="btn btn-outline-info btn-sm" onclick="openAddFloorModal()"><i class="bi bi-plus-lg"></i> Add Floor</button>
+    <button class="btn btn-outline-success btn-sm" onclick="openAddRoomModal()"><i class="bi bi-plus-lg"></i> Add Room</button>
+    <button class="btn btn-outline-warning btn-sm text-dark" onclick="openAddBedModal()"><i class="bi bi-plus-lg"></i> Add Bed</button>
+  </div>
 </div>
-{% endfor %}
+
+<!-- SKELETON LOADER -->
+<div id="skeletonLoader" class="d-none">
+  <div class="block-card p-4">
+    <div class="skeleton mb-3" style="height: 24px; width: 40%;"></div>
+    <div class="skeleton mb-2" style="height: 18px; width: 80%;"></div>
+    <div class="skeleton" style="height: 18px; width: 60%;"></div>
+  </div>
+  <div class="block-card p-4 mt-3">
+    <div class="skeleton mb-3" style="height: 24px; width: 35%;"></div>
+    <div class="skeleton" style="height: 18px; width: 75%;"></div>
+  </div>
+</div>
+
+<!-- DYNAMIC INFRASTRUCTURE TREE CONTAINER -->
+<div id="infrastructureTreeContainer">
+  <!-- Content loaded asynchronously via JS -->
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
 
 <!-- MODALS -->
-<div class="modal fade" id="addBlockModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content">
-  <div class="modal-header"><h6 class="modal-title">Add Block</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-  <form method="post" action="{% url 'hostel_block_create' %}">{% csrf_token %}<div class="modal-body">
-    <label class="form-label text-white-50">Block Name</label><input type="text" name="name" class="form-control" placeholder="e.g. Block A" required>
-    <label class="form-label text-white-50 mt-2">Description</label><input type="text" name="description" class="form-control">
-  </div><div class="modal-footer"><button class="btn btn-sm btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-sm btn-primary">Add Block</button></div></form>
-</div></div></div>
 
-<div class="modal fade" id="addFloorModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content">
-  <div class="modal-header"><h6 class="modal-title">Add Floor</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-  <form method="post" action="{% url 'hostel_floor_create' %}">{% csrf_token %}<div class="modal-body">
-    <label class="form-label text-white-50">Block</label>
-    <select name="block_id" class="form-select" required>{% for b in blocks %}<option value="{{ b.pk }}">{{ b.name }}</option>{% endfor %}</select>
-    <label class="form-label text-white-50 mt-2">Floor Number</label><input type="number" name="floor_number" class="form-control" min="0" required>
-  </div><div class="modal-footer"><button class="btn btn-sm btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-sm btn-info text-dark">Add Floor</button></div></form>
-</div></div></div>
-
-<div class="modal fade" id="addRoomModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
-  <div class="modal-header"><h6 class="modal-title">Add Room</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-  <form method="post" action="{% url 'hostel_room_create' %}">{% csrf_token %}<div class="modal-body">
-    <div class="row g-3">
-      <div class="col-6"><label class="form-label text-white-50">Floor</label>
-        <select name="floor_id" class="form-select" required>{% for b in blocks %}{% for f in b.floors.all %}<option value="{{ f.pk }}">{{ b.name }} – Floor {{ f.floor_number }}</option>{% endfor %}{% endfor %}</select>
+<!-- 1. ADD BUILDING MODAL -->
+<div class="modal fade" id="modalAddBuilding" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header">
+    <h6 class="modal-title fw-bold"><i class="bi bi-building-add text-primary me-2"></i>Add New Building</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <form id="formAddBuilding" onsubmit="submitAddBuilding(event)">
+    {% csrf_token %}
+    <div class="modal-body">
+      <div class="row g-3">
+        <div class="col-8">
+          <label class="form-label small fw-bold">Building Name *</label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Boys Hostel A" required>
+        </div>
+        <div class="col-4">
+          <label class="form-label small fw-bold">Building Code</label>
+          <input type="text" name="code" class="form-control" placeholder="BH-01">
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Hostel Type / Gender</label>
+          <select name="gender" class="form-select">
+            <option value="BOY">Boys Hostel</option>
+            <option value="GIRL">Girls Hostel</option>
+            <option value="MIXED">Mixed / Co-ed</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Assigned Warden</label>
+          <select name="warden_id" class="form-select">
+            <option value="">Unassigned</option>
+            {% for w in wardens %}
+            <option value="{{ w.id }}">{{ w.get_full_name|default:w.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-bold">Description</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Optional building notes..."></textarea>
+        </div>
       </div>
-      <div class="col-6"><label class="form-label text-white-50">Room Number</label><input type="text" name="room_number" class="form-control" required></div>
-      <div class="col-6"><label class="form-label text-white-50">Room Type</label><select name="room_type" class="form-select"><option value="2B">2 Bed</option><option value="4B">4 Bed</option></select></div>
-      <div class="col-6"><label class="form-label text-white-50">Gender</label><select name="gender" class="form-select"><option value="BOY">Boys</option><option value="GIRL">Girls</option></select></div>
     </div>
-  </div><div class="modal-footer"><button class="btn btn-sm btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-sm btn-success">Add Room</button></div></form>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-sm btn-primary">Create Building</button>
+    </div>
+  </form>
 </div></div></div>
 
-<div class="modal fade" id="addBedModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
-  <div class="modal-header"><h6 class="modal-title">Add Bed</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-  <form method="post" action="{% url 'hostel_bed_create' %}">{% csrf_token %}<div class="modal-body">
-    <div class="row g-3">
-      <div class="col-12"><label class="form-label text-white-50">Room</label>
-        <select name="room_id" class="form-select" required>{% for b in blocks %}{% for f in b.floors.all %}{% for r in f.rooms.all %}<option value="{{ r.pk }}">{{ b.name }}/F{{ f.floor_number }}/Room {{ r.room_number }}</option>{% endfor %}{% endfor %}{% endfor %}</select>
+<!-- 2. EDIT BUILDING MODAL -->
+<div class="modal fade" id="modalEditBuilding" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header">
+    <h6 class="modal-title fw-bold"><i class="bi bi-pencil-square text-info me-2"></i>Edit Building</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <form id="formEditBuilding" onsubmit="submitEditBuilding(event)">
+    {% csrf_token %}
+    <input type="hidden" id="editBuildingId" name="building_id">
+    <div class="modal-body">
+      <div class="row g-3">
+        <div class="col-8">
+          <label class="form-label small fw-bold">Building Name *</label>
+          <input type="text" id="editBuildingName" name="name" class="form-control" required>
+        </div>
+        <div class="col-4">
+          <label class="form-label small fw-bold">Code</label>
+          <input type="text" id="editBuildingCode" name="code" class="form-control">
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Gender Type</label>
+          <select id="editBuildingGender" name="gender" class="form-select">
+            <option value="BOY">Boys</option>
+            <option value="GIRL">Girls</option>
+            <option value="MIXED">Mixed</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Warden</label>
+          <select id="editBuildingWarden" name="warden_id" class="form-select">
+            <option value="">Unassigned</option>
+            {% for w in wardens %}
+            <option value="{{ w.id }}">{{ w.get_full_name|default:w.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-bold">Description</label>
+          <textarea id="editBuildingDesc" name="description" class="form-control" rows="2"></textarea>
+        </div>
       </div>
-      <div class="col-6"><label class="form-label text-white-50">Bed Number</label><input type="text" name="bed_number" class="form-control" required></div>
-      <div class="col-6"><label class="form-label text-white-50">Total Amount (₹)</label><input type="number" name="total_amount" class="form-control" step="0.01"></div>
     </div>
-  </div><div class="modal-footer"><button class="btn btn-sm btn-outline-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-sm btn-warning text-dark">Add Bed</button></div></form>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-sm btn-info">Save Changes</button>
+    </div>
+  </form>
 </div></div></div>
+
+<!-- 3. ADD BLOCK MODAL -->
+<div class="modal fade" id="modalAddBlock" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content">
+  <div class="modal-header">
+    <h6 class="modal-title fw-bold"><i class="bi bi-building text-primary me-2"></i>Add Block</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <form id="formAddBlock" onsubmit="submitAddBlock(event)">
+    {% csrf_token %}
+    <input type="hidden" id="addBlockBuildingId" name="building_id">
+    <div class="modal-body">
+      <label class="form-label small fw-bold">Block Name *</label>
+      <input type="text" name="name" class="form-control" placeholder="e.g. Block A" required>
+      <label class="form-label small fw-bold mt-2">Description</label>
+      <input type="text" name="description" class="form-control" placeholder="e.g. North Wing">
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-sm btn-primary">Add Block</button>
+    </div>
+  </form>
+</div></div></div>
+
+<!-- 4. ADD FLOOR MODAL -->
+<div class="modal fade" id="modalAddFloor" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content">
+  <div class="modal-header">
+    <h6 class="modal-title fw-bold"><i class="bi bi-layers text-info me-2"></i>Add Floor</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <form id="formAddFloor" onsubmit="submitAddFloor(event)">
+    {% csrf_token %}
+    <div class="modal-body">
+      <label class="form-label small fw-bold">Select Block *</label>
+      <select id="floorBlockSelect" name="block_id" class="form-select" required></select>
+      <label class="form-label small fw-bold mt-2">Floor Number *</label>
+      <input type="number" name="floor_number" class="form-control" min="0" value="1" required>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-sm btn-info text-dark">Add Floor</button>
+    </div>
+  </form>
+</div></div></div>
+
+<!-- 5. ADD ROOM MODAL -->
+<div class="modal fade" id="modalAddRoom" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header">
+    <h6 class="modal-title fw-bold"><i class="bi bi-door-open text-success me-2"></i>Add Room</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <form id="formAddRoom" onsubmit="submitAddRoom(event)">
+    {% csrf_token %}
+    <div class="modal-body">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label small fw-bold">Select Floor *</label>
+          <select id="roomFloorSelect" name="floor_id" class="form-select" required></select>
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Room Number *</label>
+          <input type="text" name="room_number" class="form-control" placeholder="101" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Room Type</label>
+          <select name="room_type" class="form-select">
+            <option value="SINGLE">Single (1 Bed)</option>
+            <option value="DOUBLE" selected>Double (2 Beds)</option>
+            <option value="TRIPLE">Triple (3 Beds)</option>
+            <option value="DORMITORY">Dormitory</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Gender</label>
+          <select name="gender" class="form-select">
+            <option value="BOY">Boys</option>
+            <option value="GIRL">Girls</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Category</label>
+          <select name="category" class="form-select">
+            <option value="GENERAL">General</option>
+            <option value="VIP">VIP / Premium</option>
+            <option value="STAFF">Staff Quarters</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-sm btn-success">Add Room</button>
+    </div>
+  </form>
+</div></div></div>
+
+<!-- 6. ADD BED MODAL -->
+<div class="modal fade" id="modalAddBed" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header">
+    <h6 class="modal-title fw-bold"><i class="bi bi-bed text-warning me-2"></i>Add Bed</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <form id="formAddBed" onsubmit="submitAddBed(event)">
+    {% csrf_token %}
+    <div class="modal-body">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label small fw-bold">Select Room *</label>
+          <select id="bedRoomSelect" name="room_id" class="form-select" required></select>
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Bed Number *</label>
+          <input type="text" name="bed_number" class="form-control" placeholder="A1" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label small fw-bold">Bed Fee / Rent (₹)</label>
+          <input type="number" name="total_amount" class="form-control" step="0.01" value="0.00">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-sm btn-warning text-dark">Add Bed</button>
+    </div>
+  </form>
+</div></div></div>
+
+<!-- JAVASCRIPT REAL-TIME LOGIC -->
+<script>
+  let currentBuildingId = 0;
+  let currentBuildingData = null;
+  let currentTreeData = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    switchBuilding(0);
+  });
+
+  // Switch building real-time
+  function switchBuilding(buildingId) {
+    currentBuildingId = parseInt(buildingId);
+    showSkeleton(true);
+
+    // Fetch stats and tree concurrently
+    Promise.all([
+      fetch(`/hms/api/buildings/${currentBuildingId}/`).then(res => res.json()),
+      fetch(`/hms/api/buildings/${currentBuildingId}/tree/`).then(res => res.json())
+    ]).then(([statsRes, treeRes]) => {
+      showSkeleton(false);
+
+      if (statsRes.status === 'success') {
+        currentBuildingData = statsRes.data;
+        renderBuildingStats(statsRes.data);
+      }
+
+      if (treeRes.status === 'success') {
+        currentTreeData = treeRes.blocks;
+        renderInfrastructureTree(treeRes.blocks);
+        populateModalDropdowns(treeRes.blocks);
+      }
+    }).catch(err => {
+      showSkeleton(false);
+      showToast('Error loading building data: ' + err, 'danger');
+    });
+  }
+
+  function reloadBuildingData() {
+    switchBuilding(currentBuildingId);
+  }
+
+  function showSkeleton(show) {
+    const loader = document.getElementById('skeletonLoader');
+    const container = document.getElementById('infrastructureTreeContainer');
+    if (show) {
+      loader.classList.remove('d-none');
+      container.classList.add('d-none');
+    } else {
+      loader.classList.add('d-none');
+      container.classList.remove('d-none');
+    }
+  }
+
+  // Render Stats & Banner
+  function renderBuildingStats(d) {
+    // Top banner
+    const banner = document.getElementById('buildingDetailsBanner');
+    const btnEdit = document.getElementById('btnEditBuilding');
+    const btnArchive = document.getElementById('btnArchiveBuilding');
+
+    if (d.id === 0) {
+      banner.classList.add('d-none');
+      btnEdit.classList.add('d-none');
+      btnArchive.classList.add('d-none');
+      document.getElementById('currentScopeBadge').innerText = 'Global Overview';
+    } else {
+      banner.classList.remove('d-none');
+      btnEdit.classList.remove('d-none');
+      btnArchive.classList.remove('d-none');
+
+      document.getElementById('bBannerName').innerText = d.name;
+      document.getElementById('bBannerCode').innerText = d.code || 'N/A';
+      document.getElementById('bBannerGender').innerText = d.gender;
+      document.getElementById('bBannerDesc').innerText = d.description || 'No description provided.';
+      document.getElementById('bBannerWarden').innerText = d.warden;
+      document.getElementById('bBannerFloors').innerText = d.total_floors;
+      document.getElementById('bBannerCreated').innerText = d.created_at;
+      document.getElementById('currentScopeBadge').innerText = d.name;
+    }
+
+    // KPI Cards
+    document.getElementById('kpiBlocks').innerText = d.total_blocks;
+    document.getElementById('kpiFloors').innerText = d.total_floors;
+    document.getElementById('kpiTotalRooms').innerText = d.total_rooms;
+    document.getElementById('kpiTotalBeds').innerText = d.total_beds;
+    document.getElementById('kpiOccupiedBeds').innerText = d.occupied_beds;
+    document.getElementById('kpiVacantBeds').innerText = d.vacant_beds;
+    document.getElementById('kpiOccupancyPct').innerText = d.occupancy_pct + '%';
+    document.getElementById('kpiAvailableRooms').innerText = d.available_rooms;
+    document.getElementById('kpiMaintenanceRooms').innerText = d.maintenance_rooms;
+    document.getElementById('kpiInactiveRooms').innerText = d.inactive_rooms;
+  }
+
+  // Render Infrastructure Tree DOM
+  function renderInfrastructureTree(blocks) {
+    const container = document.getElementById('infrastructureTreeContainer');
+
+    if (!blocks || blocks.length === 0) {
+      container.innerHTML = `
+        <div class="block-card p-5 text-center text-muted">
+          <i class="bi bi-building fs-1 d-block mb-2 opacity-25"></i>
+          <h5 class="fw-bold">No Infrastructure Found</h5>
+          <p class="small mb-3">There are no blocks created for this building yet.</p>
+          <button class="btn btn-primary btn-sm" onclick="openAddBlockModal()"><i class="bi bi-plus-lg me-1"></i>Add First Block</button>
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    blocks.forEach(b => {
+      html += `
+        <div class="block-card">
+          <div class="block-header">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-building-fill text-primary fs-5"></i>
+              <div>
+                <strong class="text-body fs-6">Block ${escapeHtml(b.name)}</strong>
+                ${currentBuildingId === 0 ? `<span class="badge bg-secondary bg-opacity-20 text-muted ms-2" style="font-size:0.68rem;">${escapeHtml(b.building_name)}</span>` : ''}
+                ${b.description ? `<small class="text-muted ms-2">(${escapeHtml(b.description)})</small>` : ''}
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-muted small">${b.floors.length} floor(s)</span>
+              <button class="btn btn-outline-info btn-xs py-0 px-2" style="font-size:0.72rem;" onclick="openAddFloorModal(${b.id})">+ Add Floor</button>
+            </div>
+          </div>
+          <div class="p-0">
+      `;
+
+      if (!b.floors || b.floors.length === 0) {
+        html += `<div class="p-3 text-muted small">No floors added to Block ${escapeHtml(b.name)} yet.</div>`;
+      } else {
+        b.floors.forEach(f => {
+          html += `
+            <div class="floor-section">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold small d-flex align-items-center gap-1 text-info">
+                  <i class="bi bi-layers"></i> Floor ${f.floor_number}
+                  <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" style="font-size:0.65rem;">${f.cleaning_status}</span>
+                </span>
+                <button class="btn btn-outline-success btn-xs py-0 px-2" style="font-size:0.72rem;" onclick="openAddRoomModal(${f.id})">+ Add Room</button>
+              </div>
+          `;
+
+          if (!f.rooms || f.rooms.length === 0) {
+            html += `<div class="text-muted opacity-75 small py-1 ps-3">No rooms on this floor.</div>`;
+          } else {
+            html += `
+              <div class="table-responsive">
+                <table class="table table-sm sa-table mb-0 align-middle">
+                  <thead>
+                    <tr>
+                      <th style="width:15%;">Room No.</th>
+                      <th style="width:15%;">Type</th>
+                      <th style="width:15%;">Category</th>
+                      <th style="width:15%;">Status</th>
+                      <th>Beds</th>
+                      <th style="width:10%;" class="text-end">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+            `;
+            f.rooms.forEach(r => {
+              html += `
+                <tr>
+                  <td class="fw-bold text-body">${escapeHtml(r.room_number)} ${r.is_ac ? '<i class="bi bi-snow text-info ms-1" title="AC Room"></i>' : ''}</td>
+                  <td>${escapeHtml(r.room_type)}</td>
+                  <td><span class="badge bg-secondary bg-opacity-20 text-body" style="font-size:0.68rem;">${escapeHtml(r.category)}</span></td>
+                  <td><span class="badge ${r.status === 'ACTIVE' ? 'bg-success' : (r.status === 'MAINTENANCE' ? 'bg-warning text-dark' : 'bg-secondary')} bg-opacity-20 border" style="font-size:0.68rem;">${r.status}</span></td>
+                  <td>
+              `;
+
+              if (!r.beds || r.beds.length === 0) {
+                html += `<span class="text-muted small">No beds</span>`;
+              } else {
+                r.beds.forEach(bed => {
+                  const statusClass = bed.status === 'occupied' ? 'occupied' : (bed.status === 'available' ? 'available' : 'maintenance');
+                  const label = bed.student_name ? `${bed.bed_number} (${bed.student_name})` : bed.bed_number;
+                  html += `<span class="bed-chip ${statusClass}">Bed ${escapeHtml(label)}</span>`;
+                });
+              }
+
+              html += `
+                  </td>
+                  <td class="text-end">
+                    <button class="btn btn-outline-warning btn-xs py-0 px-2" style="font-size:0.7rem;" onclick="openAddBedModal(${r.id})">+ Bed</button>
+                  </td>
+                </tr>
+              `;
+            });
+            html += `</tbody></table></div>`;
+          }
+
+          html += `</div>`;
+        });
+      }
+
+      html += `</div></div>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  // Populate Modals Dropdowns dynamically
+  function populateModalDropdowns(blocks) {
+    const floorSelect = document.getElementById('floorBlockSelect');
+    const roomSelect = document.getElementById('roomFloorSelect');
+    const bedSelect = document.getElementById('bedRoomSelect');
+
+    floorSelect.innerHTML = '';
+    roomSelect.innerHTML = '';
+    bedSelect.innerHTML = '';
+
+    blocks.forEach(b => {
+      floorSelect.innerHTML += `<option value="${b.id}">${escapeHtml(b.building_name)} – Block ${escapeHtml(b.name)}</option>`;
+      b.floors.forEach(f => {
+        roomSelect.innerHTML += `<option value="${f.id}">Block ${escapeHtml(b.name)} – Floor ${f.floor_number}</option>`;
+        f.rooms.forEach(r => {
+          bedSelect.innerHTML += `<option value="${r.id}">Block ${escapeHtml(b.name)} / F${f.floor_number} / Room ${escapeHtml(r.room_number)}</option>`;
+        });
+      });
+    });
+  }
+
+  // Filter Building Dropdown
+  function filterBuildingDropdown(query) {
+    const select = document.getElementById('buildingSelect');
+    const q = query.toLowerCase().strip ? query.toLowerCase().strip() : query.toLowerCase();
+    Array.from(select.options).forEach(opt => {
+      if (opt.value === '0') return;
+      const text = opt.text.toLowerCase();
+      opt.hidden = !text.includes(q);
+    });
+  }
+
+  // Modal open helpers
+  function openAddBlockModal() {
+    document.getElementById('addBlockBuildingId').value = currentBuildingId;
+    new bootstrap.Modal(document.getElementById('modalAddBlock')).show();
+  }
+
+  function openAddFloorModal(blockId = null) {
+    if (blockId) {
+      document.getElementById('floorBlockSelect').value = blockId;
+    }
+    new bootstrap.Modal(document.getElementById('modalAddFloor')).show();
+  }
+
+  function openAddRoomModal(floorId = null) {
+    if (floorId) {
+      document.getElementById('roomFloorSelect').value = floorId;
+    }
+    new bootstrap.Modal(document.getElementById('modalAddRoom')).show();
+  }
+
+  function openAddBedModal(roomId = null) {
+    if (roomId) {
+      document.getElementById('bedRoomSelect').value = roomId;
+    }
+    new bootstrap.Modal(document.getElementById('modalAddBed')).show();
+  }
+
+  function openEditBuildingModal() {
+    if (!currentBuildingData || currentBuildingData.id === 0) return;
+    document.getElementById('editBuildingId').value = currentBuildingData.id;
+    document.getElementById('editBuildingName').value = currentBuildingData.name;
+    document.getElementById('editBuildingCode').value = currentBuildingData.code;
+    document.getElementById('editBuildingGender').value = currentBuildingData.gender;
+    document.getElementById('editBuildingDesc').value = currentBuildingData.description;
+    if (currentBuildingData.warden_id) {
+      document.getElementById('editBuildingWarden').value = currentBuildingData.warden_id;
+    }
+    new bootstrap.Modal(document.getElementById('modalEditBuilding')).show();
+  }
+
+  // AJAX Submissions
+  function submitAddBuilding(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    fetch('/hms/api/buildings/create/', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': getCsrfToken() }
+    }).then(res => res.json()).then(data => {
+      if (data.status === 'success') {
+        bootstrap.Modal.getInstance(document.getElementById('modalAddBuilding')).hide();
+        showToast(data.message, 'success');
+        // Add to dropdown and select
+        const sel = document.getElementById('buildingSelect');
+        sel.innerHTML += `<option value="${data.building_id}">🏢 ${formData.get('name')} (${formData.get('code') || ''})</option>`;
+        sel.value = data.building_id;
+        switchBuilding(data.building_id);
+      } else {
+        showToast(data.message, 'danger');
+      }
+    });
+  }
+
+  function submitEditBuilding(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    fetch(`/hms/api/buildings/${currentBuildingId}/update/`, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': getCsrfToken() }
+    }).then(res => res.json()).then(data => {
+      if (data.status === 'success') {
+        bootstrap.Modal.getInstance(document.getElementById('modalEditBuilding')).hide();
+        showToast(data.message, 'success');
+        switchBuilding(currentBuildingId);
+      } else {
+        showToast(data.message, 'danger');
+      }
+    });
+  }
+
+  function submitAddBlock(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    formData.set('building_id', currentBuildingId);
+    fetch('/hms/api/blocks/create/', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': getCsrfToken() }
+    }).then(res => res.json()).then(data => {
+      if (data.status === 'success') {
+        bootstrap.Modal.getInstance(document.getElementById('modalAddBlock')).hide();
+        showToast(data.message, 'success');
+        reloadBuildingData();
+      } else {
+        showToast(data.message, 'danger');
+      }
+    });
+  }
+
+  function submitAddFloor(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    fetch('/hms/api/floors/create/', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': getCsrfToken() }
+    }).then(res => res.json()).then(data => {
+      if (data.status === 'success') {
+        bootstrap.Modal.getInstance(document.getElementById('modalAddFloor')).hide();
+        showToast(data.message, 'success');
+        reloadBuildingData();
+      } else {
+        showToast(data.message, 'danger');
+      }
+    });
+  }
+
+  function submitAddRoom(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    fetch('/hms/api/rooms/create/', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': getCsrfToken() }
+    }).then(res => res.json()).then(data => {
+      if (data.status === 'success') {
+        bootstrap.Modal.getInstance(document.getElementById('modalAddRoom')).hide();
+        showToast(data.message, 'success');
+        reloadBuildingData();
+      } else {
+        showToast(data.message, 'danger');
+      }
+    });
+  }
+
+  function submitAddBed(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    fetch('/hms/api/beds/create/', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': getCsrfToken() }
+    }).then(res => res.json()).then(data => {
+      if (data.status === 'success') {
+        bootstrap.Modal.getInstance(document.getElementById('modalAddBed')).hide();
+        showToast(data.message, 'success');
+        reloadBuildingData();
+      } else {
+        showToast(data.message, 'danger');
+      }
+    });
+  }
+
+  function archiveCurrentBuilding() {
+    if (currentBuildingId === 0) return;
+    if (!confirm('Are you sure you want to archive this building?')) return;
+
+    fetch(`/hms/api/buildings/${currentBuildingId}/delete/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrfToken() }
+    }).then(res => res.json()).then(data => {
+      if (data.status === 'success') {
+        showToast(data.message, 'success');
+        // Remove from select
+        const sel = document.getElementById('buildingSelect');
+        const opt = sel.querySelector(`option[value="${currentBuildingId}"]`);
+        if (opt) opt.remove();
+        sel.value = 0;
+        switchBuilding(0);
+      } else {
+        showToast(data.message, 'danger');
+      }
+    });
+  }
+
+  // Utilities
+  function getCsrfToken() {
+    const input = document.querySelector('[name=csrfmiddlewaretoken]');
+    return input ? input.value : '';
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toastId = 'toast_' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success text-white' : (type === 'danger' ? 'bg-danger text-white' : 'bg-info text-dark');
+    container.innerHTML += `
+      <div id="${toastId}" class="toast align-items-center ${bgClass} border-0 show mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body font-monospace small">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
+    `;
+    setTimeout(() => {
+      const el = document.getElementById(toastId);
+      if (el) el.remove();
+    }, 4000);
+  }
+</script>
 {% endblock %}

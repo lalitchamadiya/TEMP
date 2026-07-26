@@ -110,6 +110,7 @@ class RoomCategoryPricing(models.Model):
 class HostelBuilding(models.Model):
     hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='buildings', null=True, blank=True)
 
+    code = models.CharField(max_length=20, blank=True, null=True, help_text="Building Code e.g. BH-01")
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='MIXED')
@@ -119,18 +120,63 @@ class HostelBuilding(models.Model):
         null=True, blank=True, related_name='managed_buildings'
     )
     is_active = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'hostel_building'
         ordering = ['name']
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.code})" if self.code else self.name
 
     @property
-    def occupancy_count(self):
+    def total_blocks_count(self):
+        return self.blocks.filter(is_active=True).count()
+
+    @property
+    def total_floors_count(self):
+        from room.models import Floor
+        return Floor.objects.filter(block__building=self, is_active=True).count()
+
+    @property
+    def total_rooms_count(self):
+        return self.rooms.count()
+
+    @property
+    def total_beds_count(self):
+        from room.models import Bed
+        return Bed.objects.filter(room__building=self).count()
+
+    @property
+    def occupied_beds_count(self):
+        from room.models import Bed
+        return Bed.objects.filter(room__building=self, status='occupied').count()
+
+    @property
+    def vacant_beds_count(self):
+        from room.models import Bed
+        return Bed.objects.filter(room__building=self, status='available').count()
+
+    @property
+    def occupancy_percentage(self):
+        total = self.total_beds_count
+        if total == 0:
+            return 0.0
+        return round((self.occupied_beds_count / total) * 100, 1)
+
+    @property
+    def maintenance_rooms_count(self):
+        return self.rooms.filter(status='MAINTENANCE').count()
+
+    @property
+    def available_rooms_count(self):
         return self.rooms.filter(status='ACTIVE').count()
+
+    @property
+    def inactive_rooms_count(self):
+        return self.rooms.filter(status='INACTIVE').count()
 
 
 class HostelBlock(models.Model):

@@ -27,18 +27,27 @@ urlpatterns = [
     path("complaints/<int:pk>/assign/", views.complaint_assign, name='complaint_assign'),
     path("complaints/<int:pk>/resolve/", views.complaint_resolve, name='complaint_resolve'),
     
-    # Hostel Logistics Manager (Rooms and Beds CRUD)
+    # Hostel Logistics Manager (Rooms and Beds CRUD & Building APIs)
     path("hostel/", views.hostel_manager, name='hostel_manager'),
-    path("hostel/3d-manager/", views.hostel_3d_manager, name='hostel_3d_manager'),
-    path("hostel/3d-manager/api/data/", views.api_hostel_3d_data, name='api_hostel_3d_data'),
-    path("hostel/3d-manager/api/building/create/", views.api_hostel_3d_create_building, name='api_hostel_3d_create_building'),
-    path("hostel/3d-manager/api/bed/update/", views.api_hostel_3d_update_bed, name='api_hostel_3d_update_bed'),
     path("hostel/block/create/", views.hostel_block_create, name='hostel_block_create'),
     path("hostel/floor/create/", views.hostel_floor_create, name='hostel_floor_create'),
     path("hostel/room/create/", views.hostel_room_create, name='hostel_room_create'),
     path("hostel/bed/create/", views.hostel_bed_create, name='hostel_bed_create'),
     path("hostel/bed/<int:pk>/allocate/", views.hostel_allocate_bed, name='hostel_allocate_bed'),
     path("hostel/bed/<int:pk>/deallocate/", views.hostel_deallocate_bed, name='hostel_deallocate_bed'),
+
+    # Building & Infrastructure Real-Time APIs
+    path("api/buildings/", views.api_building_list, name='api_building_list'),
+    path("api/buildings/<int:pk>/", views.api_building_detail, name='api_building_detail'),
+    path("api/buildings/<int:pk>/tree/", views.api_building_tree, name='api_building_tree'),
+    path("api/buildings/create/", views.api_building_create, name='api_building_create'),
+    path("api/buildings/<int:pk>/update/", views.api_building_update, name='api_building_update'),
+    path("api/buildings/<int:pk>/delete/", views.api_building_delete, name='api_building_delete'),
+    path("api/blocks/create/", views.api_block_create, name='api_block_create'),
+    path("api/floors/create/", views.api_floor_create, name='api_floor_create'),
+    path("api/rooms/create/", views.api_room_create, name='api_room_create'),
+    path("api/beds/create/", views.api_bed_create, name='api_bed_create'),
+
 
     # Fee Management
     path("fees/", views.fee_manager, name='fee_manager'),
