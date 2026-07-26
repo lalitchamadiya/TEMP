@@ -88,3 +88,15 @@ class RoomManagementTests(TestCase):
 
         self.assertIsNone(self.bed_a1.student)
         self.assertEqual(self.bed_b1.student, self.student)
+
+    def test_delete_room_with_allocated_bed_fails(self):
+        url = reverse('delete_room', args=[self.room_a.id])
+        response = self.client.get(url)
+        self.assertRedirects(response, reverse('room_manage'))
+        self.assertTrue(Room.objects.filter(pk=self.room_a.id).exists())
+
+    def test_delete_building_with_allocated_bed_fails(self):
+        url = reverse('building_delete', args=[self.building.id])
+        response = self.client.get(url)
+        self.assertRedirects(response, reverse('building_list'))
+        self.assertTrue(HostelBuilding.objects.filter(pk=self.building.id).exists())

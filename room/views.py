@@ -415,6 +415,9 @@ def edit_room(request, pk):
 def delete_room(request, pk):
     room_obj = Room.objects.filter(pk=pk).first()
     if room_obj:
+        if room_obj.beds.filter(student__isnull=False).exists():
+            messages.error(request, f"Cannot delete Room #{room_obj.room_number} because it has allocated resident(s). Please deallocate residents first.")
+            return redirect('room_manage')
         r_num = room_obj.room_number
         room_obj.delete()
         messages.success(request, f'Room #{r_num} deleted successfully.')
@@ -594,6 +597,9 @@ def building_edit(request, pk):
 def building_delete(request, pk):
     b_obj = HostelBuilding.objects.filter(pk=pk).first()
     if b_obj:
+        if Bed.objects.filter(room__building=b_obj, student__isnull=False).exists():
+            messages.error(request, f"Cannot delete Building '{b_obj.name}' because it contains rooms with allocated resident(s). Please deallocate residents first.")
+            return redirect('building_list')
         b_name = b_obj.name
         b_obj.delete()
         messages.success(request, f"Building '{b_name}' removed successfully.")
