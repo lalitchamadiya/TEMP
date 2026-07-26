@@ -345,9 +345,36 @@
 <script>
 // ── Capacity defaults per room type ──────────────────────────────────────────
 const CAPACITY_MAP = {
-    'SINGLE': 1, 'DOUBLE': 2, 'TRIPLE': 3, 'DORMITORY': 10,
-    'DELUXE': 2, 'AC': 2, 'NON_AC': 2, 'CUSTOM': 0
+    '2_BED': 2, '4_BED': 4, 'CUSTOM': 0
 };
+
+function handleRoomTypeChange() {
+    const roomTypeEl = document.getElementById('id_room_type');
+    const capInput = document.getElementById('id_capacity');
+    if (!roomTypeEl || !capInput) return;
+
+    const val = roomTypeEl.value;
+    if (val === '2_BED') {
+        capInput.value = 2;
+        capInput.disabled = true;
+        capInput.readOnly = true;
+        updateBedPreview(2);
+    } else if (val === '4_BED') {
+        capInput.value = 4;
+        capInput.disabled = true;
+        capInput.readOnly = true;
+        updateBedPreview(4);
+    } else { // CUSTOM
+        capInput.disabled = false;
+        capInput.readOnly = false;
+        updateBedPreview(capInput.value || 2);
+    }
+    calculateSuggestedRent();
+    updateSummary();
+}
+
+document.getElementById('id_room_type').addEventListener('change', handleRoomTypeChange);
+handleRoomTypeChange();
 
 // ── Pricing calculation logic ─────────────────────────────────────────────────
 const BASE_RENTS = {{ base_rents_json|safe }};
