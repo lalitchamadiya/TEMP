@@ -8,45 +8,6 @@ from student.models import Student
 from .models import HostelBuilding, Room, Bed
 
 
-def _ensure_seed_data():
-    if not HostelBuilding.objects.exists():
-        b1 = HostelBuilding.objects.create(
-            name='Boys Hostel Block A', code='BH-A', gender='Boys', total_floors=3,
-            description='Main Boys Wing Accommodation', is_active=True, is_archived=False
-        )
-        b2 = HostelBuilding.objects.create(
-            name='Girls Hostel Block B', code='GH-B', gender='Girls', total_floors=3,
-            description='Main Girls Wing Accommodation', is_active=True, is_archived=False
-        )
-
-        students = list(Student.objects.filter(status='Active'))
-
-        for i in range(1, 11):
-            room_num = f"10{i}" if i < 10 else f"1{i}"
-            room1 = Room.objects.create(
-                building=b1, room_number=room_num, room_name=f'Boys Unit {room_num}',
-                block='A', floor=1, room_type='2_BED', category='GENERAL', gender='Boys',
-                capacity=2, status='AVAILABLE', monthly_rent=2500.00, is_ac=False,
-                description=f'Hostel Room Unit #{room_num}'
-            )
-            b_st_1 = students.pop(0) if students else None
-            b_st_2 = students.pop(0) if students else None
-            Bed.objects.create(room=room1, bed_number='1', student=b_st_1)
-            Bed.objects.create(room=room1, bed_number='2', student=b_st_2)
-
-            g_room_num = f"20{i}" if i < 10 else f"2{i}"
-            room2 = Room.objects.create(
-                building=b2, room_number=g_room_num, room_name=f'Girls Unit {g_room_num}',
-                block='B', floor=1, room_type='2_BED', category='GENERAL', gender='Girls',
-                capacity=2, status='AVAILABLE', monthly_rent=2500.00, is_ac=False,
-                description=f'Hostel Room Unit #{g_room_num}'
-            )
-            g_st_1 = students.pop(0) if students else None
-            g_st_2 = students.pop(0) if students else None
-            Bed.objects.create(room=room2, bed_number='1', student=g_st_1)
-            Bed.objects.create(room=room2, bed_number='2', student=g_st_2)
-
-
 class RoomForm(forms.Form):
     building = forms.ChoiceField(
         choices=[],
@@ -103,12 +64,11 @@ class RoomForm(forms.Form):
     def __init__(self, *args, **kwargs):
         kwargs.pop('buildings_data', None)
         super().__init__(*args, **kwargs)
-        _ensure_seed_data()
         buildings = HostelBuilding.objects.filter(is_active=True)
         if buildings.exists():
             self.fields['building'].choices = [(str(b.pk), b.name) for b in buildings]
         else:
-            self.fields['building'].choices = [('1', 'Boys Hostel Block A'), ('2', 'Girls Hostel Block B')]
+            self.fields['building'].choices = []
 
 
 class BuildingForm(forms.Form):
@@ -137,7 +97,6 @@ class BuildingForm(forms.Form):
 # ── Main Room Dashboard ──
 @login_required(login_url='/authentication/login')
 def room_base(request):
-    _ensure_seed_data()
     active_buildings = HostelBuilding.objects.filter(is_active=True)
     active_b_ids = set(active_buildings.values_list('id', flat=True))
 
@@ -169,7 +128,6 @@ def room_base(request):
 # ── Room Management (Overview) ──
 @login_required(login_url='/authentication/login')
 def room_manage(request):
-    _ensure_seed_data()
     search_query = request.GET.get('q', '').strip()
     selected_building_id = request.GET.get('building', '')
 
@@ -228,7 +186,6 @@ def room_manage(request):
 # ── Room Allocation ──
 @login_required(login_url='/authentication/login')
 def room_allocate(request):
-    _ensure_seed_data()
     if request.method == 'POST':
         room_id = request.POST.get('room-select')
         bed_num = request.POST.get('bed-select')
@@ -266,7 +223,6 @@ def room_allocate(request):
 # ── Auto Allocate ──
 @login_required(login_url='/authentication/login')
 def room_auto_allocate(request):
-    _ensure_seed_data()
     assigned_student_ids = Bed.objects.filter(student__isnull=False).values_list('student_id', flat=True)
     unallocated_students = Student.objects.filter(status='Active').exclude(student_id__in=assigned_student_ids)
 
@@ -280,7 +236,6 @@ def room_auto_allocate(request):
 @login_required(login_url='/authentication/login')
 def room_auto_allocate_execute(request):
     if request.method == 'POST':
-        _ensure_seed_data()
         active_b_ids = set(HostelBuilding.objects.filter(is_active=True).values_list('id', flat=True))
         assigned_student_ids = set(Bed.objects.filter(student__isnull=False).values_list('student_id', flat=True))
 
@@ -310,7 +265,6 @@ def room_auto_allocate_execute(request):
 # ── Create Room ──
 @login_required(login_url='/authentication/login')
 def create_room(request):
-    _ensure_seed_data()
     if request.method == 'POST':
         form = RoomForm(request.POST)
         if form.is_valid():
@@ -320,7 +274,11 @@ def create_room(request):
             if not b_info:
                 b_info = HostelBuilding.objects.filter(is_active=True).first()
 
-            gender = b_info.gender if b_info else 'Boys'
+            if not b_info:
+                messages.error(request, 'Please create a hostel building before adding rooms.')
+                return redirect('building_create')
+
+            gender = b_info.gender
             r_type = cleaned.get('room_type', '2_BED')
 
             if r_type == '2_BED':
@@ -367,7 +325,6 @@ def create_room(request):
 # ── Edit / Delete / Change Room ──
 @login_required(login_url='/authentication/login')
 def edit_room(request, pk):
-    _ensure_seed_data()
     room_obj = get_object_or_404(Room, pk=pk)
 
     if request.method == 'POST':
@@ -480,7 +437,6 @@ def delete_allocation(request, bed_id):
 
 @login_required(login_url='/authentication/login')
 def change_room(request, current_bed_id):
-    _ensure_seed_data()
     curr_bed_obj = Bed.objects.filter(pk=current_bed_id).first()
     if not curr_bed_obj:
         messages.error(request, 'Bed allocation not found.')
@@ -542,7 +498,6 @@ def change_room(request, current_bed_id):
 # ── Building Management ──
 @login_required(login_url='/authentication/login')
 def building_list(request):
-    _ensure_seed_data()
     qs = HostelBuilding.objects.all()
 
     b_list = []
@@ -661,7 +616,6 @@ def student_details_list(request):
 
 @login_required(login_url='/authentication/login')
 def student_allocated_view(request, room_id):
-    _ensure_seed_data()
     room_obj_db = Room.objects.filter(pk=room_id).first()
 
     if not room_obj_db:
@@ -730,8 +684,6 @@ def check_room_number(request):
 @login_required(login_url='/authentication/login')
 def get_floors(request):
     building_id = request.GET.get('building_id')
-    _ensure_seed_data()
-
     b_info = HostelBuilding.objects.filter(pk=building_id).first() if building_id else HostelBuilding.objects.first()
 
     total_floors = b_info.total_floors if b_info else 3
@@ -769,7 +721,6 @@ def rooms_by_building(request):
 
 @login_required(login_url='/authentication/login')
 def get_rooms_for_allocation(request):
-    _ensure_seed_data()
     building_id = request.GET.get('building_id')
     active_b_ids = set(HostelBuilding.objects.filter(is_active=True).values_list('id', flat=True))
 
