@@ -83,14 +83,14 @@ def superadmin_dashboard(request):
     gender_male = Student.objects.filter(gender='Male').count()
     gender_female = Student.objects.filter(gender='Female').count()
 
-    # ── Rooms & Beds ──
-    total_rooms = Room.objects.count()
-    total_beds = Bed.objects.count()
-    occupied_beds = Bed.objects.filter(student__isnull=False).count()
-    vacant_beds = total_beds - occupied_beds
-    occupancy_pct = round((occupied_beds / total_beds * 100) if total_beds else 0)
-    total_blocks = HostelBlock.objects.count()
-    total_floors = Floor.objects.count()
+    # ── Rooms & Beds (Decommissioned) ──
+    total_rooms = 0
+    total_beds = 0
+    occupied_beds = 0
+    vacant_beds = 0
+    occupancy_pct = 0
+    total_blocks = 0
+    total_floors = 0
 
     # ── Financials ──
     today_revenue = Payment.objects.filter(
@@ -108,10 +108,9 @@ def superadmin_dashboard(request):
 
     pending_payments = Payment.objects.filter(transaction_status='PENDING').count()
 
-    # Total expected (beds total_amount)
-    total_expected = Bed.objects.aggregate(total=Sum('total_amount'))['total'] or 0
-    total_paid = Bed.objects.aggregate(total=Sum('paid_amount'))['total'] or 0
-    total_outstanding = total_expected - total_paid
+    total_expected = 0
+    total_paid = total_revenue
+    total_outstanding = 0
 
     # ── Leaves ──
     pending_leaves = HostelLeave.objects.filter(status='pending').count()
@@ -276,11 +275,11 @@ def live_dashboard_stats(request):
     active_students = Student.objects.filter(status='Active').count()
     inactive_students = total_students - active_students
     
-    # Rooms & Beds
-    total_beds = Bed.objects.count()
-    occupied_beds = Bed.objects.filter(student__isnull=False).count()
-    vacant_beds = total_beds - occupied_beds
-    occupancy_pct = round((occupied_beds / total_beds * 100) if total_beds else 0)
+    # Rooms & Beds (Decommissioned)
+    total_beds = 0
+    occupied_beds = 0
+    vacant_beds = 0
+    occupancy_pct = 0
 
     # Financials
     month_start = today.replace(day=1)
@@ -1138,12 +1137,7 @@ def duty_delete_definition(request, pk):
 @login_required(login_url='/authentication/login')
 @api_permission_required('duty_management', 'view')
 def get_floors_for_building(request):
-    building_id = request.GET.get('building_id')
-    if not building_id:
-        return JsonResponse({'floors': []})
-    floors = Floor.objects.filter(building_id=building_id).order_by('floor_number')
-    data = [{'id': f.id, 'floor_number': f.floor_number} for f in floors]
-    return JsonResponse({'floors': data})
+    return JsonResponse({'floors': []})
 
 
 

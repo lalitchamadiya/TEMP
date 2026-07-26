@@ -428,7 +428,7 @@ def qr_code_image(request, qr_token):
 @permission_required('leave', 'view')
 def security_dashboard(request):
     from hms.models import DutyAssignment
-    assignment = DutyAssignment.objects.select_related('duty', 'building', 'block', 'floor').filter(staff__user=request.user, is_active=True).first()
+    assignment = DutyAssignment.objects.select_related('duty').filter(staff__user=request.user, is_active=True).first()
 
     # 1. Pending Exit: Leaves approved but exit_verified is False
     pending_exits = HostelLeave.objects.filter(status='approved', exit_verified=False).select_related('student')
@@ -438,21 +438,6 @@ def security_dashboard(request):
     
     # 3. Returned Students: status is completed and entry_verified is True
     returned_students = HostelLeave.objects.filter(status='completed', entry_verified=True).select_related('student').order_by('-entry_time')
-
-    # Apply location filters
-    if assignment:
-        if assignment.building:
-            pending_exits = pending_exits.filter(student__bed__room__floor__building=assignment.building)
-            students_outside = students_outside.filter(student__bed__room__floor__building=assignment.building)
-            returned_students = returned_students.filter(student__bed__room__floor__building=assignment.building)
-        if assignment.block:
-            pending_exits = pending_exits.filter(student__bed__room__floor__block=assignment.block)
-            students_outside = students_outside.filter(student__bed__room__floor__block=assignment.block)
-            returned_students = returned_students.filter(student__bed__room__floor__block=assignment.block)
-        if assignment.floor:
-            pending_exits = pending_exits.filter(student__bed__room__floor=assignment.floor)
-            students_outside = students_outside.filter(student__bed__room__floor=assignment.floor)
-            returned_students = returned_students.filter(student__bed__room__floor=assignment.floor)
 
     curr_now = timezone.now()
     # Annotate dynamic states
