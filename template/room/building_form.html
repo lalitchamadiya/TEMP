@@ -83,6 +83,11 @@
                     <small class="text-muted d-block mt-1">Floors auto-created on save.</small>
                 </div>
                 <div class="col-12">
+                    <label class="form-label">Blocks / Wings <small class="text-muted fw-normal">(comma-separated e.g. Block A, Block B)</small></label>
+                    {{ form.blocks }}
+                    <small class="text-muted d-block mt-1">Specify blocks available in this building for room assignment.</small>
+                </div>
+                <div class="col-12">
                     <label class="form-label">Description <small class="text-muted fw-normal">(optional)</small></label>
                     {{ form.description }}
                 </div>

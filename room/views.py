@@ -83,6 +83,11 @@ class BuildingForm(forms.Form):
         initial=3,
         widget=forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 20})
     )
+    blocks = forms.CharField(
+        initial='Block A, Block B',
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Block A, Block B'})
+    )
     description = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
@@ -536,6 +541,7 @@ def building_create(request):
                 code=f"B-{HostelBuilding.objects.count() + 1}",
                 gender=cleaned.get('gender', 'Boys'),
                 total_floors=cleaned.get('total_floors', 3),
+                blocks=cleaned.get('blocks', 'Block A, Block B') or 'Block A',
                 description=cleaned.get('description', ''),
                 is_active=bool(cleaned.get('is_active', True)),
                 is_archived=False,
@@ -559,6 +565,7 @@ def building_edit(request, pk):
             b_info.name = cleaned.get('name')
             b_info.gender = cleaned.get('gender', 'Boys')
             b_info.total_floors = cleaned.get('total_floors', 3)
+            b_info.blocks = cleaned.get('blocks', 'Block A') or 'Block A'
             b_info.description = cleaned.get('description', '')
             b_info.is_active = bool(cleaned.get('is_active', True))
             b_info.save()
@@ -570,6 +577,7 @@ def building_edit(request, pk):
             'name': b_info.name,
             'gender': b_info.gender,
             'total_floors': b_info.total_floors,
+            'blocks': b_info.blocks or 'Block A, Block B',
             'description': b_info.description,
             'is_active': b_info.is_active,
         }
@@ -684,10 +692,25 @@ def check_room_number(request):
 @login_required(login_url='/authentication/login')
 def get_floors(request):
     building_id = request.GET.get('building_id')
-    b_info = HostelBuilding.objects.filter(pk=building_id).first() if building_id else HostelBuilding.objects.first()
+    if not building_id or not str(building_id).isdigit():
+        return JsonResponse({
+            'floors': [],
+            'blocks': [],
+            'gender': '',
+            'total_floors': 0
+        })
 
-    total_floors = b_info.total_floors if b_info else 3
-    gender = b_info.gender if b_info else 'Boys'
+    b_info = HostelBuilding.objects.filter(pk=int(building_id)).first()
+    if not b_info:
+        return JsonResponse({
+            'floors': [],
+            'blocks': [],
+            'gender': '',
+            'total_floors': 0
+        })
+
+    total_floors = b_info.total_floors
+    gender = b_info.gender
 
     floors = []
     for fl in range(1, total_floors + 1):
@@ -701,10 +724,14 @@ def get_floors(request):
             lbl = f"{fl}th Floor"
         floors.append({'id': fl, 'label': lbl})
 
-    blocks = [
-        {'id': 'A', 'label': f'Block A ({gender} Wing)'},
-        {'id': 'B', 'label': f'Block B ({gender} Wing)'},
-    ]
+    raw_blocks = [b.strip() for b in b_info.blocks.split(',') if b.strip()] if b_info.blocks else ['Block A']
+    blocks = []
+    for b in raw_blocks:
+        b_code = b.replace('Block ', '').strip() if b.startswith('Block ') else b
+        blocks.append({
+            'id': b_code,
+            'label': f"{b} ({gender} Wing)"
+        })
 
     return JsonResponse({
         'floors': floors,

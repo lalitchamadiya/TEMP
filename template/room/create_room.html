@@ -563,12 +563,26 @@ document.getElementById('id_building').addEventListener('change', async function
         roomInput.dispatchEvent(new Event('input'));
     }
 
-    if (floorSelect) floorSelect.innerHTML = '<option value="">— Select Floor —</option>';
-    if (blockSelect) blockSelect.innerHTML = '<option value="">— Select Block / Wing —</option>';
-
     if (!buildingId) {
+        if (floorSelect) {
+            floorSelect.innerHTML = '<option value="">— Select Building First —</option>';
+            floorSelect.disabled = true;
+        }
+        if (blockSelect) {
+            blockSelect.innerHTML = '<option value="">— Select Building First —</option>';
+            blockSelect.disabled = true;
+        }
         updateSummary();
         return;
+    }
+
+    if (floorSelect) {
+        floorSelect.innerHTML = '<option value="">— Select Floor —</option>';
+        floorSelect.disabled = false;
+    }
+    if (blockSelect) {
+        blockSelect.innerHTML = '<option value="">— Select Block / Wing —</option>';
+        blockSelect.disabled = false;
     }
 
     if (loader) loader.classList.remove('d-none');
@@ -577,7 +591,7 @@ document.getElementById('id_building').addEventListener('change', async function
         const res = await fetch(`{% url 'get_floors' %}?building_id=${buildingId}`);
         const data = await res.json();
         
-        if (floorSelect && data.floors) {
+        if (floorSelect && data.floors && data.floors.length > 0) {
             data.floors.forEach(f => {
                 const opt = document.createElement('option');
                 opt.value = f.id;
@@ -586,7 +600,7 @@ document.getElementById('id_building').addEventListener('change', async function
             });
         }
 
-        if (blockSelect && data.blocks) {
+        if (blockSelect && data.blocks && data.blocks.length > 0) {
             data.blocks.forEach(b => {
                 const opt = document.createElement('option');
                 opt.value = b.id;

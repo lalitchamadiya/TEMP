@@ -12,6 +12,7 @@ class HostelBuilding(models.Model):
     code = models.CharField(max_length=20, blank=True, null=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Boys')
     total_floors = models.IntegerField(default=3)
+    blocks = models.CharField(max_length=200, default='Block A, Block B', blank=True, null=True, help_text='Comma-separated blocks e.g. Block A, Block B')
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_archived = models.BooleanField(default=False)
