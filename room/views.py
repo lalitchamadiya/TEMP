@@ -976,12 +976,39 @@ def check_room_number(request):
 
 @login_required(login_url='/authentication/login')
 def get_floors(request):
-    floors = [
-        {'id': 1, 'label': 'Ground Floor (G)'},
-        {'id': 2, 'label': '1st Floor'},
-        {'id': 3, 'label': '2nd Floor'},
+    building_id = request.GET.get('building_id')
+    buildings_data = _get_session_buildings(request)
+
+    b_info = buildings_data.get(str(building_id), {}) if building_id else None
+    if not b_info and buildings_data:
+        b_info = list(buildings_data.values())[0]
+
+    total_floors = int(b_info.get('total_floors', 3)) if b_info else 3
+    gender = b_info.get('gender', 'Boys') if b_info else 'Boys'
+
+    floors = []
+    for fl in range(1, total_floors + 1):
+        if fl == 1:
+            lbl = "1st Floor (Ground)"
+        elif fl == 2:
+            lbl = "2nd Floor"
+        elif fl == 3:
+            lbl = "3rd Floor"
+        else:
+            lbl = f"{fl}th Floor"
+        floors.append({'id': fl, 'label': lbl})
+
+    blocks = [
+        {'id': 'A', 'label': f'Block A ({gender} Wing)'},
+        {'id': 'B', 'label': f'Block B ({gender} Wing)'},
     ]
-    return JsonResponse({'floors': floors})
+
+    return JsonResponse({
+        'floors': floors,
+        'blocks': blocks,
+        'gender': gender,
+        'total_floors': total_floors
+    })
 
 
 @login_required(login_url='/authentication/login')
