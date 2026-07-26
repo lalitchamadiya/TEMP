@@ -92,3 +92,19 @@ def split(value, key):
     """
     return [item.strip() for item in value.split(key)]
 
+
+@register.simple_tag
+def safe_url(url_name, *args, **kwargs):
+    """
+    Safely resolves a URL by name without throwing NoReverseMatch.
+    Returns '#' if the URL name is invalid or non-existent.
+    """
+    if not url_name:
+        return '#'
+    try:
+        from django.urls import reverse, NoReverseMatch
+        return reverse(url_name, args=args, kwargs=kwargs)
+    except Exception:
+        return '#'
+
+

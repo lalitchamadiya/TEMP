@@ -233,7 +233,7 @@
                         <ul class="collapse-submenu-list">
                             {% for module in visible_modules %}
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% url module.url_name %}" title="{{ module.menu_label }}">
+                                <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% safe_url module.url_name %}" title="{{ module.menu_label }}">
                                     {% if "bi-" in module.icon %}
                                     <i class="bi {{ module.icon }} opacity-75 fs-6 me-2"></i>
                                     {% else %}
@@ -253,7 +253,7 @@
                 </li>
                 {% for module in visible_modules %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% url module.url_name %}" title="{{ module.menu_label }}">
+                    <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name %}active{% endif %}" href="{% safe_url module.url_name %}" title="{{ module.menu_label }}">
                         {% if "bi-" in module.icon %}
                         <i class="bi {{ module.icon }} opacity-75 fs-5"></i>
                         {% else %}
