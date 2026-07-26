@@ -1,14 +1,50 @@
-import os
 import json
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.conf import settings
 from student.models import Student
+from .models import HostelBuilding, Room, Bed
 
-STATE_FILE_PATH = os.path.join(settings.BASE_DIR, 'room', 'hostel_state.json')
+
+def _ensure_seed_data():
+    if not HostelBuilding.objects.exists():
+        b1 = HostelBuilding.objects.create(
+            name='Boys Hostel Block A', code='BH-A', gender='Boys', total_floors=3,
+            description='Main Boys Wing Accommodation', is_active=True, is_archived=False
+        )
+        b2 = HostelBuilding.objects.create(
+            name='Girls Hostel Block B', code='GH-B', gender='Girls', total_floors=3,
+            description='Main Girls Wing Accommodation', is_active=True, is_archived=False
+        )
+
+        students = list(Student.objects.filter(status='Active'))
+
+        for i in range(1, 11):
+            room_num = f"10{i}" if i < 10 else f"1{i}"
+            room1 = Room.objects.create(
+                building=b1, room_number=room_num, room_name=f'Boys Unit {room_num}',
+                block='A', floor=1, room_type='2_BED', category='GENERAL', gender='Boys',
+                capacity=2, status='AVAILABLE', monthly_rent=2500.00, is_ac=False,
+                description=f'Hostel Room Unit #{room_num}'
+            )
+            b_st_1 = students.pop(0) if students else None
+            b_st_2 = students.pop(0) if students else None
+            Bed.objects.create(room=room1, bed_number='1', student=b_st_1)
+            Bed.objects.create(room=room1, bed_number='2', student=b_st_2)
+
+            g_room_num = f"20{i}" if i < 10 else f"2{i}"
+            room2 = Room.objects.create(
+                building=b2, room_number=g_room_num, room_name=f'Girls Unit {g_room_num}',
+                block='B', floor=1, room_type='2_BED', category='GENERAL', gender='Girls',
+                capacity=2, status='AVAILABLE', monthly_rent=2500.00, is_ac=False,
+                description=f'Hostel Room Unit #{g_room_num}'
+            )
+            g_st_1 = students.pop(0) if students else None
+            g_st_2 = students.pop(0) if students else None
+            Bed.objects.create(room=room2, bed_number='1', student=g_st_1)
+            Bed.objects.create(room=room2, bed_number='2', student=g_st_2)
 
 
 class RoomForm(forms.Form):
@@ -65,16 +101,12 @@ class RoomForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        buildings_data = kwargs.pop('buildings_data', None)
-        if buildings_data is None:
-            buildings_data = _get_session_buildings()
+        kwargs.pop('buildings_data', None)
         super().__init__(*args, **kwargs)
-        if buildings_data:
-            active_b = [(str(b['id']), b['name']) for b in buildings_data.values() if b.get('is_active', True)]
-            if active_b:
-                self.fields['building'].choices = active_b
-            else:
-                self.fields['building'].choices = [('1', 'Boys Hostel Block A'), ('2', 'Girls Hostel Block B')]
+        _ensure_seed_data()
+        buildings = HostelBuilding.objects.filter(is_active=True)
+        if buildings.exists():
+            self.fields['building'].choices = [(str(b.pk), b.name) for b in buildings]
         else:
             self.fields['building'].choices = [('1', 'Boys Hostel Block A'), ('2', 'Girls Hostel Block B')]
 
@@ -102,149 +134,16 @@ class BuildingForm(forms.Form):
     )
 
 
-# ── File-Backed Persistent State Storage ──
-def _get_initial_buildings():
-    return {
-        '1': {
-            'id': 1, 'pk': 1, 'name': 'Boys Hostel Block A', 'code': 'BH-A',
-            'gender': 'Boys', 'get_gender_display': 'Boys', 'total_floors': 3,
-            'description': 'Main Boys Wing Accommodation', 'is_active': True, 'is_archived': False
-        },
-        '2': {
-            'id': 2, 'pk': 2, 'name': 'Girls Hostel Block B', 'code': 'GH-B',
-            'gender': 'Girls', 'get_gender_display': 'Girls', 'total_floors': 3,
-            'description': 'Main Girls Wing Accommodation', 'is_active': True, 'is_archived': False
-        },
-    }
-
-
-def _get_initial_rooms():
-    students = list(Student.objects.filter(status='Active'))
-    rooms_dict = {}
-    
-    for i in range(1, 11):
-        room_num = f"10{i}" if i < 10 else f"1{i}"
-        b_st_1 = students.pop(0) if students else None
-        b_st_2 = students.pop(0) if students else None
-        boys_beds = [
-            {'id': (i * 10) + 1, 'bed_number': '1', 'student_id': b_st_1.student_id if b_st_1 else None},
-            {'id': (i * 10) + 2, 'bed_number': '2', 'student_id': b_st_2.student_id if b_st_2 else None},
-        ]
-        rooms_dict[str(i)] = {
-            'id': i,
-            'pk': i,
-            'room_number': room_num,
-            'room_name': f'Boys Unit {room_num}',
-            'building_id': 1,
-            'building_name': 'Boys Hostel Block A',
-            'block': 'A',
-            'block_display': 'Block A',
-            'floor': 1,
-            'room_type': '2_BED',
-            'room_type_display': '2 BED',
-            'category': 'GENERAL',
-            'gender': 'Boys',
-            'capacity': 2,
-            'status': 'AVAILABLE',
-            'monthly_rent': '2500.00',
-            'is_ac': False,
-            'description': f'Hostel Room Unit #{room_num}',
-            'beds': boys_beds,
-        }
-
-        g_id = 100 + i
-        g_room_num = f"20{i}" if i < 10 else f"2{i}"
-        g_st_1 = students.pop(0) if students else None
-        g_st_2 = students.pop(0) if students else None
-        girls_beds = [
-            {'id': (g_id * 10) + 1, 'bed_number': '1', 'student_id': g_st_1.student_id if g_st_1 else None},
-            {'id': (g_id * 10) + 2, 'bed_number': '2', 'student_id': g_st_2.student_id if g_st_2 else None},
-        ]
-        rooms_dict[str(g_id)] = {
-            'id': g_id,
-            'pk': g_id,
-            'room_number': g_room_num,
-            'room_name': f'Girls Unit {g_room_num}',
-            'building_id': 2,
-            'building_name': 'Girls Hostel Block B',
-            'block': 'B',
-            'block_display': 'Block B',
-            'floor': 1,
-            'room_type': '2_BED',
-            'room_type_display': '2 BED',
-            'category': 'GENERAL',
-            'gender': 'Girls',
-            'capacity': 2,
-            'status': 'AVAILABLE',
-            'monthly_rent': '2500.00',
-            'is_ac': False,
-            'description': f'Hostel Room Unit #{g_room_num}',
-            'beds': girls_beds,
-        }
-
-    return rooms_dict
-
-
-def _load_app_state():
-    if os.path.exists(STATE_FILE_PATH):
-        try:
-            with open(STATE_FILE_PATH, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                if data and 'buildings_data' in data and 'rooms_data' in data:
-                    return data
-        except Exception:
-            pass
-
-    state = {
-        'buildings_data': _get_initial_buildings(),
-        'rooms_data': _get_initial_rooms(),
-    }
-    _save_app_state(state)
-    return state
-
-
-def _save_app_state(state):
-    try:
-        os.makedirs(os.path.dirname(STATE_FILE_PATH), exist_ok=True)
-        with open(STATE_FILE_PATH, 'w', encoding='utf-8') as f:
-            json.dump(state, f, indent=2)
-    except Exception as e:
-        print(f"Error saving hostel state file: {e}")
-
-
-def _get_session_buildings(request=None):
-    state = _load_app_state()
-    return state.get('buildings_data', {})
-
-
-def _save_session_buildings(request, buildings_data):
-    state = _load_app_state()
-    state['buildings_data'] = buildings_data
-    _save_app_state(state)
-
-
-def _get_session_rooms(request=None):
-    state = _load_app_state()
-    return state.get('rooms_data', {})
-
-
-def _save_session_rooms(request, rooms_data):
-    state = _load_app_state()
-    state['rooms_data'] = rooms_data
-    _save_app_state(state)
-
-
 # ── Main Room Dashboard ──
 @login_required(login_url='/authentication/login')
 def room_base(request):
-    rooms_data = _get_session_rooms(request)
-    buildings_data = _get_session_buildings(request)
+    _ensure_seed_data()
+    active_buildings = HostelBuilding.objects.filter(is_active=True)
+    active_b_ids = set(active_buildings.values_list('id', flat=True))
 
-    active_b_ids = {int(k) for k, v in buildings_data.items() if v.get('is_active', True)}
-
-    total_rooms = sum(1 for r in rooms_data.values() if r.get('building_id') in active_b_ids)
-    boys_rooms = sum(1 for r in rooms_data.values() if r.get('gender') == 'Boys' and r.get('building_id') in active_b_ids)
-    girls_rooms = sum(1 for r in rooms_data.values() if r.get('gender') == 'Girls' and r.get('building_id') in active_b_ids)
+    total_rooms = Room.objects.filter(building_id__in=active_b_ids).count()
+    boys_rooms = Room.objects.filter(building_id__in=active_b_ids, gender='Boys').count()
+    girls_rooms = Room.objects.filter(building_id__in=active_b_ids, gender='Girls').count()
 
     active_students = Student.objects.filter(status='Active').count()
     gender_male = Student.objects.filter(status='Active', gender='Male').count()
@@ -258,7 +157,7 @@ def room_base(request):
         'total_girls_rooms': girls_rooms,
         'total_allocated_beds': active_students,
         'total_unallocated_beds': max(0, 100 - active_students),
-        'total_maintenance_rooms': sum(1 for r in rooms_data.values() if r.get('status') == 'MAINTENANCE' and r.get('building_id') in active_b_ids),
+        'total_maintenance_rooms': Room.objects.filter(building_id__in=active_b_ids, status='MAINTENANCE').count(),
         'total_reserved_beds': 0,
         'total_boys_allocated': gender_male,
         'total_girls_allocated': gender_female,
@@ -270,62 +169,51 @@ def room_base(request):
 # ── Room Management (Overview) ──
 @login_required(login_url='/authentication/login')
 def room_manage(request):
+    _ensure_seed_data()
     search_query = request.GET.get('q', '').strip()
     selected_building_id = request.GET.get('building', '')
 
-    rooms_data = _get_session_rooms(request)
-    buildings_data = _get_session_buildings(request)
+    active_buildings = HostelBuilding.objects.filter(is_active=True)
+    active_b_ids = set(active_buildings.values_list('id', flat=True))
 
-    active_b_ids = {int(k) for k, v in buildings_data.items() if v.get('is_active', True)}
+    qs = Room.objects.prefetch_related('beds__student', 'building').all()
+    if selected_building_id:
+        qs = qs.filter(building_id=selected_building_id)
+    else:
+        qs = qs.filter(building_id__in=active_b_ids)
 
-    student_ids = []
-    for r in rooms_data.values():
-        for b in r.get('beds', []):
-            if b.get('student_id'):
-                student_ids.append(b['student_id'])
-
-    students_map = {s.student_id: s for s in Student.objects.filter(student_id__in=student_ids)}
+    if search_query:
+        qs = qs.filter(room_number__icontains=search_query) | qs.filter(room_name__icontains=search_query)
 
     rooms_list = []
-    for r_id, r_info in rooms_data.items():
-        # Scope out rooms of inactive buildings unless building is explicitly selected
-        b_id = int(r_info.get('building_id', 1))
-        if b_id not in active_b_ids and not selected_building_id:
-            continue
-
+    for r in qs:
         beds_list = []
         occupied_count = 0
-        for b in r_info.get('beds', []):
-            st_obj = students_map.get(b.get('student_id'))
-            if st_obj:
+        for b in r.beds.all():
+            if b.student:
                 occupied_count += 1
             beds_list.append({
-                'id': b.get('id'),
-                'bed_number': b.get('bed_number'),
-                'student': st_obj
+                'id': b.id,
+                'bed_number': b.bed_number,
+                'student': b.student
             })
 
         room_obj = {
-            'id': r_info['id'],
-            'pk': r_info['pk'],
-            'room_number': r_info['room_number'],
-            'room_name': r_info['room_name'],
-            'building': {'id': r_info['building_id'], 'name': r_info['building_name']},
-            'block': r_info['block'],
-            'get_block_display': r_info['block_display'],
-            'room_type': r_info['capacity'],
-            'gender': r_info['gender'],
+            'id': r.id,
+            'pk': r.id,
+            'room_number': r.room_number,
+            'room_name': r.room_name or f"Unit #{r.room_number}",
+            'building': {'id': r.building.id, 'name': r.building.name},
+            'block': r.block,
+            'get_block_display': f"Block {r.block}",
+            'room_type': r.capacity,
+            'gender': r.gender,
             'beds': {'all': beds_list},
             'occupied_count': occupied_count,
         }
         rooms_list.append(room_obj)
 
-    if search_query:
-        rooms_list = [r for r in rooms_list if search_query.lower() in str(r['room_number']).lower() or search_query.lower() in r['room_name'].lower()]
-    if selected_building_id:
-        rooms_list = [r for r in rooms_list if str(r['building']['id']) == str(selected_building_id)]
-
-    b_list = [{'pk': b_info['pk'], 'name': b_info['name']} for b_info in buildings_data.values() if b_info.get('is_active', True)]
+    b_list = [{'pk': b.pk, 'name': b.name} for b in active_buildings]
 
     context = {
         'page_title': 'Room Overview',
@@ -340,34 +228,30 @@ def room_manage(request):
 # ── Room Allocation ──
 @login_required(login_url='/authentication/login')
 def room_allocate(request):
-    rooms_data = _get_session_rooms(request)
-    buildings_data = _get_session_buildings(request)
-
+    _ensure_seed_data()
     if request.method == 'POST':
         room_id = request.POST.get('room-select')
         bed_num = request.POST.get('bed-select')
         student_id = request.POST.get('student-select')
 
         if room_id and bed_num and student_id:
-            room_info = rooms_data.get(str(room_id))
-            if room_info:
-                for b in room_info.get('beds', []):
-                    if str(b.get('bed_number')) == str(bed_num):
-                        b['student_id'] = int(student_id)
-                        break
-                _save_session_rooms(request, rooms_data)
-                st_obj = Student.objects.filter(student_id=student_id).first()
-                st_name = st_obj.name if st_obj else f'Student #{student_id}'
-                messages.success(request, f'{st_name} successfully allocated to Room #{room_info["room_number"]} Bed #{bed_num}.')
-                return redirect('student_allocated_view', room_id=room_info['id'])
+            room_obj = Room.objects.filter(pk=room_id).first()
+            if room_obj:
+                bed_obj = Bed.objects.filter(room=room_obj, bed_number=str(bed_num)).first()
+                if bed_obj:
+                    st_obj = Student.objects.filter(student_id=student_id).first()
+                    if st_obj:
+                        bed_obj.student = st_obj
+                        bed_obj.save()
+                        messages.success(request, f'{st_obj.name} successfully allocated to Room #{room_obj.room_number} Bed #{bed_num}.')
+                        return redirect('student_allocated_view', room_id=room_obj.id)
 
         messages.error(request, 'Invalid room, bed, or student selection.')
         return redirect('room_allocate')
 
-    # Filter only ACTIVE buildings for bed allocation dropdown
     b_list = [
-        {'id': b_info['id'], 'name': b_info['name'], 'get_gender_display': b_info.get('gender', 'Boys')}
-        for b_info in buildings_data.values() if b_info.get('is_active', True)
+        {'id': b.id, 'name': b.name, 'get_gender_display': b.gender}
+        for b in HostelBuilding.objects.filter(is_active=True)
     ]
     blocks = [('A', 'Block A'), ('B', 'Block B')]
 
@@ -382,14 +266,8 @@ def room_allocate(request):
 # ── Auto Allocate ──
 @login_required(login_url='/authentication/login')
 def room_auto_allocate(request):
-    rooms_data = _get_session_rooms(request)
-
-    assigned_student_ids = set()
-    for r in rooms_data.values():
-        for b in r.get('beds', []):
-            if b.get('student_id'):
-                assigned_student_ids.add(b['student_id'])
-
+    _ensure_seed_data()
+    assigned_student_ids = Bed.objects.filter(student__isnull=False).values_list('student_id', flat=True)
     unallocated_students = Student.objects.filter(status='Active').exclude(student_id__in=assigned_student_ids)
 
     context = {
@@ -402,35 +280,26 @@ def room_auto_allocate(request):
 @login_required(login_url='/authentication/login')
 def room_auto_allocate_execute(request):
     if request.method == 'POST':
-        rooms_data = _get_session_rooms(request)
-        buildings_data = _get_session_buildings(request)
-        active_b_ids = {int(k) for k, v in buildings_data.items() if v.get('is_active', True)}
-
-        assigned_student_ids = set()
-        for r in rooms_data.values():
-            for b in r.get('beds', []):
-                if b.get('student_id'):
-                    assigned_student_ids.add(b['student_id'])
+        _ensure_seed_data()
+        active_b_ids = set(HostelBuilding.objects.filter(is_active=True).values_list('id', flat=True))
+        assigned_student_ids = set(Bed.objects.filter(student__isnull=False).values_list('student_id', flat=True))
 
         unallocated_students = list(Student.objects.filter(status='Active').exclude(student_id__in=assigned_student_ids))
 
         allocated_count = 0
         for student in unallocated_students:
             st_gender = 'Boys' if student.gender == 'Male' else 'Girls'
-            allocated = False
-            for r_info in rooms_data.values():
-                if r_info.get('building_id') in active_b_ids and r_info.get('gender') == st_gender:
-                    for b in r_info.get('beds', []):
-                        if not b.get('student_id'):
-                            b['student_id'] = student.student_id
-                            allocated = True
-                            allocated_count += 1
-                            break
-                if allocated:
-                    break
+            vacant_bed = Bed.objects.filter(
+                student__isnull=True,
+                room__building_id__in=active_b_ids,
+                room__gender=st_gender
+            ).first()
+            if vacant_bed:
+                vacant_bed.student = student
+                vacant_bed.save()
+                allocated_count += 1
 
         if allocated_count > 0:
-            _save_session_rooms(request, rooms_data)
             messages.success(request, f'Successfully auto-allocated {allocated_count} residents to vacant hostel beds.')
         else:
             messages.info(request, 'No unallocated students or vacant beds in active buildings available for auto-allocation.')
@@ -441,24 +310,19 @@ def room_auto_allocate_execute(request):
 # ── Create Room ──
 @login_required(login_url='/authentication/login')
 def create_room(request):
-    buildings_data = _get_session_buildings(request)
-
+    _ensure_seed_data()
     if request.method == 'POST':
-        form = RoomForm(request.POST, buildings_data=buildings_data)
+        form = RoomForm(request.POST)
         if form.is_valid():
             cleaned = form.cleaned_data
-            rooms_data = _get_session_rooms(request)
-
-            existing_ids = [int(k) for k in rooms_data.keys() if k.isdigit()]
-            new_id = (max(existing_ids) + 1) if existing_ids else 1
-            pk_str = str(new_id)
-
             building_id = int(cleaned.get('building', 1))
-            b_info = buildings_data.get(str(building_id), {})
-            b_name = b_info.get('name', 'Boys Hostel Block A' if building_id == 1 else 'Girls Hostel Block B')
-            gender = b_info.get('gender', 'Boys' if building_id == 1 else 'Girls')
+            b_info = HostelBuilding.objects.filter(pk=building_id).first()
+            if not b_info:
+                b_info = HostelBuilding.objects.filter(is_active=True).first()
 
+            gender = b_info.gender if b_info else 'Boys'
             r_type = cleaned.get('room_type', '2_BED')
+
             if r_type == '2_BED':
                 capacity = 2
             elif r_type == '4_BED':
@@ -466,37 +330,29 @@ def create_room(request):
             else:
                 capacity = int(cleaned.get('capacity', 2))
 
-            beds = [{'id': (new_id * 10) + b_idx, 'bed_number': str(b_idx), 'student_id': None} for b_idx in range(1, capacity + 1)]
+            room_obj = Room.objects.create(
+                building=b_info,
+                room_number=cleaned.get('room_number'),
+                room_name=cleaned.get('room_name') or f"Unit #{cleaned.get('room_number')}",
+                block=cleaned.get('block', 'A'),
+                floor=cleaned.get('floor', 1),
+                room_type=r_type,
+                category=cleaned.get('category', 'GENERAL'),
+                gender=gender,
+                capacity=capacity,
+                status=cleaned.get('status', 'AVAILABLE'),
+                monthly_rent=cleaned.get('monthly_rent', 2500.00),
+                is_ac=bool(cleaned.get('is_ac')),
+                description=cleaned.get('description', '')
+            )
 
-            room_item = {
-                'id': new_id,
-                'pk': new_id,
-                'room_number': cleaned.get('room_number'),
-                'room_name': cleaned.get('room_name') or f"Unit #{cleaned.get('room_number')}",
-                'building_id': building_id,
-                'building_name': b_name,
-                'block': cleaned.get('block', 'A'),
-                'block_display': f"Block {cleaned.get('block', 'A')}",
-                'floor': cleaned.get('floor', 1),
-                'room_type': r_type,
-                'room_type_display': f"{capacity} BED",
-                'category': cleaned.get('category', 'GENERAL'),
-                'gender': gender,
-                'capacity': capacity,
-                'status': cleaned.get('status', 'AVAILABLE'),
-                'monthly_rent': str(cleaned.get('monthly_rent', '2500.00')),
-                'is_ac': bool(cleaned.get('is_ac')),
-                'description': cleaned.get('description', ''),
-                'beds': beds,
-            }
-
-            rooms_data[pk_str] = room_item
-            _save_session_rooms(request, rooms_data)
+            for b_idx in range(1, capacity + 1):
+                Bed.objects.create(room=room_obj, bed_number=str(b_idx), student=None)
 
             messages.success(request, f"New Room #{cleaned.get('room_number')} created successfully.")
             return redirect('room_manage')
     else:
-        form = RoomForm(buildings_data=buildings_data)
+        form = RoomForm()
 
     context = {
         'page_title': 'Create New Room',
@@ -511,49 +367,15 @@ def create_room(request):
 # ── Edit / Delete / Change Room ──
 @login_required(login_url='/authentication/login')
 def edit_room(request, pk):
-    rooms_data = _get_session_rooms(request)
-    buildings_data = _get_session_buildings(request)
-    pk_str = str(pk)
-
-    room_info = rooms_data.get(pk_str)
-    if not room_info:
-        try:
-            pk_int = int(pk)
-        except (ValueError, TypeError):
-            pk_int = 1
-        is_girls = pk_int >= 100
-        unit_idx = pk_int - 100 if is_girls else pk_int
-        room_num = f"20{unit_idx}" if is_girls and unit_idx < 10 else (f"2{unit_idx}" if is_girls else (f"10{unit_idx}" if unit_idx < 10 else f"1{unit_idx}"))
-        room_info = {
-            'id': pk_int,
-            'pk': pk_int,
-            'room_number': room_num,
-            'room_name': f"Unit #{room_num}",
-            'building_id': 2 if is_girls else 1,
-            'building_name': "Girls Hostel Block B" if is_girls else "Boys Hostel Block A",
-            'block': 'B' if is_girls else 'A',
-            'block_display': 'Block B' if is_girls else 'Block A',
-            'floor': 1,
-            'room_type': '2_BED',
-            'category': 'GENERAL',
-            'gender': 'Girls' if is_girls else 'Boys',
-            'capacity': 2,
-            'status': 'AVAILABLE',
-            'monthly_rent': '2500.00',
-            'is_ac': False,
-            'description': f'Hostel Room Unit #{room_num}',
-            'beds': [],
-        }
+    _ensure_seed_data()
+    room_obj = get_object_or_404(Room, pk=pk)
 
     if request.method == 'POST':
-        form = RoomForm(request.POST, buildings_data=buildings_data)
+        form = RoomForm(request.POST)
         if form.is_valid():
             cleaned = form.cleaned_data
-
             building_id = int(cleaned.get('building', 1))
-            b_info = buildings_data.get(str(building_id), {})
-            b_name = b_info.get('name', "Boys Hostel Block A" if building_id == 1 else "Girls Hostel Block B")
-            gender = b_info.get('gender', "Boys" if building_id == 1 else "Girls")
+            b_info = HostelBuilding.objects.filter(pk=building_id).first() or room_obj.building
 
             r_type = cleaned.get('room_type', '2_BED')
             if r_type == '2_BED':
@@ -563,61 +385,57 @@ def edit_room(request, pk):
             else:
                 capacity = int(cleaned.get('capacity', 2))
 
-            current_beds = room_info.get('beds', [])
+            room_obj.building = b_info
+            room_obj.room_number = cleaned.get('room_number')
+            room_obj.room_name = cleaned.get('room_name') or f"Unit #{cleaned.get('room_number')}"
+            room_obj.block = cleaned.get('block', 'A')
+            room_obj.floor = cleaned.get('floor', 1)
+            room_obj.room_type = r_type
+            room_obj.category = cleaned.get('category', 'GENERAL')
+            room_obj.gender = b_info.gender
+            room_obj.capacity = capacity
+            room_obj.status = cleaned.get('status', 'AVAILABLE')
+            room_obj.monthly_rent = cleaned.get('monthly_rent', 2500.00)
+            room_obj.is_ac = bool(cleaned.get('is_ac'))
+            room_obj.description = cleaned.get('description', '')
+            room_obj.save()
+
+            current_beds = list(room_obj.beds.all())
             if len(current_beds) < capacity:
                 for b_idx in range(len(current_beds) + 1, capacity + 1):
-                    current_beds.append({'id': (int(room_info['id']) * 10) + b_idx, 'bed_number': str(b_idx), 'student_id': None})
+                    Bed.objects.create(room=room_obj, bed_number=str(b_idx), student=None)
             elif len(current_beds) > capacity:
-                current_beds = current_beds[:capacity]
-
-            room_info['room_number'] = cleaned.get('room_number')
-            room_info['room_name'] = cleaned.get('room_name') or f"Unit #{cleaned.get('room_number')}"
-            room_info['building_id'] = building_id
-            room_info['building_name'] = b_name
-            room_info['gender'] = gender
-            room_info['block'] = cleaned.get('block', 'A')
-            room_info['block_display'] = f"Block {cleaned.get('block', 'A')}"
-            room_info['floor'] = cleaned.get('floor', 1)
-            room_info['room_type'] = r_type
-            room_info['capacity'] = capacity
-            room_info['category'] = cleaned.get('category', 'GENERAL')
-            room_info['status'] = cleaned.get('status', 'AVAILABLE')
-            room_info['monthly_rent'] = str(cleaned.get('monthly_rent', '2500.00'))
-            room_info['is_ac'] = bool(cleaned.get('is_ac'))
-            room_info['description'] = cleaned.get('description', '')
-            room_info['beds'] = current_beds
-
-            rooms_data[pk_str] = room_info
-            _save_session_rooms(request, rooms_data)
+                for b in current_beds[capacity:]:
+                    b.delete()
 
             messages.success(request, f"Room Unit #{cleaned.get('room_number')} updated successfully.")
             return redirect('room_manage')
     else:
         initial_data = {
-            'building': room_info.get('building_id', 1),
-            'block': room_info.get('block', 'A'),
-            'floor': room_info.get('floor', 1),
-            'room_number': room_info.get('room_number'),
-            'room_name': room_info.get('room_name'),
-            'room_type': room_info.get('room_type', '2_BED'),
-            'category': room_info.get('category', 'GENERAL'),
-            'status': room_info.get('status', 'AVAILABLE'),
-            'monthly_rent': room_info.get('monthly_rent', '2500.00'),
-            'is_ac': room_info.get('is_ac', False),
-            'capacity': room_info.get('capacity', 2),
-            'description': room_info.get('description', ''),
+            'building': str(room_obj.building.pk),
+            'block': room_obj.block,
+            'floor': room_obj.floor,
+            'room_number': room_obj.room_number,
+            'room_name': room_obj.room_name,
+            'room_type': room_obj.room_type,
+            'category': room_obj.category,
+            'status': room_obj.status,
+            'monthly_rent': str(room_obj.monthly_rent),
+            'is_ac': room_obj.is_ac,
+            'capacity': room_obj.capacity,
+            'description': room_obj.description,
         }
-        form = RoomForm(initial=initial_data, buildings_data=buildings_data)
+        form = RoomForm(initial=initial_data)
 
     room_dict = {
-        'pk': pk,
-        'id': room_info['id'],
-        'room_number': room_info['room_number'],
-        'room_name': room_info['room_name'],
+        'pk': room_obj.pk,
+        'id': room_obj.id,
+        'room_number': room_obj.room_number,
+        'room_name': room_obj.room_name,
     }
 
     context = {
-        'page_title': f"Edit Room #{room_info['room_number']}",
+        'page_title': f"Edit Room #{room_obj.room_number}",
         'action': 'Edit',
         'room': room_dict,
         'form': form,
@@ -629,12 +447,10 @@ def edit_room(request, pk):
 
 @login_required(login_url='/authentication/login')
 def delete_room(request, pk):
-    rooms_data = _get_session_rooms(request)
-    pk_str = str(pk)
-    if pk_str in rooms_data:
-        r_num = rooms_data[pk_str].get('room_number')
-        del rooms_data[pk_str]
-        _save_session_rooms(request, rooms_data)
+    room_obj = Room.objects.filter(pk=pk).first()
+    if room_obj:
+        r_num = room_obj.room_number
+        room_obj.delete()
         messages.success(request, f'Room #{r_num} deleted successfully.')
     else:
         messages.success(request, f'Room #{pk} deleted successfully.')
@@ -643,23 +459,13 @@ def delete_room(request, pk):
 
 @login_required(login_url='/authentication/login')
 def delete_allocation(request, bed_id):
-    rooms_data = _get_session_rooms(request)
-    target_bed_id = int(bed_id)
+    bed_obj = Bed.objects.filter(pk=bed_id).first()
     found_room_id = None
-    bed_num = str(bed_id)
-
-    for r_id, r_info in rooms_data.items():
-        for b in r_info.get('beds', []):
-            if int(b.get('id', 0)) == target_bed_id:
-                b['student_id'] = None
-                found_room_id = r_id
-                bed_num = b.get('bed_number', str(bed_id))
-                break
-        if found_room_id:
-            break
-
-    if found_room_id:
-        _save_session_rooms(request, rooms_data)
+    if bed_obj:
+        found_room_id = bed_obj.room.id
+        bed_num = bed_obj.bed_number
+        bed_obj.student = None
+        bed_obj.save()
         messages.success(request, f'Allocation for Bed #{bed_num} removed successfully.')
     else:
         messages.success(request, f'Allocation for bed {bed_id} removed.')
@@ -674,74 +480,59 @@ def delete_allocation(request, bed_id):
 
 @login_required(login_url='/authentication/login')
 def change_room(request, current_bed_id):
-    rooms_data = _get_session_rooms(request)
-    buildings_data = _get_session_buildings(request)
-    target_bed_id = int(current_bed_id)
-
-    curr_room_info = None
-    curr_bed_info = None
-    assigned_student_id = None
-
-    for r_id, r_info in rooms_data.items():
-        for b in r_info.get('beds', []):
-            if int(b.get('id', 0)) == target_bed_id:
-                curr_room_info = r_info
-                curr_bed_info = b
-                assigned_student_id = b.get('student_id')
-                break
-        if curr_room_info:
-            break
-
-    if not curr_room_info:
+    _ensure_seed_data()
+    curr_bed_obj = Bed.objects.filter(pk=current_bed_id).first()
+    if not curr_bed_obj:
         messages.error(request, 'Bed allocation not found.')
         return redirect('room_manage')
 
-    student_obj = Student.objects.filter(student_id=assigned_student_id).first() if assigned_student_id else None
+    curr_room_obj = curr_bed_obj.room
+    assigned_student = curr_bed_obj.student
 
     if request.method == 'POST':
         target_room_id = request.POST.get('room-select')
         target_bed_num = request.POST.get('bed-select')
 
-        target_room_info = rooms_data.get(str(target_room_id))
-        if target_room_info:
-            curr_bed_info['student_id'] = None
+        target_room_obj = Room.objects.filter(pk=target_room_id).first()
+        if target_room_obj:
+            curr_bed_obj.student = None
+            curr_bed_obj.save()
 
-            for tb in target_room_info.get('beds', []):
-                if str(tb.get('bed_number')) == str(target_bed_num):
-                    tb['student_id'] = assigned_student_id
-                    break
+            target_bed_obj = Bed.objects.filter(room=target_room_obj, bed_number=str(target_bed_num)).first()
+            if target_bed_obj:
+                target_bed_obj.student = assigned_student
+                target_bed_obj.save()
 
-            _save_session_rooms(request, rooms_data)
-            st_name = student_obj.name if student_obj else 'Resident'
-            messages.success(request, f'{st_name} moved to Room #{target_room_info["room_number"]} Bed #{target_bed_num}.')
-            return redirect('student_allocated_view', room_id=target_room_info['id'])
+            st_name = assigned_student.name if assigned_student else 'Resident'
+            messages.success(request, f'{st_name} moved to Room #{target_room_obj.room_number} Bed #{target_bed_num}.')
+            return redirect('student_allocated_view', room_id=target_room_obj.id)
         else:
             messages.error(request, 'Target room not found.')
             return redirect('room_manage')
 
     b_list = [
-        {'id': b_info['id'], 'name': b_info['name'], 'get_gender_display': b_info.get('gender', 'Boys')}
-        for b_info in buildings_data.values() if b_info.get('is_active', True)
+        {'id': b.id, 'name': b.name, 'get_gender_display': b.gender}
+        for b in HostelBuilding.objects.filter(is_active=True)
     ]
     blocks = [('A', 'Block A'), ('B', 'Block B')]
 
     current_bed_context = {
-        'id': target_bed_id,
-        'bed_number': curr_bed_info.get('bed_number', '1'),
+        'id': curr_bed_obj.id,
+        'bed_number': curr_bed_obj.bed_number,
         'paid_amount': '0.00',
         'remaining_amount': '0.00',
         'room': {
-            'id': curr_room_info['id'],
-            'room_number': curr_room_info['room_number'],
-            'building': {'name': curr_room_info.get('building_name', 'Hostel Building')},
-            'floor': {'floor_number': curr_room_info.get('floor', 1)},
+            'id': curr_room_obj.id,
+            'room_number': curr_room_obj.room_number,
+            'building': {'name': curr_room_obj.building.name},
+            'floor': {'floor_number': curr_room_obj.floor},
         }
     }
 
     context = {
         'page_title': 'Change Room',
         'current_bed': current_bed_context,
-        'student': student_obj,
+        'student': assigned_student,
         'buildings': b_list,
         'blocks': blocks,
     }
@@ -751,25 +542,25 @@ def change_room(request, current_bed_id):
 # ── Building Management ──
 @login_required(login_url='/authentication/login')
 def building_list(request):
-    buildings_data = _get_session_buildings(request)
-    rooms_data = _get_session_rooms(request)
+    _ensure_seed_data()
+    qs = HostelBuilding.objects.all()
 
     b_list = []
-    for b_id, b_info in buildings_data.items():
-        room_count = sum(1 for r in rooms_data.values() if str(r.get('building_id')) == str(b_id))
+    for b in qs:
+        room_count = b.rooms.count()
         b_list.append({
-            'id': b_info['id'],
-            'pk': b_info['pk'],
-            'name': b_info['name'],
-            'code': b_info.get('code', f"B-{b_id}"),
-            'gender': b_info.get('gender', 'Boys'),
-            'get_gender_display': b_info.get('gender', 'Boys'),
-            'total_floors': b_info.get('total_floors', 3),
+            'id': b.id,
+            'pk': b.pk,
+            'name': b.name,
+            'code': b.code or f"B-{b.id}",
+            'gender': b.gender,
+            'get_gender_display': b.gender,
+            'total_floors': b.total_floors,
             'room_count': room_count,
             'capacity': room_count * 2,
-            'description': b_info.get('description', ''),
-            'is_active': b_info.get('is_active', True),
-            'is_archived': b_info.get('is_archived', False),
+            'description': b.description or '',
+            'is_active': b.is_active,
+            'is_archived': b.is_archived,
         })
 
     context = {
@@ -781,34 +572,20 @@ def building_list(request):
 
 @login_required(login_url='/authentication/login')
 def building_create(request):
-    buildings_data = _get_session_buildings(request)
-
     if request.method == 'POST':
         form = BuildingForm(request.POST)
         if form.is_valid():
             cleaned = form.cleaned_data
-
-            existing_ids = [int(k) for k in buildings_data.keys() if k.isdigit()]
-            new_id = (max(existing_ids) + 1) if existing_ids else 1
-            pk_str = str(new_id)
-
-            b_item = {
-                'id': new_id,
-                'pk': new_id,
-                'name': cleaned.get('name'),
-                'code': f"B-{new_id}",
-                'gender': cleaned.get('gender', 'Boys'),
-                'get_gender_display': cleaned.get('gender', 'Boys'),
-                'total_floors': cleaned.get('total_floors', 3),
-                'description': cleaned.get('description', ''),
-                'is_active': bool(cleaned.get('is_active', True)),
-                'is_archived': False,
-            }
-
-            buildings_data[pk_str] = b_item
-            _save_session_buildings(request, buildings_data)
-
-            messages.success(request, f"New building '{cleaned.get('name')}' added successfully.")
+            b_obj = HostelBuilding.objects.create(
+                name=cleaned.get('name'),
+                code=f"B-{HostelBuilding.objects.count() + 1}",
+                gender=cleaned.get('gender', 'Boys'),
+                total_floors=cleaned.get('total_floors', 3),
+                description=cleaned.get('description', ''),
+                is_active=bool(cleaned.get('is_active', True)),
+                is_archived=False,
+            )
+            messages.success(request, f"New building '{b_obj.name}' added successfully.")
             return redirect('building_list')
     else:
         form = BuildingForm()
@@ -818,51 +595,40 @@ def building_create(request):
 
 @login_required(login_url='/authentication/login')
 def building_edit(request, pk):
-    buildings_data = _get_session_buildings(request)
-    pk_str = str(pk)
-    b_info = buildings_data.get(pk_str)
-
-    if not b_info:
-        messages.error(request, 'Building not found.')
-        return redirect('building_list')
+    b_info = get_object_or_404(HostelBuilding, pk=pk)
 
     if request.method == 'POST':
         form = BuildingForm(request.POST)
         if form.is_valid():
             cleaned = form.cleaned_data
-            b_info['name'] = cleaned.get('name')
-            b_info['gender'] = cleaned.get('gender', 'Boys')
-            b_info['get_gender_display'] = cleaned.get('gender', 'Boys')
-            b_info['total_floors'] = cleaned.get('total_floors', 3)
-            b_info['description'] = cleaned.get('description', '')
-            b_info['is_active'] = bool(cleaned.get('is_active', True))
+            b_info.name = cleaned.get('name')
+            b_info.gender = cleaned.get('gender', 'Boys')
+            b_info.total_floors = cleaned.get('total_floors', 3)
+            b_info.description = cleaned.get('description', '')
+            b_info.is_active = bool(cleaned.get('is_active', True))
+            b_info.save()
 
-            buildings_data[pk_str] = b_info
-            _save_session_buildings(request, buildings_data)
-
-            messages.success(request, f"Building '{cleaned.get('name')}' updated successfully.")
+            messages.success(request, f"Building '{b_info.name}' updated successfully.")
             return redirect('building_list')
     else:
         initial_data = {
-            'name': b_info.get('name'),
-            'gender': b_info.get('gender', 'Boys'),
-            'total_floors': b_info.get('total_floors', 3),
-            'description': b_info.get('description', ''),
-            'is_active': b_info.get('is_active', True),
+            'name': b_info.name,
+            'gender': b_info.gender,
+            'total_floors': b_info.total_floors,
+            'description': b_info.description,
+            'is_active': b_info.is_active,
         }
         form = BuildingForm(initial=initial_data)
 
-    return render(request, 'room/building_form.html', {'page_title': f"Edit Building: {b_info.get('name')}", 'action': 'Edit', 'form': form})
+    return render(request, 'room/building_form.html', {'page_title': f"Edit Building: {b_info.name}", 'action': 'Edit', 'form': form})
 
 
 @login_required(login_url='/authentication/login')
 def building_delete(request, pk):
-    buildings_data = _get_session_buildings(request)
-    pk_str = str(pk)
-    if pk_str in buildings_data:
-        b_name = buildings_data[pk_str].get('name', f"Building {pk}")
-        del buildings_data[pk_str]
-        _save_session_buildings(request, buildings_data)
+    b_obj = HostelBuilding.objects.filter(pk=pk).first()
+    if b_obj:
+        b_name = b_obj.name
+        b_obj.delete()
         messages.success(request, f"Building '{b_name}' removed successfully.")
     else:
         messages.success(request, f"Building {pk} removed.")
@@ -871,14 +637,12 @@ def building_delete(request, pk):
 
 @login_required(login_url='/authentication/login')
 def building_toggle(request, pk):
-    buildings_data = _get_session_buildings(request)
-    pk_str = str(pk)
-    if pk_str in buildings_data:
-        b_info = buildings_data[pk_str]
-        b_info['is_active'] = not b_info.get('is_active', True)
-        _save_session_buildings(request, buildings_data)
-        status_txt = 'activated' if b_info['is_active'] else 'deactivated'
-        messages.success(request, f"Building '{b_info.get('name')}' {status_txt}.")
+    b_info = HostelBuilding.objects.filter(pk=pk).first()
+    if b_info:
+        b_info.is_active = not b_info.is_active
+        b_info.save()
+        status_txt = 'activated' if b_info.is_active else 'deactivated'
+        messages.success(request, f"Building '{b_info.name}' {status_txt}.")
     else:
         messages.success(request, f'Building {pk} status toggled.')
     return redirect('building_list')
@@ -897,70 +661,41 @@ def student_details_list(request):
 
 @login_required(login_url='/authentication/login')
 def student_allocated_view(request, room_id):
-    rooms_data = _get_session_rooms(request)
-    room_info = rooms_data.get(str(room_id))
+    _ensure_seed_data()
+    room_obj_db = Room.objects.filter(pk=room_id).first()
 
-    if not room_info:
-        try:
-            room_id_int = int(room_id)
-        except (ValueError, TypeError):
-            room_id_int = 1
-        is_girls_room = room_id_int >= 100
-        if is_girls_room:
-            unit_index = room_id_int - 100
-            room_num = f"20{unit_index}" if unit_index < 10 else f"2{unit_index}"
-            building_name = "Girls Hostel Block B"
-            gender_disp = "Girls Wing"
-        else:
-            unit_index = room_id_int
-            room_num = f"10{unit_index}" if unit_index < 10 else f"1{unit_index}"
-            building_name = "Boys Hostel Block A"
-            gender_disp = "Boys Wing"
-        room_info = {
-            'id': room_id_int,
-            'pk': room_id_int,
-            'room_number': room_num,
-            'room_name': f'Unit #{room_num}',
-            'building_name': building_name,
-            'floor': 1,
-            'room_type_display': '2 BED',
-            'gender': gender_disp,
-            'capacity': 2,
-            'beds': [],
-        }
-
-    student_ids = [b.get('student_id') for b in room_info.get('beds', []) if b.get('student_id')]
-    students_map = {s.student_id: s for s in Student.objects.filter(student_id__in=student_ids)}
+    if not room_obj_db:
+        messages.error(request, "Room not found.")
+        return redirect('room_manage')
 
     hydrated_beds = []
     occupied_count = 0
-    for b in room_info.get('beds', []):
-        st_obj = students_map.get(b.get('student_id'))
-        if st_obj:
+    for b in room_obj_db.beds.all():
+        if b.student:
             occupied_count += 1
         hydrated_beds.append({
-            'id': b.get('id'),
-            'bed_number': b.get('bed_number'),
-            'student': st_obj,
+            'id': b.id,
+            'bed_number': b.bed_number,
+            'student': b.student,
             'remaining_amount': 0
         })
 
-    total_beds = room_info.get('capacity', 2)
+    total_beds = room_obj_db.capacity
     vacant_count = max(0, total_beds - occupied_count)
 
     room_obj = {
-        'id': room_info['id'],
-        'room_number': room_info['room_number'],
-        'room_name': room_info['room_name'],
-        'building': {'name': room_info.get('building_name', 'Hostel Building')},
-        'floor': {'floor_number': room_info.get('floor', 1)},
-        'get_room_type_display': room_info.get('room_type_display', f"{total_beds} BED"),
-        'get_gender_display': room_info.get('gender', 'Boys Wing'),
+        'id': room_obj_db.id,
+        'room_number': room_obj_db.room_number,
+        'room_name': room_obj_db.room_name or f"Unit #{room_obj_db.room_number}",
+        'building': {'name': room_obj_db.building.name},
+        'floor': {'floor_number': room_obj_db.floor},
+        'get_room_type_display': f"{total_beds} BED",
+        'get_gender_display': f"{room_obj_db.gender} Wing",
     }
 
     context = {
-        'page_title': f"Room #{room_info['room_number']} Details",
-        'room_number': room_info['room_number'],
+        'page_title': f"Room #{room_obj_db.room_number} Details",
+        'room_number': room_obj_db.room_number,
         'room': room_obj,
         'total_beds': total_beds,
         'occupied_beds': occupied_count,
@@ -973,20 +708,34 @@ def student_allocated_view(request, room_id):
 # ── AJAX Endpoints ──
 @login_required(login_url='/authentication/login')
 def check_room_number(request):
-    return JsonResponse({'available': True, 'message': 'Room number available'})
+    number = request.GET.get('number', '').strip()
+    building_id = request.GET.get('building_id')
+    room_id = request.GET.get('room_id')
+
+    if not number:
+        return JsonResponse({'available': True, 'message': 'Room number available'})
+
+    qs = Room.objects.filter(room_number=number)
+    if building_id:
+        qs = qs.filter(building_id=building_id)
+    if room_id and room_id.isdigit():
+        qs = qs.exclude(pk=int(room_id))
+
+    if qs.exists():
+        return JsonResponse({'available': False, 'message': f'Room #{number} already exists.'})
+
+    return JsonResponse({'available': True, 'message': f'Room #{number} is available.'})
 
 
 @login_required(login_url='/authentication/login')
 def get_floors(request):
     building_id = request.GET.get('building_id')
-    buildings_data = _get_session_buildings(request)
+    _ensure_seed_data()
 
-    b_info = buildings_data.get(str(building_id), {}) if building_id else None
-    if not b_info and buildings_data:
-        b_info = list(buildings_data.values())[0]
+    b_info = HostelBuilding.objects.filter(pk=building_id).first() if building_id else HostelBuilding.objects.first()
 
-    total_floors = int(b_info.get('total_floors', 3)) if b_info else 3
-    gender = b_info.get('gender', 'Boys') if b_info else 'Boys'
+    total_floors = b_info.total_floors if b_info else 3
+    gender = b_info.gender if b_info else 'Boys'
 
     floors = []
     for fl in range(1, total_floors + 1):
@@ -1020,30 +769,27 @@ def rooms_by_building(request):
 
 @login_required(login_url='/authentication/login')
 def get_rooms_for_allocation(request):
+    _ensure_seed_data()
     building_id = request.GET.get('building_id')
-    rooms_data = _get_session_rooms(request)
-    buildings_data = _get_session_buildings(request)
-    active_b_ids = {int(k) for k, v in buildings_data.items() if v.get('is_active', True)}
+    active_b_ids = set(HostelBuilding.objects.filter(is_active=True).values_list('id', flat=True))
+
+    qs = Room.objects.filter(building_id__in=active_b_ids).prefetch_related('beds')
+    if building_id:
+        qs = qs.filter(building_id=building_id)
 
     res_rooms = []
-    for r_id, r_info in rooms_data.items():
-        b_id = int(r_info.get('building_id', 1))
-        if b_id not in active_b_ids:
-            continue
-
-        if not building_id or str(r_info.get('building_id')) == str(building_id):
-            total_b = r_info.get('capacity', 2)
-            occ_b = sum(1 for b in r_info.get('beds', []) if b.get('student_id'))
-            vacant_b = max(0, total_b - occ_b)
-            g_disp = r_info.get('gender', 'Boys')
-            res_rooms.append({
-                'room_id': r_info['id'],
-                'room_number': r_info['room_number'],
-                'gender': g_disp,
-                'gender_display': f"{g_disp} Wing",
-                'vacant_beds': vacant_b,
-                'capacity': total_b
-            })
+    for r in qs:
+        total_b = r.capacity
+        occ_b = sum(1 for b in r.beds.all() if b.student)
+        vacant_b = max(0, total_b - occ_b)
+        res_rooms.append({
+            'room_id': r.id,
+            'room_number': r.room_number,
+            'gender': r.gender,
+            'gender_display': f"{r.gender} Wing",
+            'vacant_beds': vacant_b,
+            'capacity': total_b
+        })
 
     return JsonResponse({'rooms': res_rooms})
 
@@ -1051,15 +797,14 @@ def get_rooms_for_allocation(request):
 @login_required(login_url='/authentication/login')
 def get_beds_for_room(request):
     room_id = request.GET.get('room_id', '1')
-    rooms_data = _get_session_rooms(request)
-    room_info = rooms_data.get(str(room_id))
+    room_info = Room.objects.filter(pk=room_id).prefetch_related('beds').first()
 
     beds_data = []
     if room_info:
-        for b in room_info.get('beds', []):
+        for b in room_info.beds.all():
             beds_data.append({
-                'bed_number': b.get('bed_number'),
-                'student': b.get('student_id')
+                'bed_number': b.bed_number,
+                'student': b.student.student_id if b.student else None
             })
     else:
         beds_data = [
@@ -1068,8 +813,8 @@ def get_beds_for_room(request):
         ]
 
     return JsonResponse({
-        'room_number': room_info['room_number'] if room_info else str(room_id),
-        'gender_display': room_info.get('gender', 'Boys') if room_info else 'Boys',
+        'room_number': room_info.room_number if room_info else str(room_id),
+        'gender_display': room_info.gender if room_info else 'Boys',
         'beds': beds_data
     })
 
