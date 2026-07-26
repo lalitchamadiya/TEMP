@@ -1,14 +1,19 @@
+import os
+import json
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.conf import settings
 from student.models import Student
+
+STATE_FILE_PATH = os.path.join(settings.BASE_DIR, 'room', 'hostel_state.json')
 
 
 class RoomForm(forms.Form):
     building = forms.ChoiceField(
-        choices=[(1, 'Boys Hostel Block A'), (2, 'Girls Hostel Block B')],
+        choices=[],
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_building'})
     )
     block = forms.ChoiceField(
@@ -59,6 +64,18 @@ class RoomForm(forms.Form):
         widget=forms.Textarea(attrs={'class': 'form-control', 'id': 'id_description', 'rows': 2})
     )
 
+    def __init__(self, *args, **kwargs):
+        buildings_data = kwargs.pop('buildings_data', None)
+        super().__init__(*args, **kwargs)
+        if buildings_data:
+            active_b = [(b['id'], b['name']) for b in buildings_data.values() if b.get('is_active', True)]
+            if active_b:
+                self.fields['building'].choices = active_b
+            else:
+                self.fields['building'].choices = [(1, 'Boys Hostel Block A'), (2, 'Girls Hostel Block B')]
+        else:
+            self.fields['building'].choices = [(1, 'Boys Hostel Block A'), (2, 'Girls Hostel Block B')]
+
 
 class BuildingForm(forms.Form):
     name = forms.CharField(
@@ -83,7 +100,7 @@ class BuildingForm(forms.Form):
     )
 
 
-# ── State Storage Helpers ──
+# ── File-Backed Persistent State Storage ──
 def _get_initial_buildings():
     return {
         '1': {
@@ -97,17 +114,6 @@ def _get_initial_buildings():
             'description': 'Main Girls Wing Accommodation', 'is_active': True, 'is_archived': False
         },
     }
-
-
-def _get_session_buildings(request):
-    if 'buildings_data' not in request.session:
-        request.session['buildings_data'] = _get_initial_buildings()
-    return request.session['buildings_data']
-
-
-def _save_session_buildings(request, buildings_data):
-    request.session['buildings_data'] = buildings_data
-    request.session.modified = True
 
 
 def _get_initial_rooms():
@@ -177,15 +183,53 @@ def _get_initial_rooms():
     return rooms_dict
 
 
-def _get_session_rooms(request):
-    if 'rooms_data' not in request.session:
-        request.session['rooms_data'] = _get_initial_rooms()
-    return request.session['rooms_data']
+def _load_app_state():
+    if os.path.exists(STATE_FILE_PATH):
+        try:
+            with open(STATE_FILE_PATH, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if data and 'buildings_data' in data and 'rooms_data' in data:
+                    return data
+        except Exception:
+            pass
+
+    state = {
+        'buildings_data': _get_initial_buildings(),
+        'rooms_data': _get_initial_rooms(),
+    }
+    _save_app_state(state)
+    return state
+
+
+def _save_app_state(state):
+    try:
+        os.makedirs(os.path.dirname(STATE_FILE_PATH), exist_ok=True)
+        with open(STATE_FILE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        print(f"Error saving hostel state file: {e}")
+
+
+def _get_session_buildings(request=None):
+    state = _load_app_state()
+    return state.get('buildings_data', {})
+
+
+def _save_session_buildings(request, buildings_data):
+    state = _load_app_state()
+    state['buildings_data'] = buildings_data
+    _save_app_state(state)
+
+
+def _get_session_rooms(request=None):
+    state = _load_app_state()
+    return state.get('rooms_data', {})
 
 
 def _save_session_rooms(request, rooms_data):
-    request.session['rooms_data'] = rooms_data
-    request.session.modified = True
+    state = _load_app_state()
+    state['rooms_data'] = rooms_data
+    _save_app_state(state)
 
 
 # ── Main Room Dashboard ──
@@ -194,9 +238,11 @@ def room_base(request):
     rooms_data = _get_session_rooms(request)
     buildings_data = _get_session_buildings(request)
 
-    total_rooms = len(rooms_data)
-    boys_rooms = sum(1 for r in rooms_data.values() if r.get('gender') == 'Boys')
-    girls_rooms = sum(1 for r in rooms_data.values() if r.get('gender') == 'Girls')
+    active_b_ids = {int(k) for k, v in buildings_data.items() if v.get('is_active', True)}
+
+    total_rooms = sum(1 for r in rooms_data.values() if r.get('building_id') in active_b_ids)
+    boys_rooms = sum(1 for r in rooms_data.values() if r.get('gender') == 'Boys' and r.get('building_id') in active_b_ids)
+    girls_rooms = sum(1 for r in rooms_data.values() if r.get('gender') == 'Girls' and r.get('building_id') in active_b_ids)
 
     active_students = Student.objects.filter(status='Active').count()
     gender_male = Student.objects.filter(status='Active', gender='Male').count()
@@ -204,13 +250,13 @@ def room_base(request):
 
     context = {
         'page_title': 'Room Management Dashboard',
-        'total_buildings': len(buildings_data),
+        'total_buildings': len(active_b_ids),
         'total_availabel_room': total_rooms,
         'total_boys_rooms': boys_rooms,
         'total_girls_rooms': girls_rooms,
         'total_allocated_beds': active_students,
         'total_unallocated_beds': max(0, 100 - active_students),
-        'total_maintenance_rooms': sum(1 for r in rooms_data.values() if r.get('status') == 'MAINTENANCE'),
+        'total_maintenance_rooms': sum(1 for r in rooms_data.values() if r.get('status') == 'MAINTENANCE' and r.get('building_id') in active_b_ids),
         'total_reserved_beds': 0,
         'total_boys_allocated': gender_male,
         'total_girls_allocated': gender_female,
@@ -228,6 +274,8 @@ def room_manage(request):
     rooms_data = _get_session_rooms(request)
     buildings_data = _get_session_buildings(request)
 
+    active_b_ids = {int(k) for k, v in buildings_data.items() if v.get('is_active', True)}
+
     student_ids = []
     for r in rooms_data.values():
         for b in r.get('beds', []):
@@ -238,6 +286,11 @@ def room_manage(request):
 
     rooms_list = []
     for r_id, r_info in rooms_data.items():
+        # Scope out rooms of inactive buildings unless building is explicitly selected
+        b_id = int(r_info.get('building_id', 1))
+        if b_id not in active_b_ids and not selected_building_id:
+            continue
+
         beds_list = []
         occupied_count = 0
         for b in r_info.get('beds', []):
@@ -270,7 +323,7 @@ def room_manage(request):
     if selected_building_id:
         rooms_list = [r for r in rooms_list if str(r['building']['id']) == str(selected_building_id)]
 
-    b_list = [{'pk': b_info['pk'], 'name': b_info['name']} for b_info in buildings_data.values()]
+    b_list = [{'pk': b_info['pk'], 'name': b_info['name']} for b_info in buildings_data.values() if b_info.get('is_active', True)]
 
     context = {
         'page_title': 'Room Overview',
@@ -309,9 +362,10 @@ def room_allocate(request):
         messages.error(request, 'Invalid room, bed, or student selection.')
         return redirect('room_allocate')
 
+    # Filter only ACTIVE buildings for bed allocation dropdown
     b_list = [
         {'id': b_info['id'], 'name': b_info['name'], 'get_gender_display': b_info.get('gender', 'Boys')}
-        for b_info in buildings_data.values()
+        for b_info in buildings_data.values() if b_info.get('is_active', True)
     ]
     blocks = [('A', 'Block A'), ('B', 'Block B')]
 
@@ -347,6 +401,8 @@ def room_auto_allocate(request):
 def room_auto_allocate_execute(request):
     if request.method == 'POST':
         rooms_data = _get_session_rooms(request)
+        buildings_data = _get_session_buildings(request)
+        active_b_ids = {int(k) for k, v in buildings_data.items() if v.get('is_active', True)}
 
         assigned_student_ids = set()
         for r in rooms_data.values():
@@ -359,10 +415,9 @@ def room_auto_allocate_execute(request):
         allocated_count = 0
         for student in unallocated_students:
             st_gender = 'Boys' if student.gender == 'Male' else 'Girls'
-            # Find first available bed matching gender
             allocated = False
             for r_info in rooms_data.values():
-                if r_info.get('gender') == st_gender:
+                if r_info.get('building_id') in active_b_ids and r_info.get('gender') == st_gender:
                     for b in r_info.get('beds', []):
                         if not b.get('student_id'):
                             b['student_id'] = student.student_id
@@ -376,7 +431,7 @@ def room_auto_allocate_execute(request):
             _save_session_rooms(request, rooms_data)
             messages.success(request, f'Successfully auto-allocated {allocated_count} residents to vacant hostel beds.')
         else:
-            messages.info(request, 'No unallocated students or vacant beds available for auto-allocation.')
+            messages.info(request, 'No unallocated students or vacant beds in active buildings available for auto-allocation.')
 
     return redirect('room_manage')
 
@@ -387,7 +442,7 @@ def create_room(request):
     buildings_data = _get_session_buildings(request)
 
     if request.method == 'POST':
-        form = RoomForm(request.POST)
+        form = RoomForm(request.POST, buildings_data=buildings_data)
         if form.is_valid():
             cleaned = form.cleaned_data
             rooms_data = _get_session_rooms(request)
@@ -439,7 +494,7 @@ def create_room(request):
             messages.success(request, f"New Room #{cleaned.get('room_number')} created successfully.")
             return redirect('room_manage')
     else:
-        form = RoomForm()
+        form = RoomForm(buildings_data=buildings_data)
 
     context = {
         'page_title': 'Create New Room',
@@ -489,7 +544,7 @@ def edit_room(request, pk):
         }
 
     if request.method == 'POST':
-        form = RoomForm(request.POST)
+        form = RoomForm(request.POST, buildings_data=buildings_data)
         if form.is_valid():
             cleaned = form.cleaned_data
 
@@ -550,7 +605,7 @@ def edit_room(request, pk):
             'capacity': room_info.get('capacity', 2),
             'description': room_info.get('description', ''),
         }
-        form = RoomForm(initial=initial_data)
+        form = RoomForm(initial=initial_data, buildings_data=buildings_data)
 
     room_dict = {
         'pk': pk,
@@ -664,7 +719,7 @@ def change_room(request, current_bed_id):
 
     b_list = [
         {'id': b_info['id'], 'name': b_info['name'], 'get_gender_display': b_info.get('gender', 'Boys')}
-        for b_info in buildings_data.values()
+        for b_info in buildings_data.values() if b_info.get('is_active', True)
     ]
     blocks = [('A', 'Block A'), ('B', 'Block B')]
 
@@ -724,11 +779,12 @@ def building_list(request):
 
 @login_required(login_url='/authentication/login')
 def building_create(request):
+    buildings_data = _get_session_buildings(request)
+
     if request.method == 'POST':
         form = BuildingForm(request.POST)
         if form.is_valid():
             cleaned = form.cleaned_data
-            buildings_data = _get_session_buildings(request)
 
             existing_ids = [int(k) for k in buildings_data.keys() if k.isdigit()]
             new_id = (max(existing_ids) + 1) if existing_ids else 1
@@ -937,9 +993,15 @@ def rooms_by_building(request):
 def get_rooms_for_allocation(request):
     building_id = request.GET.get('building_id')
     rooms_data = _get_session_rooms(request)
+    buildings_data = _get_session_buildings(request)
+    active_b_ids = {int(k) for k, v in buildings_data.items() if v.get('is_active', True)}
 
     res_rooms = []
     for r_id, r_info in rooms_data.items():
+        b_id = int(r_info.get('building_id', 1))
+        if b_id not in active_b_ids:
+            continue
+
         if not building_id or str(r_info.get('building_id')) == str(building_id):
             total_b = r_info.get('capacity', 2)
             occ_b = sum(1 for b in r_info.get('beds', []) if b.get('student_id'))
