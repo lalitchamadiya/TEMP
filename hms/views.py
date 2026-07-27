@@ -13,6 +13,7 @@ from .models import (
     DutyAssignment, Duty, DutyPermission
 )
 from student.models import Student
+from room.models import HostelBuilding, Room, Bed
 from paybill.models import Payment, FeeStructure
 from leave.models import HostelLeave
 from django.contrib.auth.models import Group
@@ -83,14 +84,14 @@ def superadmin_dashboard(request):
     gender_male = Student.objects.filter(gender='Male').count()
     gender_female = Student.objects.filter(gender='Female').count()
 
-    # ── Rooms & Beds (Decommissioned) ──
-    total_rooms = 0
-    total_beds = 0
-    occupied_beds = 0
-    vacant_beds = 0
-    occupancy_pct = 0
-    total_blocks = 0
-    total_floors = 0
+    # ── Rooms & Beds ──
+    total_blocks = HostelBuilding.objects.filter(is_archived=False).count()
+    total_floors = HostelBuilding.objects.filter(is_archived=False).aggregate(s=Sum('total_floors'))['s'] or 0
+    total_rooms = Room.objects.count()
+    total_beds = Bed.objects.count()
+    occupied_beds = Bed.objects.filter(student__isnull=False).count()
+    vacant_beds = Bed.objects.filter(student__isnull=True).count()
+    occupancy_pct = round((occupied_beds / total_beds * 100), 1) if total_beds > 0 else 0
 
     # ── Financials ──
     today_revenue = Payment.objects.filter(
@@ -275,11 +276,11 @@ def live_dashboard_stats(request):
     active_students = Student.objects.filter(status='Active').count()
     inactive_students = total_students - active_students
     
-    # Rooms & Beds (Decommissioned)
-    total_beds = 0
-    occupied_beds = 0
-    vacant_beds = 0
-    occupancy_pct = 0
+    # Rooms & Beds
+    total_beds = Bed.objects.count()
+    occupied_beds = Bed.objects.filter(student__isnull=False).count()
+    vacant_beds = Bed.objects.filter(student__isnull=True).count()
+    occupancy_pct = round((occupied_beds / total_beds * 100), 1) if total_beds > 0 else 0
 
     # Financials
     month_start = today.replace(day=1)
@@ -474,6 +475,7 @@ def staff_create(request):
             if role_obj and 'admin' in role_obj.name.lower():
                 is_admin_role = True
 
+        errors = []
         if designation == 'admin' or is_admin_role:
             salary = 0.00
             shift = 'morning'
@@ -595,6 +597,7 @@ def staff_edit(request, pk):
             if role_obj and 'admin' in role_obj.name.lower():
                 is_admin_role = True
 
+        errors = []
         if designation == 'admin' or is_admin_role:
             salary = 0.00
             shift = 'morning'
