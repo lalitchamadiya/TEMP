@@ -30,6 +30,7 @@ class Payment(models.Model):
         ('CANCELLED', 'Cancelled'),
         ('REFUNDED', 'Refunded'),
     ]
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)
     transaction_id = models.CharField(max_length=50, unique=True)
     gateway_name = models.CharField(max_length=20, blank=True, null=True)
@@ -72,19 +73,7 @@ class Payment(models.Model):
         super().save(*args, **kwargs)
         
         if is_new_success and self.student:
-            from decimal import Decimal
-            from room.models import Bed
-            bed = Bed.objects.filter(student=self.student).first()
-            if bed:
-                base_paid = self.amount
-                if self.fee_breakdown and 'base_amount' in self.fee_breakdown:
-                    try:
-                        base_paid = Decimal(str(self.fee_breakdown['base_amount']))
-                    except Exception:
-                        pass
-                bed.paid_amount = (bed.paid_amount or 0) + base_paid
-                bed.remaining_amount = max(0, bed.total_amount - bed.paid_amount)
-                bed.save()
+            pass
 
     def __str__(self):
         return f"{self.enrollment_number} - {self.amount} - {self.transaction_status}"
@@ -98,16 +87,21 @@ class FeeStructure(models.Model):
         ('maintenance', 'Maintenance Charges'),
         ('other', 'Other Charges'),
     ]
-    fee_type = models.CharField(max_length=20, choices=FEE_TYPES, unique=True, default='other')
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='fee_structures', null=True, blank=True)
+    fee_type = models.CharField(max_length=20, choices=FEE_TYPES, default='other')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     due_date = models.DateField(null=True, blank=True)
     late_fee_per_day = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    class Meta:
+        unique_together = ('hostel', 'fee_type')
 
     def __str__(self):
         return f"{self.get_fee_type_display()} - {self.amount}"
 
 
 class InstallmentConfig(models.Model):
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='installment_configs', null=True, blank=True)
     part1_due_date = models.DateField(null=True, blank=True, verbose_name="Part 1 Due Date")
     part1_late_fee_per_day = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Part 1 Late Fee per Day")
     part2_due_date = models.DateField(null=True, blank=True, verbose_name="Part 2 Due Date")
@@ -118,12 +112,16 @@ class InstallmentConfig(models.Model):
         verbose_name_plural = "Installment Configurations"
 
     def save(self, *args, **kwargs):
-        self.pk = 1
+        if not self.hostel:
+            self.pk = 1
         super().save(*args, **kwargs)
 
     @classmethod
-    def get_config(cls):
-        config, created = cls.objects.get_or_create(pk=1)
+    def get_config(cls, hostel=None):
+        if hostel:
+            config, created = cls.objects.get_or_create(hostel=hostel)
+        else:
+            config, created = cls.objects.get_or_create(pk=1)
         return config
 
 

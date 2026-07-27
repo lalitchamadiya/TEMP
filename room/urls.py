@@ -5,11 +5,14 @@ urlpatterns = [
     path('', views.room_base, name='room_base'),
     path('student_details_list', views.student_details_list, name='student_details_list'),
     path('room_allocate', views.room_allocate, name='room_allocate'),
+    path('room_auto_allocate', views.room_auto_allocate, name='room_auto_allocate'),
+    path('room_auto_allocate/execute', views.room_auto_allocate_execute, name='room_auto_allocate_execute'),
     path('room_manage', views.room_manage, name='room_manage'),
     path('create_room/', views.create_room, name='create_room'),
     path('room_manage/<pk>/edit/', views.edit_room, name='edit_room'),
     path('room_manage/<pk>/delete/', views.delete_room, name='delete_room'),
     path('delete-allocation/<int:bed_id>/', views.delete_allocation, name='delete_allocation'),
+    path('change-room/<int:current_bed_id>/', views.change_room, name='change_room'),
     path('student_allocated_view/<int:room_id>/', views.student_allocated_view, name='student_allocated_view'),
 
     # AJAX endpoints

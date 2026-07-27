@@ -1,0 +1,105 @@
+{% for log in recent_logs %}
+<tr>
+  <td class="text-white opacity-70">{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+  <td>
+    <span class="d-inline-flex align-items-center gap-1">
+      <i class="bi bi-person text-secondary" style="font-size:0.9rem;"></i>
+      {% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %}
+    </span>
+  </td>
+  <td>
+    <span class="badge-status 
+      {% if log.action == 'create' or log.action == 'unlock' %}s-success
+      {% elif log.action == 'edit' or log.action == 'role_change' %}s-info
+      {% elif log.action == 'delete' or log.action == 'deactivate' or log.action == 'lock' %}s-danger
+      {% elif log.action == 'login' or log.action == 'logout' %}s-purple
+      {% else %}s-warning{% endif %}">
+      {{ log.get_action_display }}
+    </span>
+  </td>
+  <td class="text-white opacity-60">
+    {% if log.target_user %}
+    <span class="d-inline-flex align-items-center gap-1">
+      <i class="bi bi-person-x text-muted" style="font-size:0.8rem;"></i>
+      {{ log.target_user.username }}
+    </span>
+    {% else %}
+    <span class="text-muted">–</span>
+    {% endif %}
+  </td>
+  <td class="text-muted" style="font-family:monospace; font-size:0.75rem;">{{ log.ip_address|default:"–" }}</td>
+  <td class="text-end">
+    <button class="btn btn-sm btn-dark rounded-circle border-secondary p-1 align-middle" 
+            style="width:28px; height:28px; line-height:1;" 
+            data-bs-toggle="modal" 
+            data-bs-target="#logModal{{ log.id }}" 
+            title="View Full Details">
+      <i class="bi bi-info-circle text-primary" style="font-size:0.85rem;"></i>
+    </button>
+
+    <!-- Modal details inside loop to avoid fetching latency -->
+    <div class="modal fade" id="logModal{{ log.id }}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--modal-bg) !important; color: var(--text-main); border: 1px solid var(--border-light) !important; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
+          <div class="modal-header" style="border-bottom: 1px solid var(--border-light) !important;">
+            <h5 class="modal-title d-flex align-items-center gap-2">
+              <i class="bi bi-file-earmark-text text-primary"></i> Audit Log Details (ID: {{ log.id }})
+            </h5>
+            <button type="button" class="btn-close" style="filter: var(--close-btn-filter);" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" style="font-size: 0.85rem;">
+            <div class="mb-3">
+              <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">ACTION PERFORMED</small>
+              <span class="badge-status 
+                {% if log.action == 'create' or log.action == 'unlock' %}s-success
+                {% elif log.action == 'edit' or log.action == 'role_change' %}s-info
+                {% elif log.action == 'delete' or log.action == 'deactivate' or log.action == 'lock' %}s-danger
+                {% elif log.action == 'login' or log.action == 'logout' %}s-purple
+                {% else %}s-warning{% endif %}">
+                {{ log.get_action_display }}
+              </span>
+            </div>
+            <div class="mb-3">
+              <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">TIMESTAMP</small>
+              <span class="opacity-80">{{ log.timestamp|date:"Y-m-d H:i:s" }}</span>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-12 col-sm-6">
+                 <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">ACTOR</small>
+                 <span>{% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %}</span>
+              </div>
+              <div class="col-12 col-sm-6">
+                 <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">ACTOR IP</small>
+                 <span style="font-family:monospace;">{{ log.ip_address|default:"–" }}</span>
+              </div>
+            </div>
+            <div class="mb-3">
+              <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">AFFECTED USER (TARGET)</small>
+              <span>{% if log.target_user %}{{ log.target_user.username }}{% else %}None{% endif %}</span>
+            </div>
+            {% if log.hostel %}
+            <div class="mb-3">
+              <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">HOSTEL SCOPE</small>
+              <span>{{ log.hostel.name }}</span>
+            </div>
+            {% endif %}
+            <div class="p-3 rounded" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-light);">
+              <small class="text-muted d-block uppercase tracking-wider mb-1" style="font-size:0.7rem; font-weight:600;">LOG DETAILS TEXT</small>
+              <p class="mb-0 opacity-85" style="white-space: pre-wrap; word-break: break-all; font-family: monospace; font-size:0.8rem;">{{ log.details|default:"No details provided." }}</p>
+            </div>
+          </div>
+          <div class="modal-footer" style="border-top: 1px solid var(--border-light) !important;">
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </td>
+</tr>
+{% empty %}
+{% if not is_scroll %}
+<tr>
+  <td colspan="6" class="text-center text-muted py-4">No audit logs found.</td>
+</tr>
+{% endif %}
+{% endfor %}

@@ -8,11 +8,18 @@ register = template.Library()
 def has_role(user, role_names):
     if not user.is_authenticated:
         return False
-    if user.is_superuser or (hasattr(user, 'profile') and user.profile.role and user.profile.role.is_superadmin):
+
+    profile = None
+    try:
+        profile = user.profile
+    except Exception:
+        pass
+
+    if user.is_superuser or (profile and profile.role and profile.role.is_superadmin):
         return True
-    if hasattr(user, 'profile') and user.profile.role:
+    if profile and profile.role:
         names = [name.strip() for name in role_names.split(',')]
-        return user.profile.role.name in names
+        return profile.role.name in names
     return False
 
 
@@ -56,3 +63,48 @@ def get_item(dictionary, key):
     if dictionary and hasattr(dictionary, 'get'):
         return dictionary.get(key)
     return None
+
+
+@register.simple_tag
+def has_element_perm(user, element_code):
+    """
+    Usage: {% has_element_perm user 'btn_create_room' %}
+    Returns True/False.
+    """
+    from authentication.decorators import check_element_perm
+    return check_element_perm(user, element_code)
+
+
+@register.filter(name='has_element_perm')
+def has_element_perm_filter(user, element_code):
+    """
+    Usage: {{ user|has_element_perm:'btn_create_room' }}
+    Returns True/False.
+    """
+    from authentication.decorators import check_element_perm
+    return check_element_perm(user, element_code)
+
+
+@register.filter(name='split')
+def split(value, key):
+    """
+    Splits a string by key: {{ "leave,students"|split:"," }}
+    """
+    return [item.strip() for item in value.split(key)]
+
+
+@register.simple_tag
+def safe_url(url_name, *args, **kwargs):
+    """
+    Safely resolves a URL by name without throwing NoReverseMatch.
+    Returns '#' if the URL name is invalid or non-existent.
+    """
+    if not url_name:
+        return '#'
+    try:
+        from django.urls import reverse, NoReverseMatch
+        return reverse(url_name, args=args, kwargs=kwargs)
+    except Exception:
+        return '#'
+
+

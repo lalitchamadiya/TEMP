@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Change Room{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .form-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.4rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        background: rgba(255,255,255,0.9);
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .btn-action {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        color: white;
+        font-weight: 700;
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    .btn-action:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-action:disabled {
+        background: #cbd5e1;
+        transform: none;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+
+    .student-avatar-big {
+        width: 100px;
+        height: 100px;
+        border-radius: 1rem;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="container-fluid py-4">
+    
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-0" style="letter-spacing: -0.02em;">Change Room</h2>
+            <p class="text-muted small mb-0">Re-assign resident student to another available room and bed slot</p>
+        </div>
+        <div>
+            <a href="{% url 'student_allocated_view' current_bed.room.id %}" class="btn btn-sm btn-light rounded-pill border px-3 fw-semibold">
+                <i class="bi bi-arrow-left me-1"></i>Cancel & Back
+            </a>
+        </div>
+    </div>
+
+    {% include "room/room_nav.html" %}
+
+    <div class="row g-4 mt-1">
+        <!-- New Room Selection Panel -->
+        <div class="col-lg-6">
+            <div class="glass-card p-4">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <i class="bi bi-arrow-left-right text-primary fs-4"></i>
+                    <h5 class="fw-bold mb-0">Select Target Accommodation</h5>
+                </div>
+
+                <form method="post" id="changeRoomForm" action="{% url 'change_room' current_bed.id %}">
+                    {% csrf_token %}
+                    
+                    <!-- Step 1: Select Facility -->
+                    <div class="mb-3">
+                        <label class="form-label">Step 1: Select Facility (Building & Block)</label>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <select id="building-select" class="form-select form-select-sm" required>
+                                    <option value="" selected>— Select Building —</option>
+                                    {% for b in buildings %}
+                                        <option value="{{ b.id }}">{{ b.name }} ({{ b.get_gender_display }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <select id="block-select" class="form-select form-select-sm">
+                                    <option value="" selected>— Select Block —</option>
+                                    {% for block_val, block_label in blocks %}
+                                        <option value="{{ block_val }}">{{ block_label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Select Floor -->
+                    <div class="mb-3">
+                        <label class="form-label">Step 2: Select Floor</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="floor-select" class="form-select form-select-sm" disabled required>
+                                <option value="" disabled selected>Choose building first...</option>
+                            </select>
+                            <div id="floor-loading" class="spinner-border spinner-border-sm text-primary d-none" role="status"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Select Room -->
+                    <div class="mb-3">
+                        <label class="form-label">Step 3: Select Target Room</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="room-select" name="room-select" class="form-select form-select-sm" disabled required>
+                                <option value="" disabled selected>Choose floor first...</option>
+                            </select>
+                            <div id="room-loading" class="spinner-border spinner-border-sm text-primary d-none" role="status"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Select Bed -->
+                    <div class="mb-4">
+                        <label class="form-label">Step 4: Select Bed Positioning</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="bed-select" name="bed-select" class="form-select form-select-sm border-primary border-opacity-25 bg-primary bg-opacity-10 py-2" disabled required>
+                                <option value="" disabled selected>Choose room first...</option>
+                            </select>
+                            <div id="bed-loading" class="spinner-border spinner-border-sm text-primary d-none" role="status"></div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="complete-btn" class="btn btn-action w-100 shadow-sm" disabled>
+                        <i class="bi bi-arrow-left-right me-2"></i>Confirm Room Change
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Student Current Assignment Preview Panel -->
+        <div class="col-lg-6">
+            <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-3"><i class="bi bi-person-badge-fill me-2 text-primary"></i>Current Resident Details</h5>
+                    
+                    <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded-3">
+                        <img src="{% if student.photo %}{{ student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" 
+                             class="student-avatar-big" alt="{{ student.name }}">
+                        <div>
+                            <h4 class="fw-bold text-dark mb-0">{{ student.name }}</h4>
+                            <p class="text-muted mb-0 small">Roll: {{ student.roll }}</p>
+                            <p class="text-muted mb-0 small">Gender: {{ student.gender }}</p>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-muted small text-uppercase mb-3">Current Assignment Info</h6>
+                    <div class="list-group list-group-flush mb-4 small">
+                        <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2">
+                            <span>Building:</span>
+                            <strong class="text-dark">{{ current_bed.room.building.name|default:"—" }}</strong>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2">
+                            <span>Floor:</span>
+                            <strong class="text-dark">Floor {{ current_bed.room.floor.floor_number|default:"—" }}</strong>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2">
+                            <span>Room:</span>
+                            <strong class="text-dark">Room {{ current_bed.room.room_number }}</strong>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2">
+                            <span>Bed Slot:</span>
+                            <strong class="text-primary">{{ current_bed.bed_number }}</strong>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-0">
+                            <span>Rent Paid/Due:</span>
+                            <strong class="text-muted">₹{{ current_bed.paid_amount }}/₹{{ current_bed.remaining_amount }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning border-0 rounded-3 mb-0 small">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Changing the student's room will deallocate the current bed position, reset the due amount, and calculate fresh dues based on the new room's rent rate.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const buildingSelect = document.getElementById('building-select');
+    const blockSelect = document.getElementById('block-select');
+    const floorSelect = document.getElementById('floor-select');
+    const roomSelect = document.getElementById('room-select');
+    const bedSelect = document.getElementById('bed-select');
+    const completeBtn = document.getElementById('complete-btn');
+
+    const floorLoading = document.getElementById('floor-loading');
+    const roomLoading = document.getElementById('room-loading');
+    const bedLoading = document.getElementById('bed-loading');
+
+    function resetDropdown(select, placeholder) {
+        select.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+        select.disabled = true;
+    }
+
+    buildingSelect.addEventListener('change', async function () {
+        const buildingId = this.value;
+        resetDropdown(floorSelect, 'Loading floors...');
+        resetDropdown(roomSelect, 'Choose floor first...');
+        resetDropdown(bedSelect, 'Choose room first...');
+        completeBtn.disabled = true;
+
+        if (!buildingId) {
+            resetDropdown(floorSelect, 'Choose building first...');
+            return;
+        }
+
+        floorLoading.classList.remove('d-none');
+        try {
+            const res = await fetch(`{% url 'get_floors' %}?building_id=${buildingId}`);
+            const data = await res.json();
+            floorSelect.innerHTML = '<option value="">All Floors</option>';
+            data.floors.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = f.label;
+                floorSelect.appendChild(opt);
+            });
+            floorSelect.disabled = false;
+        } catch (e) {
+            console.error(e);
+        }
+        floorLoading.classList.add('d-none');
+
+        await loadRooms();
+    });
+
+    blockSelect.addEventListener('change', loadRooms);
+    floorSelect.addEventListener('change', loadRooms);
+
+    async function loadRooms() {
+        const buildingId = buildingSelect.value;
+        const block = blockSelect.value;
+        const floorId = floorSelect.value;
+
+        resetDropdown(roomSelect, 'Choose building...');
+        resetDropdown(bedSelect, 'Choose room first...');
+        completeBtn.disabled = true;
+
+        if (!buildingId) return;
+
+        roomLoading.classList.remove('d-none');
+        try {
+            const res = await fetch(`{% url 'get_rooms_for_allocation' %}?building_id=${buildingId}&block=${block}&floor_id=${floorId}`);
+            const data = await res.json();
+            roomSelect.innerHTML = '<option value="" disabled selected>— Select Room —</option>';
+            data.rooms.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.room_id;
+                opt.dataset.id = r.room_id;
+                opt.dataset.gender = r.gender;
+                opt.textContent = `Room ${r.room_number} (${r.gender_display}) - ${r.vacant_beds}/${r.capacity} Beds Vacant`;
+                roomSelect.appendChild(opt);
+            });
+            roomSelect.disabled = false;
+        } catch (e) {
+            console.error(e);
+        }
+        roomLoading.classList.add('d-none');
+    }
+
+    roomSelect.addEventListener('change', async function () {
+        const selectedOpt = this.options[this.selectedIndex];
+        const roomId = selectedOpt.dataset.id;
+
+        resetDropdown(bedSelect, 'Loading beds...');
+        completeBtn.disabled = true;
+
+        if (!roomId) return;
+
+        bedLoading.classList.remove('d-none');
+
+        try {
+            const resBeds = await fetch(`{% url 'get_beds_for_room' %}?room_id=${roomId}`);
+            const dataBeds = await resBeds.json();
+
+            bedSelect.innerHTML = '<option value="" disabled selected>— Select Bed Positioning —</option>';
+            let vacantCount = 0;
+
+            dataBeds.beds.forEach(b => {
+                const isVacant = !b.student;
+                if (isVacant) {
+                    vacantCount++;
+                    const opt = document.createElement('option');
+                    opt.value = b.bed_number;
+                    opt.textContent = `Bed #${b.bed_number} (Available)`;
+                    bedSelect.appendChild(opt);
+                }
+            });
+
+            if (vacantCount === 0) {
+                bedSelect.innerHTML = '<option value="" disabled selected>No vacant beds in this room</option>';
+            } else {
+                bedSelect.disabled = false;
+            }
+
+        } catch (e) {
+            console.error(e);
+        }
+
+        bedLoading.classList.add('d-none');
+    });
+
+    bedSelect.addEventListener('change', function() {
+        if (roomSelect.value && bedSelect.value) {
+            completeBtn.disabled = false;
+        } else {
+            completeBtn.disabled = true;
+        }
+    });
+});
+</script>
+{% endblock %}

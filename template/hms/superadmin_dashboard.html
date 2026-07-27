@@ -15,23 +15,50 @@
   --accent-red: #ef4444;
   --accent-cyan: #06b6d4;
   --accent-yellow: #eab308;
-  --dark-bg: #0d1117;
   --card-bg: #161b22;
+  
+  --sa-header-bg: linear-gradient(135deg, #1a1f35 0%, #131825 50%, #0f1420 100%);
+  --sa-title-color: #f0f6ff;
+  --sa-sub-color: rgba(255,255,255,0.5);
+  --sa-muted-color: rgba(255,255,255,0.3);
+  --sa-border: rgba(255,255,255,0.04);
 }
 
-body { background: var(--dark-bg) !important; }
+html[data-theme="light"] {
+  --glass-bg: rgba(0, 0, 0, 0.03);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --sa-header-bg: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  --sa-title-color: #0f172a;
+  --sa-sub-color: #475569;
+  --sa-muted-color: #64748b;
+  --sa-border: rgba(0, 0, 0, 0.05);
+}
 
 .sa-page { padding: 1.5rem 0; }
 
 /* ── Hero Header ── */
 .sa-header {
-  background: linear-gradient(135deg, #1a1f35 0%, #131825 50%, #0f1420 100%);
+  background: var(--sa-header-bg);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 2rem 2.5rem;
   margin-bottom: 2rem;
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+.sa-header .text-white {
+  color: var(--sa-title-color) !important;
+  transition: color 0.3s ease;
+}
+.sa-header .btn-outline-light {
+  border-color: var(--sa-title-color) !important;
+  color: var(--sa-title-color) !important;
+  transition: all 0.3s ease;
+}
+.sa-header .btn-outline-light:hover {
+  background-color: var(--sa-title-color) !important;
+  color: var(--card-bg) !important;
 }
 .sa-header::before {
   content: '';
@@ -60,7 +87,7 @@ body { background: var(--dark-bg) !important; }
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
+  color: var(--sa-sub-color);
   margin-bottom: 0.75rem;
   padding-left: 4px;
 }
@@ -71,13 +98,13 @@ body { background: var(--dark-bg) !important; }
   border: 1px solid var(--glass-border);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
-  transition: transform 0.2s, border-color 0.2s;
+  transition: transform 0.2s, border-color 0.2s, background-color 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 .kpi-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(255,255,255,0.22);
+  border-color: var(--sa-title-color);
 }
 .kpi-card::after {
   content: '';
@@ -112,24 +139,27 @@ body { background: var(--dark-bg) !important; }
 .kpi-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #f0f6ff;
+  color: var(--sa-title-color);
   line-height: 1.1;
+  transition: color 0.3s ease;
 }
 .kpi-label {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.5);
+  color: var(--sa-sub-color);
   margin-top: 2px;
+  transition: color 0.3s ease;
 }
 .kpi-sub {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.3);
+  color: var(--sa-muted-color);
+  transition: color 0.3s ease;
 }
 
 /* ── Progress Bars ── */
 .mini-progress {
   height: 6px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.08);
+  background: var(--glass-bg);
 }
 .mini-progress-bar {
   height: 6px;
@@ -143,35 +173,42 @@ body { background: var(--dark-bg) !important; }
   border: 1px solid var(--glass-border);
   border-radius: 14px;
   padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+.panel-card .text-white {
+  color: var(--sa-title-color) !important;
+  transition: color 0.3s ease;
 }
 .panel-title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: var(--sa-title-color);
   margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: color 0.3s ease;
 }
 .panel-title i { color: var(--accent-blue); }
 
 /* ── Data Table ── */
-.sa-table { color: rgba(255,255,255,0.8); font-size: 0.82rem; }
+.sa-table { color: var(--sa-title-color); font-size: 0.82rem; transition: color 0.3s ease; }
 .sa-table thead th {
-  color: rgba(255,255,255,0.4);
+  color: var(--sa-sub-color);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border-bottom: 1px solid var(--glass-border);
   background: transparent;
   padding: 0.6rem 0.75rem;
+  transition: color 0.3s ease;
 }
 .sa-table tbody td {
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--sa-border);
   padding: 0.6rem 0.75rem;
   vertical-align: middle;
 }
-.sa-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.sa-table tbody tr:hover { background: var(--glass-bg); }
 
 /* ── Status Badges ── */
 .badge-status {
@@ -191,7 +228,7 @@ body { background: var(--dark-bg) !important; }
 .health-row {
   display: flex; align-items: center;
   padding: 0.6rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--sa-border);
 }
 .health-row:last-child { border-bottom: none; }
 .health-dot {
@@ -213,12 +250,12 @@ body { background: var(--dark-bg) !important; }
   display: flex; align-items: center; gap: 12px;
   text-decoration: none;
   transition: all 0.2s;
-  color: rgba(255,255,255,0.8);
+  color: var(--sa-sub-color);
 }
 .shortcut-card:hover {
   border-color: var(--accent-blue);
   background: rgba(79,156,249,0.06);
-  color: #fff;
+  color: var(--sa-title-color);
   transform: translateY(-2px);
 }
 .shortcut-icon {
@@ -244,7 +281,7 @@ body { background: var(--dark-bg) !important; }
       <div>
         <div class="d-flex align-items-center gap-2 mb-1">
           <span class="badge-live"><i class="bi bi-circle-fill me-1" style="font-size:6px;"></i>LIVE</span>
-          <small class="text-white opacity-40">Last refreshed on page load</small>
+          <small class="text-white opacity-40" id="live-refresh-status">Last refreshed on page load</small>
         </div>
         <h1 class="text-white fw-bold mb-1" style="font-size:1.75rem;">
           <i class="bi bi-speedometer2 me-2 text-primary"></i>Super Admin Dashboard
@@ -276,11 +313,11 @@ body { background: var(--dark-bg) !important; }
         <div class="d-flex align-items-center gap-3 mb-2">
           <div class="kpi-icon blue"><i class="bi bi-mortarboard-fill"></i></div>
           <div>
-            <div class="kpi-value">{{ total_students }}</div>
+            <div class="kpi-value" id="kpi-total-students">{{ total_students }}</div>
             <div class="kpi-label">Total Students</div>
           </div>
         </div>
-        <div class="kpi-sub">{{ active_students }} active · {{ inactive_students }} inactive</div>
+        <div class="kpi-sub" id="kpi-students-sub">{{ active_students }} active · {{ inactive_students }} inactive</div>
       </div>
     </div>
     <!-- Occupied Beds -->
@@ -289,14 +326,14 @@ body { background: var(--dark-bg) !important; }
         <div class="d-flex align-items-center gap-3 mb-2">
           <div class="kpi-icon green"><i class="bi bi-bed-fill"></i></div>
           <div>
-            <div class="kpi-value">{{ occupied_beds }}</div>
+            <div class="kpi-value" id="kpi-occupied-beds">{{ occupied_beds }}</div>
             <div class="kpi-label">Beds Occupied</div>
           </div>
         </div>
         <div class="mini-progress mt-1">
-          <div class="mini-progress-bar" style="width:{{ occupancy_pct }}%; background: var(--accent-green);"></div>
+          <div class="mini-progress-bar" id="kpi-occupancy-progress" data-width="{{ occupancy_pct }}" style="background: var(--accent-green); width: {{ occupancy_pct }}%;"></div>
         </div>
-        <div class="kpi-sub mt-1">{{ occupancy_pct }}% occupancy · {{ vacant_beds }} vacant</div>
+        <div class="kpi-sub mt-1" id="kpi-occupancy-sub">{{ occupancy_pct }}% occupancy · {{ vacant_beds }} vacant</div>
       </div>
     </div>
     <!-- Revenue -->
@@ -305,11 +342,11 @@ body { background: var(--dark-bg) !important; }
         <div class="d-flex align-items-center gap-3 mb-2">
           <div class="kpi-icon purple"><i class="bi bi-currency-rupee"></i></div>
           <div>
-            <div class="kpi-value">₹{{ monthly_revenue|floatformat:0 }}</div>
+            <div class="kpi-value" id="kpi-monthly-revenue">₹{{ monthly_revenue|floatformat:0 }}</div>
             <div class="kpi-label">Monthly Revenue</div>
           </div>
         </div>
-        <div class="kpi-sub">₹{{ today_revenue|floatformat:0 }} today</div>
+        <div class="kpi-sub" id="kpi-revenue-sub">₹{{ today_revenue|floatformat:0 }} today</div>
       </div>
     </div>
     <!-- Complaints -->
@@ -318,24 +355,11 @@ body { background: var(--dark-bg) !important; }
         <div class="d-flex align-items-center gap-3 mb-2">
           <div class="kpi-icon orange"><i class="bi bi-exclamation-triangle-fill"></i></div>
           <div>
-            <div class="kpi-value">{{ open_complaints }}</div>
+            <div class="kpi-value" id="kpi-open-complaints">{{ open_complaints }}</div>
             <div class="kpi-label">Open Complaints</div>
           </div>
         </div>
-        <div class="kpi-sub">{{ resolved_complaints }} resolved total</div>
-      </div>
-    </div>
-    <!-- Visitors -->
-    <div class="col-6 col-md-4 col-xl-2">
-      <div class="kpi-card kpi-cyan h-100">
-        <div class="d-flex align-items-center gap-3 mb-2">
-          <div class="kpi-icon cyan"><i class="bi bi-person-badge-fill"></i></div>
-          <div>
-            <div class="kpi-value">{{ total_visitors_today }}</div>
-            <div class="kpi-label">Visitors Today</div>
-          </div>
-        </div>
-        <div class="kpi-sub">{{ pending_visitors }} pending approval</div>
+        <div class="kpi-sub" id="kpi-complaints-sub">{{ resolved_complaints }} resolved total</div>
       </div>
     </div>
     <!-- Staff -->
@@ -344,11 +368,11 @@ body { background: var(--dark-bg) !important; }
         <div class="d-flex align-items-center gap-3 mb-2">
           <div class="kpi-icon yellow"><i class="bi bi-people-fill"></i></div>
           <div>
-            <div class="kpi-value">{{ total_staff }}</div>
+            <div class="kpi-value" id="kpi-total-staff">{{ total_staff }}</div>
             <div class="kpi-label">Total Staff</div>
           </div>
         </div>
-        <div class="kpi-sub">{{ active_staff }} active · {{ total_guards }} guards</div>
+        <div class="kpi-sub" id="kpi-staff-sub">{{ active_staff }} active</div>
       </div>
     </div>
   </div>
@@ -403,31 +427,27 @@ body { background: var(--dark-bg) !important; }
         <hr style="border-color: var(--glass-border);">
 
         <div class="row g-2 text-center mt-1">
-          <div class="col-6">
-            <div class="kpi-value" style="font-size:1.5rem; color: var(--accent-blue);">{{ total_users }}</div>
+          <div class="col-4">
+            <div class="kpi-value" id="kpi-total-users" style="font-size:1.5rem; color: var(--accent-blue);">{{ total_users }}</div>
             <div class="kpi-sub">Total Users</div>
           </div>
-          <div class="col-6">
-            <div class="kpi-value" style="font-size:1.5rem; color: var(--accent-green);">{{ active_users }}</div>
+          <div class="col-4">
+            <div class="kpi-value" id="kpi-active-users" style="font-size:1.5rem; color: var(--accent-green);">{{ active_users }}</div>
             <div class="kpi-sub">Active Users</div>
           </div>
-          <div class="col-6">
-            <div class="kpi-value" style="font-size:1.5rem; color: var(--accent-orange);">{{ pending_leaves }}</div>
+          <div class="col-4">
+            <div class="kpi-value" id="kpi-pending-leaves" style="font-size:1.5rem; color: var(--accent-orange);">{{ pending_leaves }}</div>
             <div class="kpi-sub">Pending Leaves</div>
-          </div>
-          <div class="col-6">
-            <div class="kpi-value" style="font-size:1.5rem; color: var(--accent-red);">{{ low_stock_items }}</div>
-            <div class="kpi-sub">Out of Stock</div>
           </div>
         </div>
 
         <div class="mt-3">
           <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:rgba(255,255,255,0.5);">
-            <span>Disk: {{ disk_used_gb }} GB / {{ disk_total_gb }} GB</span>
-            <span>{{ disk_pct }}%</span>
+            <span id="kpi-disk-text">Disk: {{ disk_used_gb }} GB / {{ disk_total_gb }} GB</span>
+            <span id="kpi-disk-pct-text">{{ disk_pct }}%</span>
           </div>
           <div class="mini-progress">
-            <div class="mini-progress-bar" style="width:{{ disk_pct }}%; background: {% if disk_pct > 90 %}var(--accent-red){% elif disk_pct > 75 %}var(--accent-yellow){% else %}var(--accent-green){% endif %};"></div>
+            <div class="mini-progress-bar" id="kpi-disk-progress" data-width="{{ disk_pct }}" data-bg="{% if disk_pct > 90 %}var(--accent-red){% elif disk_pct > 75 %}var(--accent-yellow){% else %}var(--accent-green){% endif %}" style="width: {{ disk_pct }}%;"></div>
           </div>
         </div>
       </div>
@@ -542,28 +562,6 @@ body { background: var(--dark-bg) !important; }
       </a>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'visitor_list' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(6,182,212,0.15); color:var(--accent-cyan);">
-          <i class="bi bi-person-badge-fill"></i>
-        </div>
-        <div>
-          <div style="font-size:0.85rem; font-weight:600;">Visitors</div>
-          <div class="kpi-sub">{{ pending_visitors }} pending</div>
-        </div>
-      </a>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'inventory_list' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(168,85,247,0.15); color:var(--accent-purple);">
-          <i class="bi bi-boxes"></i>
-        </div>
-        <div>
-          <div style="font-size:0.85rem; font-weight:600;">Inventory</div>
-          <div class="kpi-sub">{{ low_stock_items }} out of stock</div>
-        </div>
-      </a>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
       <a href="{% url 'complaint_list' %}" class="shortcut-card">
         <div class="shortcut-icon" style="background:rgba(249,115,22,0.15); color:var(--accent-orange);">
           <i class="bi bi-ticket-perforated-fill"></i>
@@ -574,28 +572,7 @@ body { background: var(--dark-bg) !important; }
         </div>
       </a>
     </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'security_list' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(239,68,68,0.15); color:var(--accent-red);">
-          <i class="bi bi-shield-fill-check"></i>
-        </div>
-        <div>
-          <div style="font-size:0.85rem; font-weight:600;">Security</div>
-          <div class="kpi-sub">{{ total_guards }} active guards</div>
-        </div>
-      </a>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'hostel_manager' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(79,156,249,0.15); color:var(--accent-blue);">
-          <i class="bi bi-building-fill"></i>
-        </div>
-        <div>
-          <div style="font-size:0.85rem; font-weight:600;">Hostel Infra</div>
-          <div class="kpi-sub">{{ total_blocks }} blocks</div>
-        </div>
-      </a>
-    </div>
+
 
     <div class="col-6 col-md-4 col-lg-3">
       <a href="{% url 'fee_manager' %}" class="shortcut-card">
@@ -616,6 +593,17 @@ body { background: var(--dark-bg) !important; }
         <div>
           <div style="font-size:0.85rem; font-weight:600;">Reports</div>
           <div class="kpi-sub">Export CSV & Data</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <a href="{% url 'system_settings_view' %}" class="shortcut-card">
+        <div class="shortcut-icon" style="background:rgba(239,68,68,0.12); color:var(--accent-red);">
+          <i class="bi bi-gear-fill"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem; font-weight:600;">System Settings</div>
+          <div class="kpi-sub">Configure and white-label</div>
         </div>
       </a>
     </div>
@@ -688,85 +676,130 @@ body { background: var(--dark-bg) !important; }
     </div>
   </div>
 
-  <!-- ── Row 7: Visitors + Incidents ── -->
-  <div class="row g-3 mb-4">
-    <!-- Recent Visitors -->
-    <div class="col-12 col-lg-6">
-      <div class="panel-card">
-        <div class="panel-title">
-          <i class="bi bi-person-lines-fill"></i> Recent Visitors
-          <a href="{% url 'visitor_list' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
-        </div>
-        <div class="table-responsive">
-          <table class="table sa-table mb-0">
-            <thead>
-              <tr><th>Visitor</th><th>Student</th><th>Date</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              {% for v in recent_visitors %}
-              <tr>
-                <td>{{ v.name }}</td>
-                <td>{{ v.student.name|truncatechars:16 }}</td>
-                <td>{{ v.visit_date|date:"d M" }}</td>
-                <td>
-                  <span class="badge-status {% if v.status == 'approved' %}s-success{% elif v.status == 'pending' %}s-warning{% elif v.status == 'denied' %}s-danger{% else %}s-info{% endif %}">
-                    {{ v.get_status_display }}
-                  </span>
-                </td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="4" class="text-center text-muted py-3">No visitors today</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+  <!-- ── Row 8: System Audit Logs ── -->
+  <p class="sa-section-label" id="logs-anchor">System Audit Logs</p>
+  <div class="panel-card mb-4" id="logs-panel">
+    <div class="panel-title d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-clock-history"></i>
+        <span>Security & Administrative Audit Logs</span>
       </div>
+      <!-- Log filters -->
+      <form method="get" action="{% url 'superadmin_dashboard' %}#logs-anchor" class="d-flex align-items-center gap-2 flex-wrap" id="logs-filter-form">
+        <input type="text" name="log_q" value="{{ log_search_query|default:'' }}" placeholder="Search details, actor, IP..." class="form-control form-control-sm rounded-pill text-white bg-dark border-secondary px-3" style="width:180px; font-size:0.8rem;">
+        
+        <select name="log_action" class="form-select form-select-sm rounded-pill text-white bg-dark border-secondary px-3" style="width:130px; font-size:0.8rem;">
+          <option value="">All Actions</option>
+          {% for code, label in log_actions %}
+          <option value="{{ code }}" {% if log_action_selected == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <span class="text-white opacity-60" style="font-size: 0.75rem;">From:</span>
+        <input type="date" name="log_start_date" value="{{ log_start_date|default:'' }}" class="form-control form-control-sm rounded-pill text-white bg-dark border-secondary px-2" style="width:120px; font-size:0.75rem;">
+        
+        <span class="text-white opacity-60" style="font-size: 0.75rem;">To:</span>
+        <input type="date" name="log_end_date" value="{{ log_end_date|default:'' }}" class="form-control form-control-sm rounded-pill text-white bg-dark border-secondary px-2" style="width:120px; font-size:0.75rem;">
+
+        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3" title="Apply Filter"><i class="bi bi-filter"></i> Filter</button>
+        <button type="submit" name="log_export" value="csv" class="btn btn-sm btn-outline-success rounded-pill px-3" title="Export to CSV"><i class="bi bi-file-earmark-arrow-down"></i> Export</button>
+
+        {% if log_search_query or log_action_selected or log_start_date or log_end_date %}
+        <a href="{% url 'superadmin_dashboard' %}#logs-anchor" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Clear</a>
+        {% endif %}
+      </form>
     </div>
 
-    <!-- Recent Incidents -->
-    <div class="col-12 col-lg-6">
-      <div class="panel-card">
-        <div class="panel-title">
-          <i class="bi bi-exclamation-octagon-fill" style="color:var(--accent-red);"></i> Security Incidents
-          <a href="{% url 'security_list' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
-        </div>
-        {% if recent_incidents %}
-        {% for incident in recent_incidents %}
-        <div class="health-row">
-          <span class="badge-status {% if incident.severity == 'high' %}s-danger{% elif incident.severity == 'medium' %}s-warning{% else %}s-info{% endif %} me-2">{{ incident.severity|upper }}</span>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">{{ incident.get_title_display }}</span>
-          <small class="text-muted">{{ incident.date|date:"d M" }}</small>
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="text-center text-muted py-3" style="font-size:0.85rem;">
-          <i class="bi bi-shield-check fs-3 d-block mb-2" style="color:var(--accent-green); opacity:0.5;"></i>
-          No recent incidents
-        </div>
-        {% endif %}
+    <div class="table-responsive mt-3" id="audit-logs-table-container" style="max-height: 520px; overflow-y: auto;">
+      <table class="table sa-table mb-0">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Actor</th>
+            <th>Action</th>
+            <th>Affected Target</th>
+            <th>IP Address</th>
+            <th class="text-end">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% include 'hms/audit_logs_rows.html' %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div id="audit-logs-pagination">
+      {% if recent_logs.has_other_pages %}
+      <nav class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="border-color: var(--glass-border) !important;">
+        <small class="text-muted">Showing {{ recent_logs.start_index }} to {{ recent_logs.end_index }} of {{ recent_logs.paginator.count }} logs</small>
+        <ul class="pagination pagination-sm mb-0">
+          {% if recent_logs.has_previous %}
+          <li class="page-item"><a class="page-link text-white bg-dark border-secondary" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ recent_logs.previous_page_number }}#logs-anchor"><i class="bi bi-chevron-left"></i></a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link bg-dark border-secondary opacity-50"><i class="bi bi-chevron-left"></i></span></li>
+          {% endif %}
+
+          {% for num in recent_logs.paginator.page_range %}
+            {% if recent_logs.number == num %}
+            <li class="page-item active"><span class="page-link bg-primary border-primary">{{ num }}</span></li>
+            {% elif num > recent_logs.number|add:'-3' and num < recent_logs.number|add:'3' %}
+            <li class="page-item"><a class="page-link text-white bg-dark border-secondary" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ num }}#logs-anchor">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if recent_logs.has_next %}
+          <li class="page-item"><a class="page-link text-white bg-dark border-secondary" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ recent_logs.next_page_number }}#logs-anchor"><i class="bi bi-chevron-right"></i></a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link bg-dark border-secondary opacity-50"><i class="bi bi-chevron-right"></i></span></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+
+    <!-- Scroll Loading States -->
+    <div id="logs-loading-spinner" class="text-center py-3" style="display: none;">
+      <div class="spinner-border spinner-border-sm text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
       </div>
+      <span class="ms-2 text-white opacity-70" style="font-size: 0.8rem;">Loading more logs...</span>
+    </div>
+    <div id="logs-no-more" class="text-center text-muted py-3" style="display: none; font-size: 0.8rem;">
+      <i class="bi bi-info-circle me-1"></i> No more logs to load.
     </div>
   </div>
 
-</div>
-
-<!-- ── Chart.js Scripts ── -->
+  <!-- ── Chart.js Scripts ── -->
+<script id="chart-monthly-labels" type="application/json">{{ monthly_labels|safe }}</script>
+<script id="chart-monthly-data" type="application/json">{{ monthly_data|safe }}</script>
+<script id="chart-gender-data" type="application/json">[{{ gender_male }}, {{ gender_female }}]</script>
+<script id="chart-bed-data" type="application/json">[{{ occupied_beds }}, {{ vacant_beds }}]</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+const monthlyLabels = JSON.parse(document.getElementById('chart-monthly-labels').textContent);
+const monthlyData = JSON.parse(document.getElementById('chart-monthly-data').textContent);
+const genderData = JSON.parse(document.getElementById('chart-gender-data').textContent);
+const bedData = JSON.parse(document.getElementById('chart-bed-data').textContent);
 const chartDefaults = {
-  color: 'rgba(255,255,255,0.6)',
-  borderColor: 'rgba(255,255,255,0.08)',
+  color: isLight ? '#475569' : 'rgba(255,255,255,0.6)',
+  borderColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
 };
+const chartTextMuted = isLight ? '#64748b' : 'rgba(255,255,255,0.45)';
+const chartGridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+const chartVacantBg = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+const chartVacantBorder = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)';
 
 // Revenue Bar Chart
 const revenueCtx = document.getElementById('revenueChart').getContext('2d');
 new Chart(revenueCtx, {
   type: 'bar',
   data: {
-    labels: {{ monthly_labels|safe }},
+    labels: monthlyLabels,
     datasets: [{
       label: 'Revenue (₹)',
-      data: {{ monthly_data|safe }},
+      data: monthlyData,
       backgroundColor: 'rgba(79,156,249,0.25)',
       borderColor: 'rgba(79,156,249,0.8)',
       borderWidth: 2,
@@ -779,14 +812,14 @@ new Chart(revenueCtx, {
     plugins: { legend: { display: false } },
     scales: {
       x: {
-        ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 11 } },
-        grid: { color: 'rgba(255,255,255,0.05)' }
+        ticks: { color: chartTextMuted, font: { size: 11 } },
+        grid: { color: chartGridColor }
       },
       y: {
-        ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 11 },
+        ticks: { color: chartTextMuted, font: { size: 11 },
           callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v)
         },
-        grid: { color: 'rgba(255,255,255,0.05)' }
+        grid: { color: chartGridColor }
       }
     }
   }
@@ -799,7 +832,7 @@ new Chart(gCtx, {
   data: {
     labels: ['Male', 'Female'],
     datasets: [{
-      data: [{{ gender_male }}, {{ gender_female }}],
+      data: genderData,
       backgroundColor: ['rgba(79,156,249,0.8)', 'rgba(168,85,247,0.8)'],
       borderColor: ['#4f9cf9', '#a855f7'],
       borderWidth: 2,
@@ -822,9 +855,9 @@ new Chart(bCtx, {
   data: {
     labels: ['Occupied', 'Vacant'],
     datasets: [{
-      data: [{{ occupied_beds }}, {{ vacant_beds }}],
-      backgroundColor: ['rgba(34,197,94,0.8)', 'rgba(255,255,255,0.08)'],
-      borderColor: ['#22c55e', 'rgba(255,255,255,0.15)'],
+      data: bedData,
+      backgroundColor: ['rgba(34,197,94,0.8)', chartVacantBg],
+      borderColor: ['#22c55e', chartVacantBorder],
       borderWidth: 2,
       hoverOffset: 6,
     }]
@@ -835,5 +868,85 @@ new Chart(bCtx, {
     plugins: { legend: { display: false } }
   }
 });
+</script>
+
+<script>
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    const tableContainer = document.getElementById('audit-logs-table-container');
+    const tableBody = tableContainer ? tableContainer.querySelector('tbody') : null;
+    if (!tableContainer || !tableBody) return;
+
+    let nextPage = 2;
+    let hasNext = {% if recent_logs.has_next %}true{% else %}false{% endif %};
+    let loading = false;
+
+    // Helper to dynamically move modals to body (avoids backdrop z-index overlay issue)
+    function moveNewModalsToBody() {
+      tableBody.querySelectorAll('.modal').forEach(function(modal) {
+        document.body.appendChild(modal);
+      });
+    }
+
+    // Move initial dashboard log modals
+    moveNewModalsToBody();
+
+    // Hide pagination controls if JS is active
+    const paginationEl = document.getElementById('audit-logs-pagination');
+    if (paginationEl) {
+      paginationEl.style.setProperty('display', 'none', 'important');
+    }
+
+    const spinner = document.getElementById('logs-loading-spinner');
+    const noMoreEl = document.getElementById('logs-no-more');
+
+    // Scroll listener on the scrollable container itself
+    tableContainer.addEventListener('scroll', function() {
+      if (!hasNext || loading) return;
+
+      // When the user has scrolled to the bottom of the container
+      if (tableContainer.scrollHeight - tableContainer.scrollTop <= tableContainer.clientHeight + 40) {
+        loadMoreLogs();
+      }
+    });
+
+    function loadMoreLogs() {
+      loading = true;
+      if (spinner) spinner.style.display = 'block';
+      if (noMoreEl) noMoreEl.style.display = 'none';
+
+      const q = encodeURIComponent('{{ log_search_query|default:"" }}');
+      const action = encodeURIComponent('{{ log_action_selected|default:"" }}');
+      const startDate = encodeURIComponent('{{ log_start_date|default:"" }}');
+      const endDate = encodeURIComponent('{{ log_end_date|default:"" }}');
+
+      const url = `?log_page=${nextPage}&log_q=${q}&log_action=${action}&log_start_date=${startDate}&log_end_date=${endDate}&ajax=1`;
+
+      fetch(url)
+        .then(response => {
+          if (!response.ok) throw new Error('Network response error');
+          return response.json();
+        })
+        .then(data => {
+          if (data.html) {
+            tableBody.insertAdjacentHTML('beforeend', data.html);
+            moveNewModalsToBody();
+          }
+          hasNext = data.has_next;
+          nextPage++;
+          loading = false;
+          if (spinner) spinner.style.display = 'none';
+          if (!hasNext && noMoreEl) {
+            noMoreEl.style.display = 'block';
+          }
+        })
+        .catch(err => {
+          console.error('Error loading audit logs:', err);
+          loading = false;
+          if (spinner) spinner.style.display = 'none';
+        });
+    }
+  });
+})();
 </script>
 {% endblock %}

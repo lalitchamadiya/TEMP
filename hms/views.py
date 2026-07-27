@@ -9,16 +9,15 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 
 from .models import (
-    StaffProfile, Visitor, InventoryItem,
-    ComplaintTicket, SecurityGuard, IncidentReport,
-    DutyAssignment
+    StaffProfile, ComplaintTicket,
+    DutyAssignment, Duty, DutyPermission
 )
 from student.models import Student
-from room.models import HostelBuilding, HostelBlock, Floor, Room, Bed
+from room.models import HostelBuilding, Room, Bed
 from paybill.models import Payment, FeeStructure
 from leave.models import HostelLeave
 from django.contrib.auth.models import Group
-from authentication.models import Role, UserProfile
+from authentication.models import Role, UserProfile, AuditLog
 
 
 # ──────────────────────────────────────────────────────
@@ -50,6 +49,10 @@ def dashboard(request):
         return redirect('student_app:student_dashboard')
     if role_name == 'Warden':
         return redirect('warden_dashboard')
+    if role_name == 'Admin':
+        return redirect('superadmin_dashboard')
+    if role_name in ('Security Guard', 'Security'):
+        return redirect('security_dashboard')
     return redirect('superadmin_dashboard')
 
 
@@ -59,6 +62,16 @@ def dashboard(request):
 @login_required(login_url='/authentication/login')
 def superadmin_dashboard(request):
     if not _is_admin(request.user):
+        try:
+            r_name = request.user.profile.role.name
+        except Exception:
+            r_name = None
+        if r_name == 'Warden':
+            return redirect('warden_dashboard')
+        elif r_name in ('Security Guard', 'Security'):
+            return redirect('security_dashboard')
+        elif r_name == 'Student' or hasattr(request.user, 'student'):
+            return redirect('student_app:student_dashboard')
         return redirect('student_app:student_dashboard')
 
     today = timezone.now().date()
@@ -72,13 +85,13 @@ def superadmin_dashboard(request):
     gender_female = Student.objects.filter(gender='Female').count()
 
     # ── Rooms & Beds ──
+    total_blocks = HostelBuilding.objects.filter(is_archived=False).count()
+    total_floors = HostelBuilding.objects.filter(is_archived=False).aggregate(s=Sum('total_floors'))['s'] or 0
     total_rooms = Room.objects.count()
     total_beds = Bed.objects.count()
     occupied_beds = Bed.objects.filter(student__isnull=False).count()
-    vacant_beds = total_beds - occupied_beds
-    occupancy_pct = round((occupied_beds / total_beds * 100) if total_beds else 0)
-    total_blocks = HostelBlock.objects.count()
-    total_floors = Floor.objects.count()
+    vacant_beds = Bed.objects.filter(student__isnull=True).count()
+    occupancy_pct = round((occupied_beds / total_beds * 100), 1) if total_beds > 0 else 0
 
     # ── Financials ──
     today_revenue = Payment.objects.filter(
@@ -96,26 +109,19 @@ def superadmin_dashboard(request):
 
     pending_payments = Payment.objects.filter(transaction_status='PENDING').count()
 
-    # Total expected (beds total_amount)
-    total_expected = Bed.objects.aggregate(total=Sum('total_amount'))['total'] or 0
-    total_paid = Bed.objects.aggregate(total=Sum('paid_amount'))['total'] or 0
-    total_outstanding = total_expected - total_paid
+    total_expected = 0
+    total_paid = total_revenue
+    total_outstanding = 0
 
     # ── Leaves ──
     pending_leaves = HostelLeave.objects.filter(status='pending').count()
-    approved_leaves_today = HostelLeave.objects.filter(status='approved', leave_date=today).count()
+    approved_leaves_today = HostelLeave.objects.filter(status='approved', leave_from=today).count()
 
     # ── HMS Models ──
     total_staff = StaffProfile.objects.count()
     active_staff = StaffProfile.objects.filter(status='active').count()
-    total_visitors_today = Visitor.objects.filter(visit_date=today).count()
-    pending_visitors = Visitor.objects.filter(status='pending').count()
     open_complaints = ComplaintTicket.objects.filter(status__in=['pending', 'assigned', 'in_progress']).count()
     resolved_complaints = ComplaintTicket.objects.filter(status='resolved').count()
-    total_guards = SecurityGuard.objects.filter(status='active').count()
-    recent_incidents = IncidentReport.objects.order_by('-date')[:5]
-    low_stock_items = InventoryItem.objects.filter(status='oos').count()
-    damaged_items = InventoryItem.objects.filter(status='damaged').count()
 
     # ── Users & Roles ──
     total_users = User.objects.count()
@@ -150,8 +156,59 @@ def superadmin_dashboard(request):
     # Recent complaints
     recent_complaints = ComplaintTicket.objects.order_by('-created_at')[:6]
 
-    # Recent visitors
-    recent_visitors = Visitor.objects.order_by('-visit_date', '-id')[:6]
+    # ── Audit Logs ──
+    from django.core.paginator import Paginator
+    log_qs = AuditLog.objects.select_related('actor', 'target_user', 'hostel').order_by('-timestamp')
+    log_action = request.GET.get('log_action', '')
+    log_search = request.GET.get('log_q', '').strip()
+    log_start_date = request.GET.get('log_start_date', '').strip()
+    log_end_date = request.GET.get('log_end_date', '').strip()
+
+    if log_action:
+        log_qs = log_qs.filter(action=log_action)
+    if log_search:
+        log_qs = log_qs.filter(
+            Q(details__icontains=log_search) |
+            Q(actor__username__icontains=log_search) |
+            Q(target_user__username__icontains=log_search) |
+            Q(ip_address__icontains=log_search)
+        )
+    if log_start_date:
+        log_qs = log_qs.filter(timestamp__date__gte=log_start_date)
+    if log_end_date:
+        log_qs = log_qs.filter(timestamp__date__lte=log_end_date)
+
+    if request.GET.get('log_export') == 'csv':
+        import csv
+        from django.http import HttpResponse
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="audit_logs_export.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Timestamp', 'Actor/Username', 'Action', 'Target User', 'Hostel', 'IP Address', 'Details'])
+        for log in log_qs:
+            writer.writerow([
+                log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                log.actor.username if log.actor else 'System',
+                log.get_action_display(),
+                log.target_user.username if log.target_user else 'None',
+                log.hostel.name if log.hostel else 'N/A',
+                log.ip_address or '',
+                log.details or ''
+            ])
+        return response
+
+    log_paginator = Paginator(log_qs, 10)
+    log_page = request.GET.get('log_page', 1)
+    recent_logs = log_paginator.get_page(log_page)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1':
+        from django.template.loader import render_to_string
+        from django.http import JsonResponse
+        html = render_to_string('hms/audit_logs_rows.html', {'recent_logs': recent_logs}, request=request)
+        return JsonResponse({
+            'html': html,
+            'has_next': recent_logs.has_next(),
+        })
 
     context = {
         'page_title': 'Super Admin Dashboard',
@@ -181,14 +238,8 @@ def superadmin_dashboard(request):
         # HMS
         'total_staff': total_staff,
         'active_staff': active_staff,
-        'total_visitors_today': total_visitors_today,
-        'pending_visitors': pending_visitors,
         'open_complaints': open_complaints,
         'resolved_complaints': resolved_complaints,
-        'total_guards': total_guards,
-        'recent_incidents': recent_incidents,
-        'low_stock_items': low_stock_items,
-        'damaged_items': damaged_items,
         # Users
         'total_users': total_users,
         'active_users': active_users,
@@ -202,9 +253,86 @@ def superadmin_dashboard(request):
         # Recent data
         'recent_payments': recent_payments,
         'recent_complaints': recent_complaints,
-        'recent_visitors': recent_visitors,
+        # Audit Logs
+        'recent_logs': recent_logs,
+        'log_actions': AuditLog.ACTION_CHOICES,
+        'log_action_selected': log_action,
+        'log_search_query': log_search,
+        'log_start_date': log_start_date,
+        'log_end_date': log_end_date,
     }
     return render(request, 'hms/superadmin_dashboard.html', context)
+
+
+@login_required(login_url='/authentication/login')
+def live_dashboard_stats(request):
+    if not _is_admin(request.user):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    today = timezone.now().date()
+    
+    # Students
+    total_students = Student.objects.count()
+    active_students = Student.objects.filter(status='Active').count()
+    inactive_students = total_students - active_students
+    
+    # Rooms & Beds
+    total_beds = Bed.objects.count()
+    occupied_beds = Bed.objects.filter(student__isnull=False).count()
+    vacant_beds = Bed.objects.filter(student__isnull=True).count()
+    occupancy_pct = round((occupied_beds / total_beds * 100), 1) if total_beds > 0 else 0
+
+    # Financials
+    month_start = today.replace(day=1)
+    monthly_revenue = Payment.objects.filter(
+        transaction_status='SUCCESSFUL', created_at__date__gte=month_start
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    today_revenue = Payment.objects.filter(
+        transaction_status='SUCCESSFUL', created_at__date=today
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    # Complaints
+    open_complaints = ComplaintTicket.objects.filter(status__in=['pending', 'assigned', 'in_progress']).count()
+    resolved_complaints = ComplaintTicket.objects.filter(status='resolved').count()
+
+    # HMS Staff
+    total_staff = StaffProfile.objects.count()
+    active_staff = StaffProfile.objects.filter(status='active').count()
+
+    # Users
+    total_users = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+
+    # Leaves
+    pending_leaves = HostelLeave.objects.filter(status='pending').count()
+
+    # System Health
+    disk = shutil.disk_usage('/')
+    disk_total_gb = round(disk.total / (1024 ** 3), 1)
+    disk_used_gb = round(disk.used / (1024 ** 3), 1)
+    disk_pct = round(disk.used / disk.total * 100, 1)
+
+    return JsonResponse({
+        'total_students': total_students,
+        'active_students': active_students,
+        'inactive_students': inactive_students,
+        'total_beds': total_beds,
+        'occupied_beds': occupied_beds,
+        'vacant_beds': vacant_beds,
+        'occupancy_pct': occupancy_pct,
+        'monthly_revenue': float(monthly_revenue),
+        'today_revenue': float(today_revenue),
+        'open_complaints': open_complaints,
+        'resolved_complaints': resolved_complaints,
+        'total_staff': total_staff,
+        'active_staff': active_staff,
+        'total_users': total_users,
+        'active_users': active_users,
+        'pending_leaves': pending_leaves,
+        'disk_pct': disk_pct,
+        'disk_used_gb': disk_used_gb,
+        'disk_total_gb': disk_total_gb,
+    })
 
 
 # ──────────────────────────────────────────────────────
@@ -339,8 +467,18 @@ def staff_create(request):
         password = data.get('password', '')
         confirm_password = data.get('confirm_password', '')
         role_id = data.get('role')
-        
+
+        # Check if Admin designation or Admin system role
+        is_admin_role = False
+        if role_id:
+            role_obj = Role.objects.filter(id=role_id).first()
+            if role_obj and 'admin' in role_obj.name.lower():
+                is_admin_role = True
+
         errors = []
+        if designation == 'admin' or is_admin_role:
+            salary = 0.00
+            shift = 'morning'
         if not name:
             errors.append('Name is required.')
         if not email:
@@ -451,8 +589,18 @@ def staff_edit(request, pk):
         password = data.get('password', '')
         confirm_password = data.get('confirm_password', '')
         role_id = data.get('role')
-        
+
+        # Check if Admin designation or Admin system role
+        is_admin_role = False
+        if role_id:
+            role_obj = Role.objects.filter(id=role_id).first()
+            if role_obj and 'admin' in role_obj.name.lower():
+                is_admin_role = True
+
         errors = []
+        if designation == 'admin' or is_admin_role:
+            salary = 0.00
+            shift = 'morning'
         if staff.user:
             if User.objects.filter(email=email).exclude(id=staff.user.id).exists():
                 errors.append('Email is already in use by another user.')
@@ -605,156 +753,6 @@ def staff_toggle_status(request, pk):
 
 
 # ──────────────────────────────────────────────────────
-# VISITOR MANAGEMENT
-# ──────────────────────────────────────────────────────
-@login_required(login_url='/authentication/login')
-def visitor_list(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    visitors = Visitor.objects.select_related('student').order_by('-visit_date', '-id')
-    query = request.GET.get('q', '')
-    if query:
-        visitors = visitors.filter(Q(name__icontains=query) | Q(student__name__icontains=query))
-    context = {'visitors': visitors, 'query': query, 'page_title': 'Visitor Management'}
-    return render(request, 'hms/visitor_list.html', context)
-
-
-@login_required(login_url='/authentication/login')
-def visitor_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    students = Student.objects.filter(status='Active').order_by('name')
-    if request.method == 'POST':
-        data = request.POST
-        student = get_object_or_404(Student, pk=data['student_id'])
-        Visitor.objects.create(
-            name=data['name'],
-            phone=data['phone'],
-            student=student,
-            relation=data['relation'],
-            visit_date=data.get('visit_date') or timezone.now().date(),
-            purpose=data['purpose'],
-            status='pending',
-        )
-        messages.success(request, 'Visitor registered successfully.')
-        return redirect('visitor_list')
-    return render(request, 'hms/visitor_form.html', {
-        'page_title': 'Register Visitor',
-        'students': students,
-    })
-
-
-@login_required(login_url='/authentication/login')
-def visitor_update_status(request, pk, status):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    visitor = get_object_or_404(Visitor, pk=pk)
-    if status in ['approved', 'denied', 'completed']:
-        visitor.status = status
-        if status == 'approved':
-            visitor.entry_time = timezone.now().time()
-        visitor.save()
-        messages.success(request, f'Visitor status updated to {status}.')
-    return redirect('visitor_list')
-
-
-@login_required(login_url='/authentication/login')
-def visitor_checkout(request, pk):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    visitor = get_object_or_404(Visitor, pk=pk)
-    visitor.exit_time = timezone.now().time()
-    visitor.status = 'completed'
-    visitor.save()
-    messages.success(request, 'Visitor checked out successfully.')
-    return redirect('visitor_list')
-
-
-# ──────────────────────────────────────────────────────
-# INVENTORY MANAGEMENT
-# ──────────────────────────────────────────────────────
-@login_required(login_url='/authentication/login')
-def inventory_list(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    items = InventoryItem.objects.all().order_by('-purchase_date')
-    category = request.GET.get('category', '')
-    if category:
-        items = items.filter(category=category)
-    context = {
-        'items': items, 'category': category,
-        'page_title': 'Inventory Management',
-        'categories': InventoryItem.CATEGORY_CHOICES,
-        'total_items': InventoryItem.objects.count(),
-        'low_stock': InventoryItem.objects.filter(status='oos').count(),
-        'damaged': InventoryItem.objects.filter(status='damaged').count(),
-    }
-    return render(request, 'hms/inventory_list.html', context)
-
-
-@login_required(login_url='/authentication/login')
-def inventory_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        data = request.POST
-        InventoryItem.objects.create(
-            name=data['name'],
-            category=data['category'],
-            quantity=int(data.get('quantity', 1)),
-            available_quantity=int(data.get('available_quantity', 1)),
-            vendor_name=data.get('vendor_name', ''),
-            vendor_contact=data.get('vendor_contact', ''),
-            status=data.get('status', 'good'),
-            purchase_order_no=data.get('purchase_order_no', ''),
-        )
-        messages.success(request, 'Inventory item added.')
-        return redirect('inventory_list')
-    return render(request, 'hms/inventory_form.html', {
-        'page_title': 'Add Inventory Item',
-        'categories': InventoryItem.CATEGORY_CHOICES,
-        'statuses': InventoryItem.STATUS_CHOICES,
-    })
-
-
-@login_required(login_url='/authentication/login')
-def inventory_edit(request, pk):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    item = get_object_or_404(InventoryItem, pk=pk)
-    if request.method == 'POST':
-        data = request.POST
-        item.name = data.get('name', item.name)
-        item.category = data.get('category', item.category)
-        item.quantity = int(data.get('quantity', item.quantity))
-        item.available_quantity = int(data.get('available_quantity', item.available_quantity))
-        item.vendor_name = data.get('vendor_name', item.vendor_name)
-        item.vendor_contact = data.get('vendor_contact', item.vendor_contact)
-        item.status = data.get('status', item.status)
-        item.purchase_order_no = data.get('purchase_order_no', item.purchase_order_no)
-        item.save()
-        messages.success(request, 'Item updated.')
-        return redirect('inventory_list')
-    return render(request, 'hms/inventory_form.html', {
-        'page_title': 'Edit Inventory Item',
-        'item': item,
-        'categories': InventoryItem.CATEGORY_CHOICES,
-        'statuses': InventoryItem.STATUS_CHOICES,
-    })
-
-
-@login_required(login_url='/authentication/login')
-def inventory_delete(request, pk):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    item = get_object_or_404(InventoryItem, pk=pk)
-    if request.method == 'POST':
-        item.delete()
-        messages.success(request, 'Item deleted.')
-    return redirect('inventory_list')
-
-
-# ──────────────────────────────────────────────────────
 # COMPLAINT MANAGEMENT
 # ──────────────────────────────────────────────────────
 @login_required(login_url='/authentication/login')
@@ -805,172 +803,7 @@ def complaint_resolve(request, pk):
     return redirect('complaint_list')
 
 
-# ──────────────────────────────────────────────────────
-# SECURITY MANAGEMENT
-# ──────────────────────────────────────────────────────
-@login_required(login_url='/authentication/login')
-def security_list(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    guards = SecurityGuard.objects.all().order_by('-id')
-    incidents = IncidentReport.objects.select_related('guard').order_by('-date', '-id')[:20]
-    context = {
-        'guards': guards,
-        'incidents': incidents,
-        'page_title': 'Security Management',
-    }
-    return render(request, 'hms/security_list.html', context)
 
-
-@login_required(login_url='/authentication/login')
-def security_guard_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        data = request.POST
-        SecurityGuard.objects.create(
-            name=data['name'],
-            phone=data['phone'],
-            gate_no=data.get('gate_no', 'Main Gate 1'),
-            shift=data.get('shift', 'morning'),
-            status=data.get('status', 'active'),
-        )
-        messages.success(request, 'Security guard added.')
-    return redirect('security_list')
-
-
-@login_required(login_url='/authentication/login')
-def incident_report_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        data = request.POST
-        guard_id = data.get('guard_id')
-        guard = SecurityGuard.objects.filter(pk=guard_id).first() if guard_id else None
-        IncidentReport.objects.create(
-            title=data['title'],
-            description=data['description'],
-            guard=guard,
-            severity=data.get('severity', 'low'),
-            action_taken=data.get('action_taken', ''),
-        )
-        messages.success(request, 'Incident report filed.')
-    return redirect('security_list')
-
-
-# ──────────────────────────────────────────────────────
-# HOSTEL LOGISTICS MANAGER
-# ──────────────────────────────────────────────────────
-@login_required(login_url='/authentication/login')
-def hostel_manager(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    blocks = HostelBlock.objects.prefetch_related('floors__rooms__bed_set').all()
-    all_beds = Bed.objects.select_related('room', 'student').all()
-    context = {
-        'blocks': blocks,
-        'all_beds': all_beds,
-        'total_rooms': Room.objects.count(),
-        'total_beds': Bed.objects.count(),
-        'occupied_beds': Bed.objects.filter(student__isnull=False).count(),
-        'page_title': 'Hostel Infrastructure Manager',
-    }
-    return render(request, 'hms/hostel_manager.html', context)
-
-
-@login_required(login_url='/authentication/login')
-def hostel_block_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        HostelBlock.objects.get_or_create(
-            name=request.POST['name'],
-            defaults={'description': request.POST.get('description', '')}
-        )
-        messages.success(request, 'Block created.')
-    return redirect('hostel_manager')
-
-
-@login_required(login_url='/authentication/login')
-def hostel_floor_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        block = get_object_or_404(HostelBlock, pk=request.POST['block_id'])
-        Floor.objects.get_or_create(block=block, floor_number=int(request.POST['floor_number']))
-        messages.success(request, 'Floor added.')
-    return redirect('hostel_manager')
-
-
-@login_required(login_url='/authentication/login')
-def hostel_room_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        data = request.POST
-        floor = get_object_or_404(Floor, pk=data['floor_id'])
-        Room.objects.create(
-            room_number=data['room_number'],
-            room_type=data['room_type'],
-            gender=data['gender'],
-            floor=floor,
-        )
-        messages.success(request, 'Room added.')
-    return redirect('hostel_manager')
-
-
-@login_required(login_url='/authentication/login')
-def hostel_bed_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        data = request.POST
-        room = get_object_or_404(Room, pk=data['room_id'])
-        Bed.objects.create(
-            room=room,
-            bed_number=data['bed_number'],
-            total_amount=float(data.get('total_amount', 0)),
-            remaining_amount=float(data.get('total_amount', 0)),
-        )
-        messages.success(request, 'Bed added.')
-    return redirect('hostel_manager')
-
-
-@login_required(login_url='/authentication/login')
-def hostel_allocate_bed(request, pk):
-    if not _is_admin(request.user):
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        return redirect('dashboard')
-    bed = get_object_or_404(Bed, pk=pk)
-    if request.method == 'POST':
-        student = get_object_or_404(Student, pk=request.POST['student_id'])
-        bed.student = student
-        bed.save()
-        msg = f'Bed allocated to {student.name}.'
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'success', 'message': msg})
-        messages.success(request, msg)
-    next_url = request.GET.get('next') or 'hostel_manager'
-    return redirect(next_url)
-
-
-@login_required(login_url='/authentication/login')
-def hostel_deallocate_bed(request, pk):
-    if not _is_admin(request.user):
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        return redirect('dashboard')
-    bed = get_object_or_404(Bed, pk=pk)
-    if request.method == 'POST':
-        bed.student = None
-        bed.save()
-        msg = 'Bed deallocated.'
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'success', 'message': msg})
-        messages.success(request, msg)
-    next_url = request.GET.get('next') or 'hostel_manager'
-    return redirect(next_url)
 
 
 # ──────────────────────────────────────────────────────
@@ -1091,11 +924,6 @@ def export_report(request, module):
         for c in ComplaintTicket.objects.select_related('student').all():
             writer.writerow([c.id, c.title, c.student.name, c.get_category_display(), c.status, c.created_at.date()])
 
-    elif module == 'visitors':
-        writer.writerow(['ID', 'Name', 'Phone', 'Student', 'Relation', 'Date', 'Status', 'Pass Code'])
-        for v in Visitor.objects.select_related('student').all():
-            writer.writerow([v.id, v.name, v.phone, v.student.name, v.relation, v.visit_date, v.status, v.pass_code])
-
     else:
         writer.writerow(['No data available for this module.'])
 
@@ -1109,19 +937,18 @@ from authentication.decorators import permission_required, api_permission_requir
 
 @login_required(login_url='/authentication/login')
 @permission_required('duty_management', 'view')
+@login_required(login_url='/authentication/login')
+@permission_required('duty_management', 'view')
 def duty_list(request):
-    assignments = DutyAssignment.objects.select_related('staff', 'building', 'block', 'floor').filter(is_active=True).order_by('-assigned_date')
+    assignments = DutyAssignment.objects.select_related('staff', 'duty').filter(is_active=True).order_by('-assigned_date')
     staff_members = StaffProfile.objects.filter(status='active').order_by('name')
-    buildings = HostelBuilding.objects.filter(is_active=True).order_by('name')
-    blocks = HostelBlock.objects.all().order_by('name')
+    duties = Duty.objects.prefetch_related('permissions').all().order_by('name')
     
-    # We will pass the list of assignments, active staff, buildings, blocks
     context = {
         'page_title': 'Staff Duty Assignments',
         'assignments': assignments,
         'staff_members': staff_members,
-        'buildings': buildings,
-        'blocks': blocks,
+        'duties': duties,
     }
     return render(request, 'hms/duty_list.html', context)
 
@@ -1132,26 +959,30 @@ def duty_assign(request):
     if request.method == 'POST':
         data = request.POST
         staff_id = data.get('staff_id')
+        duty_id = data.get('duty_id')
         duty_title = data.get('duty_title', '').strip()
-        building_id = data.get('building_id')
-        block_id = data.get('block_id')
-        floor_id = data.get('floor_id')
         specific_location = data.get('specific_location', '').strip()
         shift_start = data.get('shift_start') or None
         shift_end = data.get('shift_end') or None
         description = data.get('description', '').strip()
         
         staff = get_object_or_404(StaffProfile, pk=staff_id)
-        building = HostelBuilding.objects.filter(pk=building_id).first() if building_id else None
-        block = HostelBlock.objects.filter(pk=block_id).first() if block_id else None
-        floor = Floor.objects.filter(pk=floor_id).first() if floor_id else None
+        
+        duty = None
+        if duty_id:
+            duty = Duty.objects.filter(pk=duty_id).first()
+            if duty and not duty_title:
+                duty_title = duty.name
+            if duty:
+                if not shift_start and duty.start_time:
+                    shift_start = duty.start_time
+                if not shift_end and duty.end_time:
+                    shift_end = duty.end_time
         
         DutyAssignment.objects.create(
+            duty=duty,
             staff=staff,
             duty_title=duty_title,
-            building=building,
-            block=block,
-            floor=floor,
             specific_location=specific_location,
             shift_start=shift_start,
             shift_end=shift_end,
@@ -1168,25 +999,24 @@ def duty_edit(request, pk):
     if request.method == 'POST':
         data = request.POST
         staff_id = data.get('staff_id')
+        duty_id = data.get('duty_id')
         duty_title = data.get('duty_title', '').strip()
-        building_id = data.get('building_id')
-        block_id = data.get('block_id')
-        floor_id = data.get('floor_id')
         specific_location = data.get('specific_location', '').strip()
         shift_start = data.get('shift_start') or None
         shift_end = data.get('shift_end') or None
         description = data.get('description', '').strip()
         
         staff = get_object_or_404(StaffProfile, pk=staff_id)
-        building = HostelBuilding.objects.filter(pk=building_id).first() if building_id else None
-        block = HostelBlock.objects.filter(pk=block_id).first() if block_id else None
-        floor = Floor.objects.filter(pk=floor_id).first() if floor_id else None
         
+        duty = None
+        if duty_id:
+            duty = Duty.objects.filter(pk=duty_id).first()
+            if duty and not duty_title:
+                duty_title = duty.name
+        
+        assignment.duty = duty
         assignment.staff = staff
         assignment.duty_title = duty_title
-        assignment.building = building
-        assignment.block = block
-        assignment.floor = floor
         assignment.specific_location = specific_location
         assignment.shift_start = shift_start
         assignment.shift_end = shift_end
@@ -1194,6 +1024,7 @@ def duty_edit(request, pk):
         assignment.save()
         messages.success(request, f"Duty assignment for {staff.name} updated.")
     return redirect('duty_list')
+
 
 
 @login_required(login_url='/authentication/login')
@@ -1207,11 +1038,111 @@ def duty_delete(request, pk):
 
 
 @login_required(login_url='/authentication/login')
+@permission_required('duty_management', 'add')
+def duty_create(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        category = request.POST.get('category', 'Custom Duty').strip()
+        priority = request.POST.get('priority', 'medium')
+        start_date = request.POST.get('start_date') or None
+        end_date = request.POST.get('end_date') or None
+        start_time = request.POST.get('start_time') or None
+        end_time = request.POST.get('end_time') or None
+        repeat_type = request.POST.get('repeat_type', 'none')
+        
+        duty = Duty.objects.create(
+            name=name,
+            description=description,
+            category=category,
+            priority=priority,
+            start_date=start_date,
+            end_date=end_date,
+            start_time=start_time,
+            end_time=end_time,
+            repeat_type=repeat_type,
+            status='active',
+            created_by=request.user
+        )
+        
+        # Save permissions for each module
+        modules = ['leave', 'students', 'fees', 'attendance']
+        for mod in modules:
+            can_view = request.POST.get(f'perm_{mod}_view') == 'on'
+            can_add = request.POST.get(f'perm_{mod}_add') == 'on'
+            can_edit = request.POST.get(f'perm_{mod}_edit') == 'on'
+            can_delete = request.POST.get(f'perm_{mod}_delete') == 'on'
+            
+            # If any permission is granted, save it
+            if can_view or can_add or can_edit or can_delete:
+                DutyPermission.objects.create(
+                    duty=duty,
+                    module_name=mod,
+                    can_view=can_view,
+                    can_add=can_add,
+                    can_edit=can_edit,
+                    can_delete=can_delete
+                )
+        
+        messages.success(request, f"Duty '{name}' created successfully.")
+    return redirect('duty_list')
+
+
+@login_required(login_url='/authentication/login')
+@permission_required('duty_management', 'edit')
+def duty_edit_definition(request, pk):
+    duty = get_object_or_404(Duty, pk=pk)
+    if request.method == 'POST':
+        duty.name = request.POST.get('name', '').strip()
+        duty.description = request.POST.get('description', '').strip()
+        duty.category = request.POST.get('category', 'Custom Duty').strip()
+        duty.priority = request.POST.get('priority', 'medium')
+        duty.start_date = request.POST.get('start_date') or None
+        duty.end_date = request.POST.get('end_date') or None
+        duty.start_time = request.POST.get('start_time') or None
+        duty.end_time = request.POST.get('end_time') or None
+        duty.repeat_type = request.POST.get('repeat_type', 'none')
+        duty.status = request.POST.get('status', 'active')
+        duty.save()
+        
+        # Reset permissions
+        duty.permissions.all().delete()
+        modules = ['leave', 'students', 'fees', 'attendance']
+        for mod in modules:
+            can_view = request.POST.get(f'perm_{mod}_view') == 'on'
+            can_add = request.POST.get(f'perm_{mod}_add') == 'on'
+            can_edit = request.POST.get(f'perm_{mod}_edit') == 'on'
+            can_delete = request.POST.get(f'perm_{mod}_delete') == 'on'
+            
+            if can_view or can_add or can_edit or can_delete:
+                DutyPermission.objects.create(
+                    duty=duty,
+                    module_name=mod,
+                    can_view=can_view,
+                    can_add=can_add,
+                    can_edit=can_edit,
+                    can_delete=can_delete
+                )
+        messages.success(request, f"Duty definition '{duty.name}' updated.")
+    return redirect('duty_list')
+
+
+@login_required(login_url='/authentication/login')
+@permission_required('duty_management', 'delete')
+def duty_delete_definition(request, pk):
+    duty = get_object_or_404(Duty, pk=pk)
+    if request.method == 'POST':
+        duty.delete()
+        messages.success(request, "Duty definition deleted.")
+    return redirect('duty_list')
+
+
+@login_required(login_url='/authentication/login')
 @api_permission_required('duty_management', 'view')
 def get_floors_for_building(request):
-    building_id = request.GET.get('building_id')
-    if not building_id:
-        return JsonResponse({'floors': []})
-    floors = Floor.objects.filter(building_id=building_id).order_by('floor_number')
-    data = [{'id': f.id, 'floor_number': f.floor_number} for f in floors]
-    return JsonResponse({'floors': data})
+    return JsonResponse({'floors': []})
+
+
+
+
+

@@ -18,10 +18,44 @@ def check_perm(user, module_code, action):
         return False
     if user.is_superuser:
         return True
-    if hasattr(user, 'profile') and user.profile.role and user.profile.role.is_superadmin:
+
+    profile = None
+    try:
+        profile = user.profile
+    except Exception:
+        pass
+
+    if profile and profile.role and profile.role.is_superadmin:
         return True
-    if hasattr(user, 'profile') and user.profile.role:
-        perm = user.profile.role.permissions.filter(module__code=module_code).first()
+
+    # 1. Overlay/intercept active duty permissions
+    try:
+        from hms.models import DutyAssignment
+        # Query active assignment
+        assignment = DutyAssignment.objects.filter(staff__user=user, is_active=True).first()
+        if assignment and assignment.duty:
+            # Map core module code to duty module name
+            core_to_duty = {
+                'leave': 'leave',
+                'student': 'students',
+                'paybill': 'fees',
+                'attendance': 'attendance',
+            }
+            duty_mod = core_to_duty.get(module_code)
+            if duty_mod:
+                dp = assignment.duty.permissions.filter(module_name=duty_mod).first()
+                if dp:
+                    field = f'can_{action}'
+                    return getattr(dp, field, False)
+                else:
+                    # Duty is active, but doesn't grant permissions to this module
+                    return False
+    except Exception as e:
+        pass
+
+    # 2. Fall back to standard Role-based check
+    if profile and profile.role:
+        perm = profile.role.permissions.filter(module__code=module_code).first()
         if perm:
             return getattr(perm, f'can_{action}', False)
     return False
@@ -42,15 +76,21 @@ def role_required(*role_names):
             if not request.user.is_authenticated:
                 return redirect('login')
             # Super Admin bypass
+            profile = None
+            try:
+                profile = request.user.profile
+            except Exception:
+                pass
+
             if request.user.is_superuser or (
-                hasattr(request.user, 'profile') and
-                request.user.profile.role and
-                request.user.profile.role.is_superadmin
+                profile and
+                profile.role and
+                profile.role.is_superadmin
             ):
                 return view_func(request, *args, **kwargs)
 
-            if hasattr(request.user, 'profile') and request.user.profile.role:
-                if request.user.profile.role.name in role_names:
+            if profile and profile.role:
+                if profile.role.name in role_names:
                     return view_func(request, *args, **kwargs)
 
             raise PermissionDenied
@@ -107,3 +147,48 @@ def api_permission_required(module_code, action):
             )
         return _wrapped_view
     return decorator
+
+
+def check_element_perm(user, element_code):
+    """
+    Returns True if the user has the given element permission enabled.
+    Always returns True for super-admins or Django superusers.
+    """
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+
+    profile = None
+    try:
+        profile = user.profile
+    except Exception:
+        pass
+
+    if profile and profile.role and profile.role.is_superadmin:
+        return True
+    if profile and profile.role:
+        perm = profile.role.element_permissions.filter(element__code=element_code).first()
+        if perm:
+            return perm.is_enabled
+    return False
+
+
+def element_permission_required(element_code):
+    """
+    Decorator that checks whether the user's role has the designated permission element enabled.
+    Redirects to 403 PermissionDenied if not allowed.
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return redirect('login')
+
+            if check_element_perm(request.user, element_code):
+                return view_func(request, *args, **kwargs)
+
+            raise PermissionDenied
+        return _wrapped_view
+    return decorator
+

@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.views import View
 
 from .decorators import role_required, permission_required
-from .models import AuditLog, Module, Role, RolePermission, UserProfile
+from .models import AuditLog, Module, Role, RolePermission, UserProfile, Hostel, PermissionElement, RoleElementPermission
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -45,10 +45,10 @@ def get_client_ip(request):
 
 class EmailValidationView(View):
     def post(self, request):
-        from validate_email import validate_email
+        from pyIsEmail import is_email
         data = json.loads(request.body)
         email = data['email']
-        if not validate_email(email):
+        if not is_email(email):
             return JsonResponse({'email_error': 'Email is invalid'}, status=400)
         if User.objects.filter(email=email).exists():
             return JsonResponse({'email_error': 'Email already in use'}, status=409)
@@ -121,8 +121,14 @@ class LoginView(View):
         if username and password:
             user = auth.authenticate(username=username, password=password)
             if user:
+                profile = None
+                try:
+                    profile = user.profile
+                except Exception:
+                    pass
+
                 # Check if account is locked
-                if hasattr(user, 'profile') and user.profile.is_locked:
+                if profile and profile.is_locked:
                     messages.error(request, 'Your account has been locked. Contact an administrator.')
                     return render(request, 'authentication/login.html')
 
@@ -131,8 +137,8 @@ class LoginView(View):
                     request.session.set_expiry(900)
                     log_action(user, 'login', user, request=request)
 
-                    if hasattr(user, 'profile') and user.profile.role:
-                        role_name = user.profile.role.name
+                    if profile and profile.role:
+                        role_name = profile.role.name
                         if role_name in ('Super Admin', 'Admin'):
                             return redirect('superadmin_dashboard')
                         elif role_name == 'Student':
@@ -141,6 +147,8 @@ class LoginView(View):
                             return redirect('warden_dashboard')
                         elif role_name == 'Staff':
                             return redirect('superadmin_dashboard')
+                        elif role_name in ('Security Guard', 'Security'):
+                            return redirect('security_dashboard')
                     return redirect('superadmin_dashboard')
 
                 messages.error(request, 'Account is not active')
@@ -169,7 +177,7 @@ class LogoutView(View):
 @login_required
 @role_required('Super Admin')
 def role_list(request):
-    roles = Role.objects.all().order_by('-created_at')
+    roles = Role.objects.exclude(is_superadmin=True).order_by('-created_at')
     return render(request, 'authentication/rbac/role_list.html', {'roles': roles})
 
 
@@ -177,6 +185,7 @@ def role_list(request):
 @role_required('Super Admin')
 def role_create(request):
     modules = Module.objects.all()
+    elements = PermissionElement.objects.select_related('module').all()
     if request.method == 'POST':
         name = request.POST.get('name')
         description = request.POST.get('description')
@@ -200,17 +209,34 @@ def role_create(request):
                 can_disable=request.POST.get(f'disable_{module.id}') == 'on',
             )
 
+        for element in elements:
+            RoleElementPermission.objects.create(
+                role=role,
+                element=element,
+                is_enabled=request.POST.get(f'element_{element.id}') == 'on'
+            )
+
         messages.success(request, f"Role '{name}' created successfully.")
         return redirect('role_list')
 
-    return render(request, 'authentication/rbac/role_form.html', {'modules': modules, 'role_perms': {}})
+    return render(request, 'authentication/rbac/role_form.html', {
+        'modules': modules,
+        'role_perms': {},
+        'elements': elements,
+        'role_element_perms': set()
+    })
 
 
 @login_required
 @role_required('Super Admin')
 def role_edit(request, pk):
     role = get_object_or_404(Role, pk=pk)
+    if role.is_superadmin:
+        messages.error(request, 'Super Admin role cannot be modified.')
+        return redirect('role_list')
+        
     modules = Module.objects.all()
+    elements = PermissionElement.objects.select_related('module').all()
 
     if request.method == 'POST':
         role.name = request.POST.get('name')
@@ -233,12 +259,22 @@ def role_edit(request, pk):
             perm.can_disable = request.POST.get(f'disable_{module.id}') == 'on'
             perm.save()
 
+        for element in elements:
+            el_perm, _ = RoleElementPermission.objects.get_or_create(role=role, element=element)
+            el_perm.is_enabled = request.POST.get(f'element_{element.id}') == 'on'
+            el_perm.save()
+
         messages.success(request, f"Role '{role.name}' updated successfully.")
         return redirect('role_list')
 
     role_perms = {p.module_id: p for p in role.permissions.all()}
+    role_element_perms = set(RoleElementPermission.objects.filter(role=role, is_enabled=True).values_list('element_id', flat=True))
     return render(request, 'authentication/rbac/role_form.html', {
-        'role': role, 'modules': modules, 'role_perms': role_perms
+        'role': role,
+        'modules': modules,
+        'role_perms': role_perms,
+        'elements': elements,
+        'role_element_perms': role_element_perms
     })
 
 
@@ -248,6 +284,10 @@ def role_clone(request, pk):
     """Deep copy of a role's permissions to a new role."""
     if request.method == 'POST':
         source_role = get_object_or_404(Role, pk=pk)
+        if source_role.is_superadmin:
+            messages.error(request, 'Super Admin role cannot be cloned.')
+            return redirect('role_list')
+            
         new_name = request.POST.get('name', f"{source_role.name} (Copy)").strip()
         
         if Role.objects.filter(name=new_name).exists():
@@ -318,6 +358,44 @@ def role_delete(request, pk):
     return redirect('role_list')
 
 
+@login_required
+@role_required('Super Admin')
+def add_custom_permission_element(request):
+    """Allows Super Admins to dynamically add new permission elements from Role forms."""
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip().replace(' ', '_').lower()
+        name = request.POST.get('name', '').strip()
+        category = request.POST.get('category', 'button')
+        description = request.POST.get('description', '').strip()
+        module_id = request.POST.get('module')
+
+        if not code or not name:
+            messages.error(request, "Code and Name are required fields.")
+        elif PermissionElement.objects.filter(code=code).exists():
+            messages.error(request, f"Permission element with code '{code}' already exists.")
+        else:
+            module_obj = None
+            if module_id:
+                try:
+                    module_obj = Module.objects.get(id=module_id)
+                except Module.DoesNotExist:
+                    pass
+            
+            PermissionElement.objects.create(
+                code=code,
+                name=name,
+                category=category,
+                description=description,
+                module=module_obj
+            )
+            messages.success(request, f"Custom permission element '{name}' created successfully.")
+            
+    referrer = request.META.get('HTTP_REFERER')
+    if referrer:
+        return redirect(referrer)
+    return redirect('role_list')
+
+
 # ---------------------------------------------------------------------------
 # User Management — Full CRUD + Actions
 # ---------------------------------------------------------------------------
@@ -325,8 +403,96 @@ def role_delete(request, pk):
 @login_required
 @role_required('Super Admin')
 def user_list(request):
-    """Redirect User Management to Staff Management list."""
-    return redirect('staff_list')
+    """View, search, filter and perform bulk actions on all system users."""
+    qs = User.objects.select_related('profile', 'profile__role').order_by('-id')
+
+    # ── Filters ──
+    search = request.GET.get('q', '').strip()
+    role_filter = request.GET.get('role', '')
+    status_filter = request.GET.get('status', '')
+
+    if search:
+        qs = qs.filter(
+            Q(username__icontains=search) |
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search)
+        )
+    if role_filter:
+        qs = qs.filter(profile__role_id=role_filter)
+    if status_filter:
+        if status_filter == 'active':
+            qs = qs.filter(is_active=True)
+        elif status_filter == 'inactive':
+            qs = qs.filter(is_active=False)
+        elif status_filter == 'locked':
+            qs = qs.filter(profile__is_locked=True)
+
+    # ── Bulk Actions ──
+    if request.method == 'POST':
+        action = request.POST.get('bulk_action')
+        selected_ids = request.POST.getlist('selected_users')
+        if selected_ids and action:
+            selected_users = User.objects.filter(id__in=selected_ids)
+            
+            if action == 'activate':
+                selected_users.update(is_active=True)
+                for u in selected_users:
+                    log_action(request.user, 'activate', u, 'Bulk activated', request)
+                messages.success(request, f'Activated {selected_users.count()} user(s).')
+                
+            elif action == 'deactivate':
+                deactivatable = selected_users.exclude(id=request.user.id)
+                deactivatable.update(is_active=False)
+                for u in deactivatable:
+                    log_action(request.user, 'deactivate', u, 'Bulk deactivated', request)
+                messages.success(request, f'Deactivated {deactivatable.count()} user(s).')
+                if deactivatable.count() < selected_users.count():
+                    messages.warning(request, 'You cannot deactivate your own account.')
+                    
+            elif action == 'delete':
+                deletable = selected_users.exclude(id=request.user.id)
+                u_count = deletable.count()
+                for u in deletable:
+                    log_action(request.user, 'delete', None, f'Bulk deleted user {u.username}', request)
+                    u.delete()
+                messages.success(request, f'Deleted {u_count} user(s).')
+                if u_count < selected_users.count():
+                    messages.warning(request, 'You cannot delete your own account.')
+                    
+            elif action == 'export':
+                return _export_users_csv(selected_users)
+        
+        qs_str = request.META.get('QUERY_STRING', '')
+        return redirect(request.path + ('?' + qs_str if qs_str else ''))
+
+    # ── Stats ──
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    seven_days_ago = timezone.now() - timezone.timedelta(days=7)
+    stats = {
+        'total': User.objects.count(),
+        'active': User.objects.filter(is_active=True).count(),
+        'inactive': User.objects.filter(is_active=False).count(),
+        'roles': Role.objects.filter(is_active=True).count(),
+        'logged_in_today': User.objects.filter(last_login__gte=today_start).count(),
+        'new_this_week': User.objects.filter(date_joined__gte=seven_days_ago).count(),
+    }
+
+    # ── Pagination ──
+    paginator = Paginator(qs, 15)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    roles = Role.objects.filter(is_active=True)
+
+    context = {
+        'page_obj': page_obj,
+        'stats': stats,
+        'roles': roles,
+        'search': search,
+        'role_filter': role_filter,
+        'status_filter': status_filter,
+        'page_title': 'User Management',
+    }
+    return render(request, 'authentication/rbac/user_list.html', context)
 
 
 @login_required
@@ -608,3 +774,80 @@ def user_audit(request, pk):
 def user_update_role(request, user_id):
     """Legacy endpoint — delegates to user_change_role."""
     return user_change_role(request, pk=user_id)
+
+
+
+from django import forms
+from .models import SystemSettings
+
+TIMEZONE_CHOICES = [
+    ('UTC', 'UTC'),
+    ('Asia/Kolkata', 'Asia/Kolkata (IST)'),
+    ('America/New_York', 'America/New_York (EST/EDT)'),
+    ('Europe/London', 'Europe/London (GMT/BST)'),
+    ('Asia/Dubai', 'Asia/Dubai'),
+    ('Asia/Singapore', 'Asia/Singapore'),
+]
+
+class SystemSettingsForm(forms.ModelForm):
+    class Meta:
+        model = SystemSettings
+        fields = [
+            'system_name', 'organization_name', 'logo', 'favicon', 
+            'theme_color', 'dark_mode_default', 'timezone', 
+            'date_format', 'time_format', 'currency', 'language', 
+            'maintenance_mode', 'system_version', 'license_key', 'license_expiry',
+            'session_timeout', 'login_attempt_limit', 'allowed_ips',
+            'enable_audit_logs', 'password_expiry_days', 'backup_frequency'
+        ]
+        widgets = {
+            'system_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'organization_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'favicon': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'theme_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'dark_mode_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'timezone': forms.Select(choices=TIMEZONE_CHOICES, attrs={'class': 'form-select'}),
+            'date_format': forms.TextInput(attrs={'class': 'form-control'}),
+            'time_format': forms.TextInput(attrs={'class': 'form-control'}),
+            'currency': forms.TextInput(attrs={'class': 'form-control'}),
+            'language': forms.TextInput(attrs={'class': 'form-control'}),
+            'maintenance_mode': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'system_version': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+            'license_key': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'license_expiry': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'session_timeout': forms.NumberInput(attrs={'class': 'form-control', 'min': 60, 'placeholder': 'e.g. 1800 (seconds)'}),
+            'login_attempt_limit': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 20, 'placeholder': 'e.g. 5 attempts'}),
+            'allowed_ips': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'e.g. 192.168.1.1, 10.0.0.0/24 (blank for all)'}),
+            'enable_audit_logs': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'password_expiry_days': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'placeholder': 'e.g. 90 (0 to disable)'}),
+            'backup_frequency': forms.Select(choices=[
+                ('daily', 'Daily Auto-Backup'),
+                ('weekly', 'Weekly Auto-Backup'),
+                ('monthly', 'Monthly Auto-Backup'),
+                ('manual', 'Manual Backups Only')
+            ], attrs={'class': 'form-select'}),
+        }
+
+
+@login_required
+@role_required('Super Admin')
+def system_settings_view(request):
+    settings = SystemSettings.get_settings()
+    if request.method == 'POST':
+        form = SystemSettingsForm(request.POST, request.FILES, instance=settings)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Global system settings updated successfully!")
+            return redirect('system_settings_view')
+    else:
+        form = SystemSettingsForm(instance=settings)
+
+    return render(request, 'authentication/system_settings.html', {
+        'form': form,
+        'settings': settings,
+    })
+
+
+
+

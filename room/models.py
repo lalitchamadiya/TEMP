@@ -2,233 +2,80 @@ from django.db import models
 from student.models import Student
 
 
-GENDER_CHOICES = [
-    ('BOY', 'Boys'),
-    ('GIRL', 'Girls'),
-    ('MIXED', 'Mixed'),
-]
-
-ROOM_TYPE_CHOICES = [
-    ('SINGLE', 'Single (1 Bed)'),
-    ('DOUBLE', 'Double (2 Beds)'),
-    ('TRIPLE', 'Triple (3 Beds)'),
-    ('DORMITORY', 'Dormitory'),
-    ('DELUXE', 'Deluxe'),
-    ('AC', 'AC Room'),
-    ('NON_AC', 'Non-AC Room'),
-    ('CUSTOM', 'Custom'),
-]
-
-ROOM_CATEGORY_CHOICES = [
-    ('GENERAL', 'General'),
-    ('VIP', 'VIP / Premium'),
-    ('STAFF', 'Staff Quarters'),
-    ('RESERVED', 'Reserved'),
-]
-
-ROOM_STATUS_CHOICES = [
-    ('ACTIVE', 'Active'),
-    ('MAINTENANCE', 'Under Maintenance'),
-    ('INACTIVE', 'Inactive'),
-]
-
-BLOCK_CHOICES = [
-    ('A', 'Block A'),
-    ('B', 'Block B'),
-    ('C', 'Block C'),
-    ('D', 'Block D'),
-    ('E', 'Block E'),
-    ('F', 'Block F'),
-    ('NORTH', 'North Wing'),
-    ('SOUTH', 'South Wing'),
-    ('EAST', 'East Wing'),
-    ('WEST', 'West Wing'),
-]
-
-# Capacity map per room type (defaults; overridable)
-CAPACITY_MAP = {
-    'SINGLE': 1,
-    'DOUBLE': 2,
-    'TRIPLE': 3,
-    'DORMITORY': 10,
-    'DELUXE': 2,
-    'AC': 2,
-    'NON_AC': 2,
-    'CUSTOM': 0,
-}
-
-
 class HostelBuilding(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True)
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='MIXED')
-    total_floors = models.PositiveIntegerField(default=1)
+    GENDER_CHOICES = [
+        ('Boys', 'Boys Wing / Male'),
+        ('Girls', 'Girls Wing / Female'),
+    ]
+
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=20, blank=True, null=True)
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Boys')
+    total_floors = models.IntegerField(default=3)
+    blocks = models.CharField(max_length=200, default='Block A, Block B', blank=True, null=True, help_text='Comma-separated blocks e.g. Block A, Block B')
+    description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'hostel_building'
-        ordering = ['name']
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
 
-
-class HostelBlock(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True)
-
-    def __str__(self):
-        return self.name
-
-
-class Floor(models.Model):
-    block = models.ForeignKey(HostelBlock, on_delete=models.CASCADE, related_name='floors')
-    building = models.ForeignKey(
-        HostelBuilding, on_delete=models.CASCADE, related_name='floors',
-        null=True, blank=True
-    )
-    floor_number = models.IntegerField()
-
-    class Meta:
-        ordering = ['floor_number']
-
-    def __str__(self):
-        if self.building:
-            return f"{self.building.name} – Floor {self.floor_number}"
-        return f"{self.block.name} – Floor {self.floor_number}"
+    @property
+    def pk_str(self):
+        return str(self.pk)
 
 
 class Room(models.Model):
-    # Legacy choices kept for backward compat
-    ROOM_TYPES = (
-        ('2B', '2 Bed'),
-        ('4B', '4 Bed'),
-    )
-    GENDER = (
-        ('BOY', 'BOYS'),
-        ('GIRL', 'GIRLS'),
-    )
+    ROOM_TYPE_CHOICES = [
+        ('2_BED', '2 BED (Double Sharing)'),
+        ('4_BED', '4 BED (Quad Sharing)'),
+        ('CUSTOM', 'CUSTOM (Specify Capacity)'),
+    ]
+    CATEGORY_CHOICES = [
+        ('GENERAL', 'General Student'),
+        ('DELUXE', 'Deluxe Premium'),
+        ('STAFF', 'Staff / Warden'),
+    ]
+    STATUS_CHOICES = [
+        ('AVAILABLE', 'Available / Active'),
+        ('MAINTENANCE', 'Under Maintenance'),
+    ]
+    GENDER_CHOICES = [
+        ('Boys', 'Boys Wing / Male'),
+        ('Girls', 'Girls Wing / Female'),
+    ]
 
-    # --- Location ---
-    building = models.ForeignKey(
-        HostelBuilding, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='rooms'
-    )
-    block = models.CharField(max_length=10, choices=BLOCK_CHOICES, blank=True)
-    floor = models.ForeignKey(
-        Floor, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='rooms'
-    )
-
-    # --- Identity ---
+    building = models.ForeignKey(HostelBuilding, on_delete=models.CASCADE, related_name='rooms')
     room_number = models.CharField(max_length=20)
-    room_name = models.CharField(max_length=100, blank=True, help_text="Optional friendly name")
-
-    # --- Classification ---
-    room_type = models.CharField(max_length=20, choices=ROOM_TYPE_CHOICES, default='DOUBLE')
-    category = models.CharField(
-        max_length=20, choices=ROOM_CATEGORY_CHOICES, default='GENERAL'
-    )
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='BOY')
-
-    # --- Occupancy ---
-    capacity = models.PositiveIntegerField(default=2, help_text="Number of beds in the room")
+    room_name = models.CharField(max_length=100, blank=True, null=True)
+    block = models.CharField(max_length=10, default='A')
+    floor = models.IntegerField(default=1)
+    room_type = models.CharField(max_length=20, choices=ROOM_TYPE_CHOICES, default='2_BED')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='GENERAL')
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Boys')
+    capacity = models.IntegerField(default=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='AVAILABLE')
+    monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, default=2500.00)
     is_ac = models.BooleanField(default=False)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    # --- Status ---
-    status = models.CharField(
-        max_length=20, choices=ROOM_STATUS_CHOICES, default='ACTIVE'
-    )
+    def __str__(self):
+        return f"{self.building.name} - Room {self.room_number}"
 
-    # --- Meta ---
-    description = models.TextField(blank=True)
-    monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+class Bed(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='beds')
+    bed_number = models.CharField(max_length=10)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True, related_name='allocated_beds')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'room'
-        ordering = ['room_number']
-        unique_together = ('building', 'room_number')
+        ordering = ['id']
 
     def __str__(self):
-        parts = [self.room_number]
-        if self.room_name:
-            parts.append(self.room_name)
-        return ' – '.join(parts)
-
-    @property
-    def is_available(self):
-        return self.status == 'ACTIVE'
-
-    @property
-    def default_capacity(self):
-        return CAPACITY_MAP.get(self.room_type, 2)
-
-    def calculate_suggested_rent(self):
-        """
-        Calculate suggested monthly rent based on:
-        - Room Type Base Rent
-        - Category Multiplier
-        - AC Amenity Charge
-        """
-        if self.room_type == 'CUSTOM':
-            return self.monthly_rent
-
-        # Base Rent Map
-        base_rent_map = {
-            'SINGLE': 8000,
-            'DOUBLE': 6000,
-            'TRIPLE': 5000,
-            'DORMITORY': 3000,
-            'DELUXE': 9000,
-            'AC': 6000,
-            'NON_AC': 6000,
-        }
-        base_rent = base_rent_map.get(self.room_type, 0)
-
-        # Category Multipliers
-        category_multipliers = {
-            'GENERAL': 1.0,
-            'VIP': 1.3,
-            'STAFF': 0.0,
-            'RESERVED': 0.0,
-        }
-        multiplier = category_multipliers.get(self.category, 0.0)
-
-        # Amenity Charge (AC)
-        amenity_charge = 0
-        if self.is_ac and self.category not in ['STAFF', 'RESERVED']:
-            amenity_charge = 1500
-
-        # Calculations
-        from decimal import Decimal
-        return Decimal(base_rent) * Decimal(multiplier) + Decimal(amenity_charge)
-
-    def save(self, *args, **kwargs):
-        if self.building:
-            self.gender = self.building.gender
-
-        # Auto-calculate rent for non-custom types
-        if self.room_type != 'CUSTOM':
-            computed = self.calculate_suggested_rent()
-            if self.category == 'STAFF':
-                # Staff rooms can have custom rent, default to 0 if not set
-                if self.monthly_rent is None or self.monthly_rent == 0:
-                    self.monthly_rent = 0
-            else:
-                self.monthly_rent = computed
-        super().save(*args, **kwargs)
-
-
-class Bed(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    bed_number = models.CharField(max_length=10)
-    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    remaining_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
-    def __str__(self):
-        return f"Bed {self.bed_number} in Room {self.room.room_number}"
+        return f"Room {self.room.room_number} - Bed {self.bed_number}"

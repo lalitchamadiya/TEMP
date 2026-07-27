@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Room Auto Allocation{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .theme-primary-grad {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    }
+
+    .recommendations-table thead th {
+        background: #f1f5f9;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #475569;
+        padding: 0.85rem 1rem;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-0" style="letter-spacing: -0.02em;">Smart Auto Allocation Engine</h2>
+            <p class="text-muted small mb-0">Review matched criteria allocations and run bulk assignments in one click</p>
+        </div>
+    </div>
+
+    {% include 'room/room_nav.html' %}
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="glass-card p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted small fw-bold text-uppercase mb-1">Unallocated Students</h6>
+                    <span class="display-6 fw-bold text-dark">{{ unallocated_count }}</span>
+                </div>
+                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="bi bi-people text-primary fs-4"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="glass-card p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted small fw-bold text-uppercase mb-1">Available Vacant Beds</h6>
+                    <span class="display-6 fw-bold text-dark">{{ vacant_beds_count }}</span>
+                </div>
+                <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="bi bi-door-open text-success fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-card overflow-hidden">
+        <div class="bg-light p-3 border-bottom d-flex align-items-center justify-content-between">
+            <h6 class="fw-bold mb-0 text-dark">Suggested Room Allocation Matches</h6>
+            {% if unallocated_count > 0 and vacant_beds_count > 0 %}
+            <form action="{% url 'room_auto_allocate_execute' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-primary border-0 theme-primary-grad px-4 py-2 fw-semibold" style="border-radius: 8px;">
+                    <i class="bi bi-play-fill me-1"></i>Run Bulk Execution
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        <div class="table-responsive">
+            <table class="table recommendations-table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Student</th>
+                        <th>Gender</th>
+                        <th>Recommended Placement</th>
+                        <th>Building Context</th>
+                        <th class="text-end pe-4">Match Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in recommendations %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-light font-initials fw-bold text-secondary" style="width:40px; height:40px;">
+                                    {{ rec.student.name|slice:":2"|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">{{ rec.student.name }}</div>
+                                    <div class="text-muted small">Roll: {{ rec.student.roll }}</div>
+                                </div>
+                             </div>
+                        </td>
+                        <td>
+                            <span class="badge {% if rec.student.gender == 'Male' %}bg-primary{% else %}bg-danger{% endif %} bg-opacity-10 text-{% if rec.student.gender == 'Male' %}primary{% else %}danger{% endif %} fw-bold px-3 py-1.5" style="font-size:0.75rem;">
+                                {{ rec.student.gender }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if rec.bed %}
+                            <div class="fw-bold text-dark">Room {{ rec.room.room_number }} - {{ rec.bed.bed_number }}</div>
+                            <div class="text-muted small">Rent: ${{ rec.room.monthly_rent }}</div>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if rec.building %}
+                            <span class="fw-semibold">{{ rec.building.name }}</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            {% if rec.bed %}
+                            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-1.5" style="font-size:0.75rem;">
+                                <i class="bi bi-check-circle-fill me-1"></i>Optimized Match
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning bg-opacity-10 text-warning fw-bold px-3 py-1.5" style="font-size:0.75rem;">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>No Bed Available
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-people display-6 opacity-25"></i>
+                            <p class="mt-2 fw-medium mb-0">All active students are currently allocated rooms!</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
