@@ -17,6 +17,7 @@
     </div>
 </div>
 
+<script id="chart-data" type="application/json">{{ chart_data|safe }}</script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript">
   google.charts.load('current', {'packages':['corechart']});
@@ -24,15 +25,17 @@
 
   function drawCharts() {
       // Data from Django view
-      var data = google.visualization.arrayToDataTable({{ chart_data|safe }});
+      var data = google.visualization.arrayToDataTable(JSON.parse(document.getElementById('chart-data').textContent));
 
-      var chartBg = '#ffffff';
-      var textStyle = { color: '#64748b', fontName: 'Inter' };
+      var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      var chartBg = isLight ? '#ffffff' : '#161b22';
+      var textStyle = { color: isLight ? '#64748b' : '#e2e8f0', fontName: 'Inter' };
+      var titleColor = isLight ? '#0f172a' : '#f8fafc';
 
       // Options for the column chart
       var columnOptions = {
           title: 'Student Admissions by Gender',
-          titleTextStyle: { color: '#0f172a', fontSize: 18, fontName: 'Inter', bold: true },
+          titleTextStyle: { color: titleColor, fontSize: 18, fontName: 'Inter', bold: true },
           legend: { position: 'top', textStyle: textStyle },
           colors: ['#2563eb', '#10b981'],
           backgroundColor: chartBg,
@@ -50,7 +53,7 @@
       // Options for the line chart
       var lineOptions = {
           title: 'Admission Trends Over Time',
-          titleTextStyle: { color: '#0f172a', fontSize: 18, fontName: 'Inter', bold: true },
+          titleTextStyle: { color: titleColor, fontSize: 18, fontName: 'Inter', bold: true },
           legend: { position: 'bottom', textStyle: textStyle },
           colors: ['#2563eb', '#10b981'],
           backgroundColor: chartBg,

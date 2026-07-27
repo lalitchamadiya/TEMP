@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load rbac_tags %}
 
 {% block title %} | Room Management Dashboard{% endblock %}
 
@@ -95,9 +96,11 @@
                 <span class="dot bg-danger me-2" style="width:8px; height:8px; border-radius:50%;"></span>
                 <span class="x-small fw-bold text-muted">OCCUPIED</span>
             </div>
+            {% if request.user|has_element_perm:'btn_create_room' %}
             <a href="{% url 'create_room' %}" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold shadow-sm">
                 <i class="bi bi-plus-lg me-1"></i>New Room
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -112,7 +115,9 @@
                         <th>Building / Block</th>
                         <th>Type &amp; Wing</th>
                         <th>Occupancy Status</th>
+                        {% if request.user|has_element_perm:'item_live_bed_map' %}
                         <th>Live Bed Map</th>
+                        {% endif %}
                         <th class="text-end pe-4">Actions</th>
                     </tr>
                 </thead>
@@ -154,36 +159,42 @@
                             </div>
                         </td>
                         <td>
-                            {% with total=roomDetails.room_type occupied=roomDetails.bed_set.all|length %}
+                            {% with total=roomDetails.room_type occupied=roomDetails.occupied_count|default:0 %}
                                 <div class="progress mb-1" style="height: 6px; width: 100px; border-radius: 10px; background: #f1f5f9;">
-                                    {% widthratio roomDetails.bed_set.all|length roomDetails.room_type 100 as percentage %}
-                                    <div class="progress-bar {% if percentage == '100' %}bg-danger{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ percentage }}%; border-radius: 10px;"></div>
+                                    {% widthratio occupied total 100 as percentage %}
+                                    <div class="progress-bar {% if percentage == '100' %}bg-danger{% elif percentage == '0' %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ percentage }}%; border-radius: 10px;"></div>
                                 </div>
-                                <span class="text-muted x-small fw-bold">{{ roomDetails.bed_set.all|length }}/{{ roomDetails.room_type }} FILLED</span>
+                                <span class="text-muted x-small fw-bold">{{ occupied }}/{{ total }} FILLED</span>
                             {% endwith %}
                         </td>
+                        {% if request.user|has_element_perm:'item_live_bed_map' %}
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                {% for bed in roomDetails.bed_set.all %} 
+                                {% for bed in roomDetails.beds.all %} 
                                     {% if bed.student %}
                                         <i class="bi bi-person-fill status-occupied bed-icon" title="Bed {{bed.bed_number}}: {{bed.student.name}}"></i>
                                     {% else %}
                                         <i class="bi bi-person status-available bed-icon" title="Bed {{bed.bed_number}}: Available"></i>
                                     {% endif %} 
-                                {% endfor %}
+                                  {% endfor %}
                             </div>
                         </td>
+                        {% endif %}
                         <td class="pe-4">
                             <div class="d-flex justify-content-end gap-2">
                                 <a href="{% url 'student_allocated_view' roomDetails.id %}" class="action-btn btn-view" title="Room Details">
                                     <i class="bi bi-eye-fill"></i>
                                 </a>
+                                {% if request.user|has_element_perm:'btn_edit_room' %}
                                 <a href="{% url 'edit_room' roomDetails.id %}" class="action-btn btn-edit" title="Edit Room">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
+                                {% endif %}
+                                {% if request.user|has_element_perm:'btn_delete_room' %}
                                 <button type="button" class="action-btn btn-del" data-bs-toggle="modal" data-bs-target="#deleteRoomModal{{ roomDetails.id }}" title="Delete Room">
                                     <i class="bi bi-trash-fill"></i>
                                 </button>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

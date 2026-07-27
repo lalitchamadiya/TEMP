@@ -4,8 +4,11 @@
 {% block content %}
 
 <nav class="navbar top-nav sticky-top">
-    <div class="container-fluid justify-content-center py-2">
+    <div class="container-fluid justify-content-between align-items-center py-2 px-4">
         <h4 class="navbar-brand mb-0">Hostel Management System</h4>
+        <button id="themeToggleBtn" class="btn btn-sm theme-toggle-btn" type="button" title="Toggle Theme" aria-label="Toggle Light/Dark Theme">
+          <i class="bi bi-moon-fill" id="themeIcon"></i>
+        </button>
     </div>
 </nav>
 
@@ -18,12 +21,12 @@
             </div>
             
             <!-- Login Form Side -->
-            <div class="col-md-6 d-flex flex-column justify-content-center p-5 bg-white bg-opacity-75">
+            <div class="col-md-6 d-flex flex-column justify-content-center p-5">
                 <div class="text-center mb-4">
                     <div class="d-inline-flex justify-content-center align-items-center bg-primary text-white rounded-circle mb-3 shadow" style="width: 60px; height: 60px;">
                         <span class="material-symbols-outlined" style="font-size: 32px;">vpn_key</span>
                     </div>
-                    <h3 class="fw-bold text-dark">Welcome Back</h3>
+                    <h3 class="fw-bold">Welcome Back</h3>
                     <p class="text-muted small">Enter your credentials to access your dashboard</p>
                 </div>
                 
@@ -34,7 +37,7 @@
                     <div class="mb-4 position-relative">
                         <label class="form-label small fw-bold text-muted px-1">Username</label>
                         <div class="input-group drop-shadow-sm">
-                            <span class="input-group-text bg-white border-end-0 text-primary">
+                            <span class="input-group-text border-end-0 text-primary">
                                 <span class="material-symbols-outlined fs-5">person</span>
                             </span>
                             <input type="text" name="username" placeholder="Student Roll or Admin ID" id="usernameField" value="{{fieldValues.username}}" class="form-control border-start-0 ps-0" autocomplete="username" required>
@@ -44,7 +47,7 @@
                     <div class="mb-4 position-relative">
                         <label class="form-label small fw-bold text-muted px-1">Password</label>
                         <div class="input-group drop-shadow-sm">
-                            <span class="input-group-text bg-white border-end-0 text-primary">
+                            <span class="input-group-text border-end-0 text-primary">
                                 <span class="material-symbols-outlined fs-5">lock</span>
                             </span>
                             <input type="password" name="password" placeholder="••••••••" id="passwordField" class="form-control border-start-0 ps-0" autocomplete="current-password" required>

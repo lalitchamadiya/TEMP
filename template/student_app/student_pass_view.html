@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Active Gate Pass{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    body {
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--body-bg, #f8fafc);
+        color: var(--text-main, #0f172a);
+    }
+
+    /* Glassmorphic ticket card container */
+    .ticket-container {
+        max-width: 480px;
+        margin: 2rem auto;
+        perspective: 1000px;
+    }
+
+    .ticket-card {
+        background: var(--card-bg, rgba(255, 255, 255, 0.75));
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.4));
+        border-radius: 2rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .ticket-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+        color: white;
+        padding: 2.25rem 2rem;
+        text-align: center;
+        border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+        position: relative;
+    }
+
+    /* Ticket cutouts on the side */
+    .ticket-card::before, .ticket-card::after {
+        content: '';
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        background-color: var(--body-bg, #f8fafc);
+        border-radius: 50%;
+        top: 145px; /* Alignment with the dashed line */
+        z-index: 10;
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+    }
+    .ticket-card::before { left: -15px; }
+    .ticket-card::after { right: -15px; }
+
+    .qr-container {
+        background: white;
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        display: inline-block;
+        transition: transform 0.3s ease;
+    }
+    .qr-container:hover {
+        transform: scale(1.02);
+    }
+
+    .student-img-pass {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        position: absolute;
+        bottom: -35px;
+        left: calc(50% - 35px);
+        z-index: 11;
+    }
+
+    .ticket-body {
+        padding: 3.5rem 2rem 2.25rem;
+        text-align: center;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+        margin: 1.75rem 0;
+        text-align: left;
+        border-top: 1px solid var(--border-color, #e2e8f0);
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        padding: 1.5rem 0;
+    }
+
+    .info-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-muted, #64748b);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-val {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text-main, #334155);
+    }
+
+    .pass-type-badge {
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.45rem 1.5rem;
+        border-radius: 50rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    .pass-exit {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    .pass-entry {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .pulse {
+        animation: pulse-animation 2s infinite;
+    }
+    @keyframes pulse-animation {
+        0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+    }
+
+    /* Success Checkmark & Overlay styles */
+    #success-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.9);
+        z-index: 99999;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+    }
+    #success-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .checkmark-wrapper {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .checkmark-svg {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 4;
+        stroke: #10b981;
+        stroke-miterlimit: 10;
+        box-shadow: inset 0px 0px 0px #10b981;
+        animation: fill-anim .4s ease-in-out .4s forwards, scale-anim .3s ease-in-out .9s both;
+    }
+    .checkmark-circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-width: 4;
+        stroke-miterlimit: 10;
+        stroke: #10b981;
+        fill: none;
+        animation: stroke-anim .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .checkmark-check {
+        transform-origin: 50% 50%;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        stroke: white;
+        stroke-linecap: round;
+        animation: stroke-anim .3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke-anim {
+        100% { stroke-dashoffset: 0; }
+    }
+    @keyframes fill-anim {
+        100% { box-shadow: inset 0px 0px 0px 50px #10b981; }
+    }
+    @keyframes scale-anim {
+        0%, 100% { transform: none; }
+        50% { transform: scale3d(1.1, 1.1, 1); }
+    }
+</style>
+
+<div class="container-fluid py-4 min-vh-100">
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2 max-width-container" style="max-width: 480px; margin: 0 auto;">
+        <h4 class="fw-bold mb-0 text-slate-800"><i class="bi bi-ticket-perforated me-2"></i>Gate Pass Ticket</h4>
+        <a href="{% url 'student_app:student_leave_details' %}" class="btn btn-sm btn-light border-0 shadow-sm rounded-pill px-3 fw-bold small">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+
+    <div class="ticket-container">
+        {% if active_pass %}
+        <div class="ticket-card">
+            <!-- Header section containing the pass type and QR code -->
+            <div class="ticket-header">
+                <span class="pass-type-badge {% if active_pass.pass_type == 'EXIT' %}pass-exit{% else %}pass-entry{% endif %} mb-3 d-inline-block">
+                    {{ active_pass.pass_type }} TICKET
+                </span>
+                
+                <div class="d-block mt-2">
+                    <div class="qr-container pulse">
+                        <img src="{% url 'qr_code_image' active_pass.qr_token %}" alt="QR Pass" style="width: 170px; height: 170px; object-fit: contain;">
+                    </div>
+                </div>
+
+                <!-- Floating Student Image -->
+                <img src="{% if student.photo %}{{ student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="student-img-pass" alt="Avatar">
+            </div>
+
+            <!-- Body section containing details -->
+            <div class="ticket-body">
+                <h4 class="fw-bold mb-1 mt-2 text-dark">{{ student.name }}</h4>
+                <div class="badge bg-light text-dark border px-3 rounded-pill fw-semibold mb-2" style="font-size:0.75rem;">
+                    {{ student.roll }}
+                </div>
+                <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Scan this at the main gate checkpoint to verify movement.</p>
+
+                <!-- Information Grid -->
+                <div class="info-grid">
+                    <div>
+                        <div class="info-label">Room / Bed</div>
+                        <div class="info-val">{% if bed %}{{ bed.room.room_number }} (Bed {{ bed.bed_number }}){% else %}Not Assigned{% endif %}</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Pass Number</div>
+                        <div class="info-val">{% if leave.gate_pass %}{{ leave.gate_pass.gate_pass_no }}{% else %}GP-{{ leave.id }}{% endif %}</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Valid From</div>
+                        <div class="info-val">{{ leave.leave_from }}</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Expiry Date</div>
+                        <div class="info-val">{{ active_pass.expires_at|date:"d M Y (H:i)" }}</div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-center gap-2 text-muted small">
+                    <i class="bi bi-shield-check text-primary fs-5"></i>
+                    <span>Authorized by Warden: <strong>{{ leave.approved_by.username|default:"System" }}</strong></span>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="glass-card p-5 text-center shadow-sm border-0">
+            <div class="text-danger mb-3">
+                <i class="bi bi-exclamation-triangle fs-1"></i>
+            </div>
+            <h4 class="fw-bold text-dark">No Active Pass Available</h4>
+            <p class="text-muted small mb-4">Either your leave request is not yet approved, or your pass has already been used or expired.</p>
+            <a href="{% url 'student_app:student_leave_details' %}" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold">
+                My Leave History
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="success-overlay">
+    <div class="checkmark-wrapper">
+         <svg class="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+             <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+             <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+         </svg>
+    </div>
+    <h2 id="success-overlay-title" class="fw-bold mt-4" style="letter-spacing:-0.02em;">Gating Verified!</h2>
+    <p id="success-overlay-msg" class="text-white-50 mt-1 px-4 text-center" style="max-width:320px;">Your transit has been approved by checkpoint security.</p>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const leaveId = "{{ leave.id }}";
+        let currentPassType = "{% if active_pass %}{{ active_pass.pass_type }}{% else %}NONE{% endif %}";
+        let currentPassUsed = {% if active_pass %}{{ active_pass.is_used|yesno:"true,false" }}{% else %}false{% endif %};
+        let isTransitioning = false;
+
+        const overlay = document.getElementById("success-overlay");
+        const overlayTitle = document.getElementById("success-overlay-title");
+        const overlayMsg = document.getElementById("success-overlay-msg");
+
+        function showOverlay(title, message, duration, callback) {
+            overlayTitle.textContent = title;
+            overlayMsg.textContent = message;
+            overlay.style.display = "flex";
+            setTimeout(() => overlay.classList.add("show"), 10);
+            
+            setTimeout(() => {
+                overlay.classList.remove("show");
+                setTimeout(() => {
+                    overlay.style.display = "none";
+                    if (callback) callback();
+                }, 400); // Overlay transition duration
+            }, duration);
+        }
+
+        function checkStatus() {
+            if (isTransitioning) return;
+            fetch(`/student/active-pass-status/${leaveId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.has_pass) {
+                        if (data.pass_type !== currentPassType || data.is_used !== currentPassUsed) {
+                            isTransitioning = true;
+                            const isExitScanned = (currentPassType === 'EXIT' && data.pass_type === 'ENTRY');
+                            
+                            const title = isExitScanned ? "Exit Approved!" : "Entry Approved!";
+                            const msg = isExitScanned ? "Generating Entry Ticket..." : "Welcome back to your hostel.";
+                            
+                            showOverlay(title, msg, 2200, () => {
+                                currentPassType = data.pass_type;
+                                currentPassUsed = data.is_used;
+
+                                // Update Badge
+                                const badge = document.querySelector(".pass-type-badge");
+                                if (badge) {
+                                    badge.className = `pass-type-badge ${data.pass_type === 'EXIT' ? 'pass-exit' : 'pass-entry'} mb-3 d-inline-block`;
+                                    badge.textContent = `${data.pass_type} TICKET`;
+                                }
+
+                                // Update QR Image
+                                const qrImg = document.querySelector(".qr-container img");
+                                if (qrImg) {
+                                    qrImg.src = data.qr_url;
+                                }
+                                
+                                // Update Expiry Date label dynamically
+                                const infoVals = document.querySelectorAll(".info-val");
+                                if (infoVals.length >= 4) {
+                                    const dateObj = new Date(data.expires_at.replace(/-/g, "/"));
+                                    const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+                                    infoVals[3].textContent = dateObj.toLocaleDateString('en-GB', options).replace(',', '');
+                                }
+
+                                isTransitioning = false;
+                            });
+                        }
+                    } else {
+                        if (currentPassType !== 'NONE') {
+                            isTransitioning = true;
+                            showOverlay("Entry Approved!", 'Welcome back! Your leave is completed.', 2200, () => {
+                                const container = document.querySelector(".ticket-container");
+                                if (container) {
+                                    container.innerHTML = `
+                                        <div class="glass-card p-5 text-center shadow-sm border-0" style="background: var(--card-bg, rgba(255, 255, 255, 0.75)); border-radius: 2rem; border: 1px solid var(--border-color, rgba(255, 255, 255, 0.4)); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);">
+                                            <div class="text-success mb-3">
+                                                <i class="bi bi-patch-check-fill fs-1"></i>
+                                            </div>
+                                            <h4 class="fw-bold text-dark">Leave Completed!</h4>
+                                            <p class="text-muted small mb-4">Your entry transit was approved. Welcome back to the hostel.</p>
+                                            <a href="{% url 'student_app:student_leave_details' %}" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold">
+                                                My Leave History
+                                            </a>
+                                        </div>
+                                    `;
+                                }
+                                currentPassType = 'NONE';
+                                isTransitioning = false;
+                            });
+                        }
+                    }
+                })
+                .catch(err => console.error("Error polling pass status: ", err));
+        }
+
+        setInterval(checkStatus, 2500);
+    });
+</script>
+{% endblock %}

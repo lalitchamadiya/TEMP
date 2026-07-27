@@ -205,6 +205,155 @@
                         </div>
                     </div>
                 </div>
+                <!-- Granular Element Permissions Card -->
+                <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center me-3" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-sliders text-info"></i>
+                                    </div>
+                                    <h5 class="mb-0 fw-bold">Granular Element Permissions</h5>
+                                </div>
+                                <p class="text-muted small mt-2 mb-0">Control specific pages, buttons, and minor UI components across all modules.</p>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary rounded-pill px-3 py-1.5 btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#customPermissionModal">
+                                    <i class="bi bi-plus-circle me-1"></i> Add Custom Item
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tab headings -->
+                        <ul class="nav nav-tabs border-bottom-0 mt-4" id="elementPermTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active fw-bold text-secondary text-uppercase fs-xs border-0 pb-3" id="pages-tab" data-bs-toggle="tab" data-bs-target="#pages-pane" type="button" role="tab" aria-controls="pages-pane" aria-selected="true" style="font-size:0.75rem;">Pages & Views</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link fw-bold text-secondary text-uppercase fs-xs border-0 pb-3" id="buttons-tab" data-bs-toggle="tab" data-bs-target="#buttons-pane" type="button" role="tab" aria-controls="buttons-pane" aria-selected="false" style="font-size:0.75rem;">Buttons & CTAs</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link fw-bold text-secondary text-uppercase fs-xs border-0 pb-3" id="items-tab" data-bs-toggle="tab" data-bs-target="#items-pane" type="button" role="tab" aria-controls="items-pane" aria-selected="false" style="font-size:0.75rem;">UI Sections & Minor Items</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link fw-bold text-secondary text-uppercase fs-xs border-0 pb-3" id="apis-tab" data-bs-toggle="tab" data-bs-target="#apis-pane" type="button" role="tab" aria-controls="apis-pane" aria-selected="false" style="font-size:0.75rem;">APIs & Backend Actions</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="tab-content" id="elementPermTabsContent">
+                            
+                            <!-- Pages Tab -->
+                            <div class="tab-pane fade show active" id="pages-pane" role="tabpanel" aria-labelledby="pages-tab" tabindex="0">
+                                <div class="row g-3">
+                                    {% for el in elements %}
+                                        {% if el.category == 'page' %}
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="p-3 border border-light-subtle rounded-3 h-100 bg-light-subtle d-flex flex-column justify-content-between" style="border: 1px solid rgba(0,0,0,0.08) !important;">
+                                                <div>
+                                                    <div class="form-check form-switch card-switch mb-1">
+                                                        <input class="form-check-input" type="checkbox" name="element_{{ el.id }}" id="el_{{ el.id }}" {% if el.id in role_element_perms %}checked{% endif %}>
+                                                        <label class="form-check-label fw-bold text-dark fs-7" for="el_{{ el.id }}">{{ el.name }}</label>
+                                                    </div>
+                                                    <div class="fs-xs text-muted" style="min-height: 32px;">{{ el.description }}</div>
+                                                </div>
+                                                <div class="mt-2 pt-2 border-top border-light-subtle fs-xs text-muted d-flex justify-content-between">
+                                                    <span>Code: <code>{{ el.code }}</code></span>
+                                                    <span>{{ el.module.name|default:"Global" }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% empty %}
+                                        <div class="col-12 text-center text-muted py-3">No page permissions available.</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Buttons Tab -->
+                            <div class="tab-pane fade" id="buttons-pane" role="tabpanel" aria-labelledby="buttons-tab" tabindex="0">
+                                <div class="row g-3">
+                                    {% for el in elements %}
+                                        {% if el.category == 'button' %}
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="p-3 border border-light-subtle rounded-3 h-100 bg-light-subtle d-flex flex-column justify-content-between" style="border: 1px solid rgba(0,0,0,0.08) !important;">
+                                                <div>
+                                                    <div class="form-check form-switch card-switch mb-1">
+                                                        <input class="form-check-input" type="checkbox" name="element_{{ el.id }}" id="el_{{ el.id }}" {% if el.id in role_element_perms %}checked{% endif %}>
+                                                        <label class="form-check-label fw-bold text-dark fs-7" for="el_{{ el.id }}">{{ el.name }}</label>
+                                                    </div>
+                                                    <div class="fs-xs text-muted" style="min-height: 32px;">{{ el.description }}</div>
+                                                </div>
+                                                <div class="mt-2 pt-2 border-top border-light-subtle fs-xs text-muted d-flex justify-content-between">
+                                                    <span>Code: <code>{{ el.code }}</code></span>
+                                                    <span>{{ el.module.name|default:"Global" }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% empty %}
+                                        <div class="col-12 text-center text-muted py-3">No button permissions available.</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Items Tab -->
+                            <div class="tab-pane fade" id="items-pane" role="tabpanel" aria-labelledby="items-tab" tabindex="0">
+                                <div class="row g-3">
+                                    {% for el in elements %}
+                                        {% if el.category == 'item' %}
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="p-3 border border-light-subtle rounded-3 h-100 bg-light-subtle d-flex flex-column justify-content-between" style="border: 1px solid rgba(0,0,0,0.08) !important;">
+                                                <div>
+                                                    <div class="form-check form-switch card-switch mb-1">
+                                                        <input class="form-check-input" type="checkbox" name="element_{{ el.id }}" id="el_{{ el.id }}" {% if el.id in role_element_perms %}checked{% endif %}>
+                                                        <label class="form-check-label fw-bold text-dark fs-7" for="el_{{ el.id }}">{{ el.name }}</label>
+                                                    </div>
+                                                    <div class="fs-xs text-muted" style="min-height: 32px;">{{ el.description }}</div>
+                                                </div>
+                                                <div class="mt-2 pt-2 border-top border-light-subtle fs-xs text-muted d-flex justify-content-between">
+                                                    <span>Code: <code>{{ el.code }}</code></span>
+                                                    <span>{{ el.module.name|default:"Global" }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% empty %}
+                                        <div class="col-12 text-center text-muted py-3">No UI item permissions available.</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- APIs Tab -->
+                            <div class="tab-pane fade" id="apis-pane" role="tabpanel" aria-labelledby="apis-tab" tabindex="0">
+                                <div class="row g-3">
+                                    {% for el in elements %}
+                                        {% if el.category == 'api' %}
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="p-3 border border-light-subtle rounded-3 h-100 bg-light-subtle d-flex flex-column justify-content-between" style="border: 1px solid rgba(0,0,0,0.08) !important;">
+                                                <div>
+                                                    <div class="form-check form-switch card-switch mb-1">
+                                                        <input class="form-check-input" type="checkbox" name="element_{{ el.id }}" id="el_{{ el.id }}" {% if el.id in role_element_perms %}checked{% endif %}>
+                                                        <label class="form-check-label fw-bold text-dark fs-7" for="el_{{ el.id }}">{{ el.name }}</label>
+                                                    </div>
+                                                    <div class="fs-xs text-muted" style="min-height: 32px;">{{ el.description }}</div>
+                                                </div>
+                                                <div class="mt-2 pt-2 border-top border-light-subtle fs-xs text-muted d-flex justify-content-between">
+                                                    <span>Code: <code>{{ el.code }}</code></span>
+                                                    <span>{{ el.module.name|default:"Global" }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% empty %}
+                                        <div class="col-12 text-center text-muted py-3">No API or custom action permissions available.</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="text-end mb-4">
                     <a href="{% url 'role_list' %}" class="btn btn-light rounded-pill px-4 me-2">Cancel</a>
@@ -221,7 +370,7 @@
                     const rowToggles = table.querySelectorAll('.row-toggle');
                     const btnGrantAll = document.getElementById('btn-grant-all');
                     const btnRevokeAll = document.getElementById('btn-revoke-all');
-
+ 
                     // Grant All / Revoke All globals
                     if (btnGrantAll) {
                         btnGrantAll.addEventListener('click', function(e) {
@@ -239,7 +388,7 @@
                             colToggles.forEach(cb => cb.checked = false);
                         });
                     }
-
+ 
                     // Row-level Select All
                     rowToggles.forEach(rowToggle => {
                         rowToggle.addEventListener('change', function() {
@@ -249,7 +398,7 @@
                             syncColumnToggles();
                         });
                     });
-
+ 
                     // Column-level Select All
                     colToggles.forEach(colToggle => {
                         colToggle.addEventListener('change', function() {
@@ -259,7 +408,7 @@
                             syncRowToggles();
                         });
                     });
-
+ 
                     // Individual checkboxes update row & column selects
                     matrixCheckboxes.forEach(cb => {
                         cb.addEventListener('change', function() {
@@ -267,7 +416,7 @@
                             syncColumnToggles();
                         });
                     });
-
+ 
                     function syncRowToggles() {
                         rowToggles.forEach(rowToggle => {
                             const tr = rowToggle.closest('tr');
@@ -276,7 +425,7 @@
                             rowToggle.checked = (checkedCount === rowCheckboxes.length);
                         });
                     }
-
+ 
                     function syncColumnToggles() {
                         colToggles.forEach(colToggle => {
                             const action = colToggle.getAttribute('data-action');
@@ -285,7 +434,7 @@
                             colToggle.checked = (checkedCount === colCheckboxes.length);
                         });
                     }
-
+ 
                     // Initial sync
                     syncRowToggles();
                     syncColumnToggles();
@@ -296,9 +445,83 @@
     </div>
 </div>
 
+<!-- Modal for Creating Dynamic Permission Elements -->
+<div class="modal fade" id="customPermissionModal" tabindex="-1" aria-labelledby="customPermissionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg" style="background-color: var(--bs-card-bg, #fff);">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold" id="customPermissionModalLabel">Add Custom Permission Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'add_custom_permission_element' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body px-4 pb-4">
+                    <p class="text-muted small">Define a new page, button or component to enable role-based controls for it.</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Permission Code (Unique Slug)</label>
+                        <input type="text" name="code" class="form-control rounded-3" placeholder="e.g. btn_export_payments" required>
+                        <div class="form-text fs-xs text-muted">Always lowercase, letters, digits, and underscores only.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Aesthetic Name</label>
+                        <input type="text" name="name" class="form-control rounded-3" placeholder="e.g. Export Payments Button" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Type / Category</label>
+                        <select name="category" class="form-select rounded-3">
+                            <option value="page">Page / View</option>
+                            <option value="button" selected>Button / CTA</option>
+                            <option value="item">Minor UI Item / Section</option>
+                            <option value="api">API Endpoint / Action</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">System Module association</label>
+                        <select name="module" class="form-select rounded-3">
+                            <option value="">Global / Independent</option>
+                            {% for m in modules %}
+                                <option value="{{ m.id }}">{{ m.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Description</label>
+                        <textarea name="description" class="form-control rounded-3" rows="2" placeholder="Explain what this controls..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Create Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
     .fs-xs { font-size: 0.7rem; }
+    .fs-7 { font-size: 0.85rem; }
     .table > :not(caption) > * > * { border-bottom-width: 0; }
     .custom-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
+    
+    /* Custom styles for tab controls */
+    .nav-tabs .nav-link {
+        color: #718096 !important;
+        border: none;
+        border-bottom: 2px solid transparent !important;
+        background: transparent !important;
+    }
+    .nav-tabs .nav-link.active {
+        color: var(--primary, #0d6efd) !important;
+        border-bottom: 2px solid var(--primary, #0d6efd) !important;
+    }
+    .card-switch .form-check-input {
+        width: 2.2em;
+        height: 1.1em;
+        cursor: pointer;
+    }
+    .text-muted-50 {
+        color: rgba(113, 128, 150, 0.7);
+    }
 </style>
 {% endblock %}

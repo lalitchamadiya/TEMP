@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Gate Pass Verification{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    body {
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--body-bg, #f8fafc);
+        color: var(--text-main, #0f172a);
+    }
+
+    .verification-card {
+        max-width: 550px;
+        margin: 3rem auto;
+        border-radius: 2rem;
+        background: var(--card-bg, rgba(255, 255, 255, 0.8));
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.5));
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .profile-area {
+        padding: 2.5rem 2rem 2rem;
+        background: linear-gradient(to bottom, var(--light-bg, #f8fafc) 0%, transparent 100%);
+        text-align: center;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        position: relative;
+    }
+
+    .status-highlight {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.5rem 1.75rem;
+        border-radius: 50rem;
+        display: inline-block;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    }
+
+    .status-valid { background-color: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .status-invalid { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+    .large-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        margin: 1.5rem auto 1rem;
+    }
+
+    .details-body {
+        padding: 2.25rem 2rem;
+    }
+
+    .gate-detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.85rem 0;
+        border-bottom: 1px dashed var(--border-color, #e2e8f0);
+    }
+    .gate-detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .gate-label {
+        font-weight: 600;
+        color: var(--text-muted, #64748b);
+        font-size: 0.85rem;
+    }
+    .gate-value {
+        font-weight: 700;
+        color: var(--text-main, #334155);
+        font-size: 0.9rem;
+    }
+
+    .action-btn-confirm {
+        border-radius: 1rem;
+        padding: 1rem 1.5rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        transition: all 0.2s ease;
+    }
+
+    /* Success Checkmark & Overlay styles */
+    #success-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.9);
+        z-index: 99999;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+    }
+    #success-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .checkmark-wrapper {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .checkmark-svg {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 4;
+        stroke: #10b981;
+        stroke-miterlimit: 10;
+        box-shadow: inset 0px 0px 0px #10b981;
+        animation: fill-anim .4s ease-in-out .4s forwards, scale-anim .3s ease-in-out .9s both;
+    }
+    .checkmark-circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-width: 4;
+        stroke-miterlimit: 10;
+        stroke: #10b981;
+        fill: none;
+        animation: stroke-anim .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .checkmark-check {
+        transform-origin: 50% 50%;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        stroke: white;
+        stroke-linecap: round;
+        animation: stroke-anim .3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke-anim {
+        100% { stroke-dashoffset: 0; }
+    }
+    @keyframes fill-anim {
+        100% { box-shadow: inset 0px 0px 0px 50px #10b981; }
+    }
+    @keyframes scale-anim {
+        0%, 100% { transform: none; }
+        50% { transform: scale3d(1.1, 1.1, 1); }
+    }
+</style>
+
+<div class="container py-5 min-vh-100">
+    <div class="verification-card">
+        
+        <!-- Profile Area / Status Badge -->
+        <div class="profile-area">
+            {% if error_msg %}
+                <span class="status-highlight status-invalid mb-3"><i class="bi bi-x-circle-fill me-2"></i>Pass Invalid / Terminated</span>
+                <div class="text-danger my-2"><i class="bi bi-shield-x display-3"></i></div>
+                <h4 class="fw-bold mt-2">Validation Defect</h4>
+                <p class="text-muted small mb-0">This QR token is not approved for gate transit.</p>
+            {% elif success_msg %}
+                <span class="status-highlight status-valid mb-3"><i class="bi bi-check-circle-fill me-2"></i>Action Processed</span>
+                <div class="text-success my-2"><i class="bi bi-shield-checkbox display-3"></i></div>
+                <h4 class="fw-bold mt-2">Transit Logged</h4>
+                <p class="text-muted small mb-0">The gating checkout/checkin record has been updated successfully.</p>
+            {% else %}
+                <span class="status-highlight status-valid mb-3"><i class="bi bi-shield-fill-check me-2"></i>Pass Active & Valid</span>
+                <img src="{% if student.photo %}{{ student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="large-avatar" alt="Student photo">
+                <h4 class="fw-bold mb-1">{{ student.name }}</h4>
+                <span class="badge bg-light text-muted border px-3 rounded-pill fw-semibold" style="font-size: 0.75rem;">
+                    {{ student.roll }}
+                </span>
+            {% endif %}
+        </div>
+
+        <!-- Details Body -->
+        <div class="details-body">
+            
+            <!-- Result Toast messages -->
+            {% if success_msg %}
+                <div class="alert alert-success rounded-4 border-0 p-3 mb-4 d-flex align-items-start gap-3">
+                    <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Gate Pass Approved</h6>
+                        <span class="small">{{ success_msg }}</span>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if error_msg %}
+                <div class="alert alert-danger rounded-4 border-0 p-3 mb-4 d-flex align-items-start gap-3">
+                    <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Access Denied</h6>
+                        <span class="small">{{ error_msg }}</span>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Gate Pass Metadata -->
+            <div class="p-3 border rounded-4 mb-4" style="background-color: var(--input-bg);">
+                <div class="gate-detail-row">
+                    <span class="gate-label">Pass Type</span>
+                    <span class="gate-value text-primary fw-bold">{{ qr.pass_type }} Pass</span>
+                </div>
+                <div class="gate-detail-row">
+                    <span class="gate-label">Gating Status</span>
+                    <span class="gate-value">
+                        {% if qr.is_used %}
+                            <span class="text-danger"><i class="bi bi-dot fs-5"></i>Used</span>
+                        {% else %}
+                            <span class="text-success"><i class="bi bi-dot fs-5"></i>Pending Scan</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="gate-detail-row">
+                    <span class="gate-label">Room Allocation</span>
+                    <span class="gate-value">{% if bed %}Room {{ bed.room.room_number }} (Bed {{ bed.bed_number }}){% else %}N/A{% endif %}</span>
+                </div>
+                <div class="gate-detail-row">
+                    <span class="gate-label">Authorized Departure</span>
+                    <span class="gate-value">{{ leave.leave_from }}</span>
+                </div>
+                <div class="gate-detail-row">
+                    <span class="gate-label">Expiration Limit</span>
+                    <span class="gate-value">{{ qr.expires_at|date:"d M Y (H:i)" }}</span>
+                </div>
+            </div>
+
+            <!-- Operational Triggers -->
+            <div class="d-grid gap-2">
+                {% if not error_msg and not success_msg %}
+                    <form method="post" class="w-100">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-emerald text-white action-btn-confirm w-100 shadow-sm" style="background-color:#10b981;">
+                            <i class="bi bi-check-square me-2"></i> Approve {{ qr.pass_type }} Transit
+                        </button>
+                    </form>
+                {% endif %}
+                
+                <a href="{% url 'security_dashboard' %}" class="btn btn-outline-secondary rounded-3 fw-bold py-3 mt-1">
+                    <i class="bi bi-arrow-left me-2"></i> Return to Security Dashboard
+                </a>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<div id="success-overlay">
+    <div class="checkmark-wrapper">
+         <svg class="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+             <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+             <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+         </svg>
+    </div>
+    <h2 id="success-overlay-title" class="fw-bold mt-4" style="letter-spacing:-0.02em;">Transit Approved!</h2>
+    <p id="success-overlay-msg" class="text-white-50 mt-1 px-4 text-center" style="max-width:320px;">Logging exit transit...</p>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.querySelector("form");
+        const overlay = document.getElementById("success-overlay");
+        const overlayTitle = document.getElementById("success-overlay-title");
+        const overlayMsg = document.getElementById("success-overlay-msg");
+        const passType = "{{ qr.pass_type }}";
+
+        if (form) {
+            form.addEventListener("submit", function(e) {
+                e.preventDefault();
+                
+                // Show loading message initially on overlay
+                overlayTitle.textContent = "Processing...";
+                overlayMsg.textContent = `Registering ${passType} transit...`;
+                overlay.style.display = "flex";
+                setTimeout(() => overlay.classList.add("show"), 10);
+
+                const formData = new FormData(form);
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    // Update overlay with checkmark success
+                    overlayTitle.textContent = "Transit Approved!";
+                    overlayMsg.textContent = `${passType === 'EXIT' ? 'Exit' : 'Entry'} successfully logged.`;
+                    
+                    // Force the checkmark path animation to replay
+                    const svg = document.querySelector(".checkmark-svg");
+                    if (svg) {
+                        svg.style.display = "none";
+                        svg.offsetHeight; // trigger reflow
+                        svg.style.display = "block";
+                    }
+
+                    setTimeout(() => {
+                        window.location.href = "{% url 'security_dashboard' %}";
+                    }, 1800);
+                })
+                .catch(err => {
+                    console.error("Gating execution failed: ", err);
+                    overlay.classList.remove("show");
+                    setTimeout(() => overlay.style.display = "none", 400);
+                    alert("Gating action failed to persist. Please try again.");
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

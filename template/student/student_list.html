@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load rbac_tags %}
 
 {% block title %} | Student Records{% endblock %}
 
@@ -15,9 +16,11 @@
                     <p class="text-muted small mb-0">Manage all registered students in the system</p>
                 </div>
                 <div class="col-md-6 d-flex justify-content-md-end">
+                    {% if request.user|has_element_perm:'btn_student_add' %}
                     <a href="{% url 'create_student' %}" class="btn btn-primary btn-sm rounded-3 px-3 shadow-sm border-0">
                         <i class="bi bi-plus-lg me-1"></i> Add Student
                     </a>
+                    {% endif %}
                 </div>
                 <div class="col-12 mt-3">
                     <form method="GET" action="{% url 'student_list' %}" class="row g-2 align-items-center">
@@ -128,12 +131,16 @@
                                 <a href="{% url 'view_student' student.pk %}" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center text-primary" style="width: 32px; height: 32px;" title="View Details">
                                     <i class="bi bi-eye"></i>
                                 </a>
+                                {% if request.user|has_element_perm:'btn_student_edit' %}
                                 <a href="{% url 'update_student' student.pk %}" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center text-warning" style="width: 32px; height: 32px;" title="Edit Record">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
+                                {% endif %}
+                                {% if request.user|has_element_perm:'btn_student_delete' %}
                                 <button type="button" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center text-danger" style="width: 32px; height: 32px;" data-bs-toggle="modal" data-bs-target="#deleteModal-{{ student.pk }}" title="Delete Record">
                                     <i class="bi bi-trash"></i>
                                 </button>
+                                {% endif %}
                             </div>
 
                             <!-- Delete Modal -->

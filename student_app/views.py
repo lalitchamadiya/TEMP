@@ -27,7 +27,7 @@ def student_dashboard(request):
     student = get_object_or_404(Student, user=request.user)
     
     # Bed/Room info
-    bed = student.bed_set.first()
+    bed = student.allocated_beds.first()
     
     # Fee Info
     total_fee = FeeStructure.objects.aggregate(total=Sum('amount'))['total'] or 0
@@ -162,15 +162,15 @@ def student_leave_request(request):
             return render(request, 'student_app/student_leave_request.html', {'student_details': student_details, 'latest_leave': latest_leave})
 
         try:
-            # Check if the latest leave request is not marked as "entered"
-            if latest_leave and latest_leave.status != 'entered':
-                messages.error(request, 'You cannot submit a new leave request until you are not entered in hostel.')
+            # Check if the latest leave request is still active
+            if latest_leave and latest_leave.status not in ['entered', 'completed', 'rejected']:
+                messages.error(request, 'You cannot submit a new leave request until your previous application is completed or rejected.')
                 return redirect('student_app:student_leave_request')
 
             hostelleave = HostelLeave(
                 student=student_details,
-                leave_date=leave_date,
-                return_date=request.POST.get('return_date'),
+                leave_from=leave_date,
+                leave_to=parse_date(request.POST.get('return_date')),
                 start_time=request.POST.get('start_time'),
                 end_time=request.POST.get('end_time'),
                 reason=reason,
@@ -249,7 +249,7 @@ def student_pay_fee(request):
     from datetime import date
     from decimal import Decimal
     
-    bed = student.bed_set.first()
+    bed = student.allocated_beds.first()
     yearly_fee = bed.total_amount if bed else 0
     if yearly_fee == 0:
         yearly_fee = FeeStructure.objects.aggregate(total=models.Sum('amount'))['total'] or 0
@@ -497,7 +497,7 @@ def student_fee_details(request):
     from datetime import date
     from decimal import Decimal
     
-    bed = student.bed_set.first()
+    bed = student.allocated_beds.first()
     yearly_fee = bed.total_amount if bed else 0
     if yearly_fee == 0:
         yearly_fee = FeeStructure.objects.aggregate(total=models.Sum('amount'))['total'] or 0
@@ -632,4 +632,59 @@ def download_fee_receipt(request, transaction_id):
         return HttpResponse('We had some errors while generating the PDF', status=500)
 
     return response
+
+
+@login_required(login_url='/authentication/login')
+def view_active_pass(request, leave_id):
+    student = get_object_or_404(Student, user=request.user)
+    leave = get_object_or_404(HostelLeave, id=leave_id, student=student)
+    
+    # Get active/latest pass (EXIT or ENTRY)
+    active_pass = leave.qr_passes.order_by('-generated_at').first()
+    
+    # If no pass exists and leave is approved, auto-generate EXIT pass as fallback
+    if not active_pass and leave.status == 'approved':
+        from leave.models import QRPass
+        from datetime import time, datetime
+        from django.utils import timezone
+        expires_at = timezone.make_aware(datetime.combine(leave.leave_from, time(23, 59, 59)))
+        active_pass = QRPass.objects.create(
+            leave=leave,
+            pass_type='EXIT',
+            expires_at=expires_at
+        )
+
+    context = {
+        'student': student,
+        'leave': leave,
+        'active_pass': active_pass,
+        'bed': student.allocated_beds.first(),
+    }
+    return render(request, 'student_app/student_pass_view.html', context)
+
+from django.urls import reverse
+
+@login_required(login_url='/authentication/login')
+def active_pass_status_json(request, leave_id):
+    student = get_object_or_404(Student, user=request.user)
+    leave = get_object_or_404(HostelLeave, id=leave_id, student=student)
+    active_pass = leave.qr_passes.order_by('-generated_at').first()
+    
+    if active_pass:
+        return JsonResponse({
+            'has_pass': True,
+            'pass_id': active_pass.id,
+            'pass_type': active_pass.pass_type,
+            'is_used': active_pass.is_used,
+            'qr_token': str(active_pass.qr_token),
+            'qr_url': request.build_absolute_uri(reverse('qr_code_image', kwargs={'qr_token': active_pass.qr_token})),
+            'expires_at': active_pass.expires_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'leave_status': leave.status,
+        })
+    else:
+        return JsonResponse({
+            'has_pass': False,
+            'leave_status': leave.status,
+        })
+
 

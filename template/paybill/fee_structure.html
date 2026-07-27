@@ -1,130 +1,340 @@
-{% extends "base.html" %} {% load static %} {% block content %}
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %} | Fee Structure{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --accent: #6366f1;
+        --accent-2: #a855f7;
+        --accent-soft: rgba(99,102,241,0.07);
+        --glass-bg: rgba(255,255,255,0.85);
+        --border: rgba(226,232,240,0.8);
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --input-bg: rgba(248,250,252,0.9);
+    }
+    body { font-family: 'Outfit', sans-serif; background: #f1f5f9; }
+
+    .fee-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        margin-bottom: 1.5rem;
+    }
+    
+    .fee-card-header {
+        border-bottom: 1px solid var(--border);
+        padding: 1.2rem 1.5rem;
+        background: rgba(255, 255, 255, 0.4);
+    }
+    
+    .btn-action-premium {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: white !important;
+        border: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border-radius: 0.5rem;
+        padding: 0.5rem 1.25rem;
+        box-shadow: 0 4px 10px rgba(99,102,241,0.2);
+        transition: all 0.2s ease;
+    }
+    .btn-action-premium:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(99,102,241,0.3);
+    }
+
+    .form-control-premium {
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 0.5rem !important;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    .form-control-premium:focus {
+        background: white !important;
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.12) !important;
+    }
+    
+    .pricing-table th {
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--border);
+        padding: 0.75rem 1rem;
+    }
+    
+    .pricing-table td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .status-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        border-radius: 50rem;
+    }
+</style>
+
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4 px-2">
         <div>
-            <h2 class="fw-bold mb-1">Fee Structure</h2>
-            <p class="text-muted mb-0 small">Define and manage the hostel fee categories.</p>
+            <h2 class="fw-bold mb-1" style="font-family: 'Outfit';">Fee Structure & Pricing Options</h2>
+            <p class="text-muted mb-0 small">Configure base room rates, category multipliers, and installment schedules for <strong>{{ active_hostel.name }}</strong></p>
         </div>
     </div>
-{% include 'paybill/paybill_nav.html' %}
+    
+    {% include 'paybill/paybill_nav.html' %}
 
-
-<div class="row g-4">
-    <!-- Left column: Add Fees -->
-    <div class="col-lg-6">
-        <form method="post" action="{% url 'fee_structure' %}">
-            {% csrf_token %}
-            <h5 class="mt-3 d-flex align-items-center">
-                <span class="material-symbols-outlined text-muted" style="font-size: 25px; margin-right:2px;">keyboard_double_arrow_right</span>Add Fees
-            </h5>
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="fee_type" class="form-label text-secondary small fw-bold">Fees Type</label>
-                            <select name="fee_type" class="form-select form-select-sm" required>
-                                <option value="" disabled selected>Select Fee Type</option>
-                                <option value="rent">Hostel Rent</option>
-                                <option value="deposit">Security Deposit</option>
-                                <option value="electricity">Electricity Charges</option>
-                                <option value="mess">Mess Charges</option>
-                                <option value="maintenance">Maintenance Charges</option>
-                                <option value="other">Other Charges</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="amount" class="form-label text-secondary small fw-bold">Amount</label>
-                            <input type="text" name="amount" class="form-control form-control-sm" placeholder="Enter Amount" required />
-                        </div>
-                        <div class="col-12 mt-3">
-                            <button type="submit" class="rounded-1 btn btn-success btn-sm shadow-sm d-flex align-items-center gap-1">
-                                <span class="material-symbols-outlined" style="font-size: 2.2vh;">Currency_rupee</span>Add Fee
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </form>
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible rounded-3 border-0 shadow-sm py-2.5 fade show mb-2" role="alert">
+            <span class="small">{{ message }}</span>
+            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
     </div>
+    {% endif %}
 
-    <!-- Right column: Installment Config -->
-    <div class="col-lg-6">
-        <form method="post" action="{% url 'fee_structure' %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="save_installments" />
-            <h5 class="mt-3 d-flex align-items-center">
-                <span class="material-symbols-outlined text-muted" style="font-size: 25px; margin-right:2px;">settings</span>Installment & Penalty Schedule
-            </h5>
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <!-- Part 1: Start of Year -->
-                        <div class="col-md-6">
-                            <label for="part1_due_date" class="form-label text-secondary small fw-bold">Part 1 Due Date</label>
-                            <input type="date" name="part1_due_date" class="form-control form-control-sm" value="{% if installment_config.part1_due_date %}{{ installment_config.part1_due_date|date:'Y-m-d' }}{% endif %}" />
-                        </div>
-                        <div class="col-md-6">
-                            <label for="part1_late_fee_per_day" class="form-label text-secondary small fw-bold">Part 1 Late Fee (₹/Day)</label>
-                            <input type="number" name="part1_late_fee_per_day" class="form-control form-control-sm" step="0.01" value="{{ installment_config.part1_late_fee_per_day|default:'0.00' }}" required />
-                        </div>
-
-                        <!-- Part 2: Mid-Year -->
-                        <div class="col-md-6">
-                            <label for="part2_due_date" class="form-label text-secondary small fw-bold">Part 2 Due Date</label>
-                            <input type="date" name="part2_due_date" class="form-control form-control-sm" value="{% if installment_config.part2_due_date %}{{ installment_config.part2_due_date|date:'Y-m-d' }}{% endif %}" />
-                        </div>
-                        <div class="col-md-6">
-                            <label for="part2_late_fee_per_day" class="form-label text-secondary small fw-bold">Part 2 Late Fee (₹/Day)</label>
-                            <input type="number" name="part2_late_fee_per_day" class="form-control form-control-sm" step="0.01" value="{{ installment_config.part2_late_fee_per_day|default:'0.00' }}" required />
-                        </div>
-
-                        <div class="col-12 mt-3">
-                            <button type="submit" class="rounded-1 btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1">
-                                <span class="material-symbols-outlined" style="font-size: 2.2vh;">save</span>Save Schedule
-                            </button>
-                        </div>
-                    </div>
+    <div class="row g-4">
+        
+        <!-- Pricing settings forms (Single submit button updates rents & multipliers) -->
+        <div class="col-lg-8">
+            <!-- Room Type base rents -->
+            <div class="fee-card card border-0">
+                <div class="fee-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-dark" style="font-size: 1rem;"><i class="bi bi-door-open me-2 text-primary"></i>Room Type Options (Base Rent - ₹)</h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-3" data-bs-toggle="collapse" data-bs-target="#addRoomTypeCollapse">
+                        <i class="bi bi-plus-lg me-1"></i>Add Option
+                    </button>
                 </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="card border-0 shadow-sm mt-4">
-    <div class="table-responsive">
-        <table class="table align-middle table-hover mb-0">
-            <thead class="bg-light">
-                <tr class="text-muted small text-uppercase fw-bold">
-                    <th class="ps-4">Fee Name</th>
-                    <th>Amount</th>
-                    <th class="text-end pe-4">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for fee_structure in fee_structures %}
-                <tr>
-                    <td class="ps-4 fw-semibold">{{ fee_structure.get_fee_type_display }}</td>
-                    <td class="text-primary fw-bold">₹{{ fee_structure.amount }}</td>
-                    <td class="text-end pe-4">
-                        <form method="post" action="{% url 'delete_fee_item' fee_structure.id %}" onsubmit="return confirm('Delete this fee item?')">
+                <div class="card-body p-0">
+                    <!-- Add Room Type Collapse -->
+                    <div class="collapse p-3 border-bottom bg-light" id="addRoomTypeCollapse">
+                        <form method="post" action="{% url 'fee_structure' %}" class="row g-2 align-items-center">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-light border p-1 d-inline-flex text-danger" title="Delete">
-                                <i class="material-symbols-outlined fs-5">delete</i>
-                            </button>
+                            <input type="hidden" name="action" value="add_room_type" />
+                            <div class="col-md-5">
+                                <input type="text" name="label" class="form-control form-control-sm" placeholder="Display Name (e.g. Quad AC)" required />
+                            </div>
+                            <div class="col-md-4">
+                                <input type="number" step="0.01" min="0" name="base_rent" class="form-control form-control-sm" placeholder="Base Rent (₹)" required />
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-sm btn-success w-100"><i class="bi bi-plus-circle me-1"></i>Add</button>
+                            </div>
                         </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="3" class="text-center py-5 text-muted">
-                        <i class="material-symbols-outlined fs-1 opacity-25">account_balance</i>
-                        <p class="mt-2 mb-0">No fee categories defined yet.</p>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    </div>
+
+                    <form method="post" action="{% url 'fee_structure' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_prices" />
+                        
+                        <div class="table-responsive">
+                            <table class="table pricing-table mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Room Type Option</th>
+                                        <th>Base Rent</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in room_types_prices %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ item.label|default:item.room_type }}</td>
+                                        <td>
+                                            <div class="input-group input-group-sm" style="max-width: 15rem;">
+                                                <span class="input-group-text bg-light">₹</span>
+                                                <input type="number" step="0.01" name="price_{{ item.room_type }}" value="{{ item.base_rent }}" class="form-control form-control-premium" required />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if item.is_active %}
+                                            <span class="status-badge bg-success-subtle text-success">Active</span>
+                                            {% else %}
+                                            <span class="status-badge bg-danger-subtle text-danger">Disabled</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex gap-1">
+                                                <!-- Toggle Form -->
+                                                <button type="submit" name="action" value="toggle_room_type" onclick="this.form.action.value='toggle_room_type'; document.getElementById('item_pk').value='{{ item.pk }}';" class="btn btn-sm btn-light border p-1" title="Toggle Status">
+                                                    <i class="bi bi-power text-warning fs-6"></i>
+                                                </button>
+                                                <!-- Delete Form -->
+                                                <button type="submit" name="action" value="delete_room_type" onclick="if(confirm('Delete this option?')) { this.form.action.value='delete_room_type'; document.getElementById('item_pk').value='{{ item.pk }}'; } else { return false; }" class="btn btn-sm btn-light border p-1" title="Delete">
+                                                    <i class="bi bi-trash text-danger fs-6"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">No Room Types configured.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="border-top p-3 bg-light d-flex justify-content-between align-items-center">
+                            <span class="small text-muted"><i class="bi bi-info-circle me-1"></i>Edit options amounts above and save overall settings.</span>
+                            <button type="submit" class="btn-action-premium shadow">
+                                <i class="bi bi-check-circle me-1"></i>Save All Pricing Settings
+                            </button>
+                        </div>
+                        
+                        <!-- Hidden variable input for row level actions -->
+                        <input type="hidden" name="pk" id="item_pk" value="" />
+                    </form>
+                </div>
+            </div>
+
+            <!-- Category pricing multipliers -->
+            <div class="fee-card card border-0">
+                <div class="fee-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-dark" style="font-size: 1rem;"><i class="bi bi-tags me-2 text-warning"></i>Category Options (Multiplier x)</h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-3" data-bs-toggle="collapse" data-bs-target="#addCategoryCollapse">
+                        <i class="bi bi-plus-lg me-1"></i>Add Option
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Add Category Collapse -->
+                    <div class="collapse p-3 border-bottom bg-light" id="addCategoryCollapse">
+                        <form method="post" action="{% url 'fee_structure' %}" class="row g-2 align-items-center">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="add_category" />
+                            <div class="col-md-5">
+                                <input type="text" name="label" class="form-control form-control-sm" placeholder="Display Name (e.g. VIP AC)" required />
+                            </div>
+                            <div class="col-md-4">
+                                <input type="number" step="0.01" min="0" name="multiplier" class="form-control form-control-sm" placeholder="Multiplier (e.g. 1.25)" required />
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-sm btn-success w-100"><i class="bi bi-plus-circle me-1"></i>Add</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <form method="post" action="{% url 'fee_structure' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_prices" />
+                        
+                        <div class="table-responsive">
+                            <table class="table pricing-table mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Category Option</th>
+                                        <th>Multiplier Ratio</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in room_categories_multipliers %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ item.label|default:item.category }}</td>
+                                        <td>
+                                            <div class="input-group input-group-sm" style="max-width: 15rem;">
+                                                <input type="number" step="0.01" name="mult_{{ item.category }}" value="{{ item.multiplier }}" class="form-control form-control-premium" required />
+                                                <span class="input-group-text bg-light">x</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if item.is_active %}
+                                            <span class="status-badge bg-success-subtle text-success">Active</span>
+                                            {% else %}
+                                            <span class="status-badge bg-danger-subtle text-danger">Disabled</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex gap-1">
+                                                <!-- Toggle Form -->
+                                                <button type="submit" name="action" value="toggle_category" onclick="this.form.action.value='toggle_category'; document.getElementById('cat_pk').value='{{ item.pk }}';" class="btn btn-sm btn-light border p-1" title="Toggle Status">
+                                                    <i class="bi bi-power text-warning fs-6"></i>
+                                                </button>
+                                                <!-- Delete Form -->
+                                                <button type="submit" name="action" value="delete_category" onclick="if(confirm('Delete this option?')) { this.form.action.value='delete_category'; document.getElementById('cat_pk').value='{{ item.pk }}'; } else { return false; }" class="btn btn-sm btn-light border p-1" title="Delete">
+                                                    <i class="bi bi-trash text-danger fs-6"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">No Categories configured.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="border-top p-3 bg-light d-flex justify-content-between align-items-center">
+                            <span class="small text-muted"><i class="bi bi-info-circle me-1"></i>Edit ratios above and save overall settings.</span>
+                            <button type="submit" class="btn-action-premium shadow">
+                                <i class="bi bi-check-circle me-1"></i>Save All Pricing Settings
+                            </button>
+                        </div>
+                        
+                        <!-- Hidden variable input for row level actions -->
+                        <input type="hidden" name="pk" id="cat_pk" value="" />
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column: Installment Config -->
+        <div class="col-lg-4">
+            <form method="post" action="{% url 'fee_structure' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_installments" />
+                
+                <div class="fee-card card border-0">
+                    <div class="fee-card-header">
+                        <h5 class="fw-bold mb-0 text-dark" style="font-size: 1rem;"><i class="bi bi-calendar-event me-2 text-info"></i>Installment & Penalty Schedule</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-4">
+                            <label for="part1_due_date" class="form-label text-secondary small fw-bold">Part 1 Due Date</label>
+                            <input type="date" name="part1_due_date" class="form-control form-control-premium" value="{% if installment_config.part1_due_date %}{{ installment_config.part1_due_date|date:'Y-m-d' }}{% endif %}" />
+                        </div>
+                        <div class="mb-4">
+                            <label for="part1_late_fee_per_day" class="form-label text-secondary small fw-bold">Part 1 Late Fee (₹/Day)</label>
+                            <input type="number" name="part1_late_fee_per_day" class="form-control form-control-premium" step="0.01" value="{{ installment_config.part1_late_fee_per_day|default:'0.00' }}" required />
+                        </div>
+
+                        <hr class="my-4 text-muted opacity-25">
+
+                        <div class="mb-4">
+                            <label for="part2_due_date" class="form-label text-secondary small fw-bold">Part 2 Due Date</label>
+                            <input type="date" name="part2_due_date" class="form-control form-control-premium" value="{% if installment_config.part2_due_date %}{{ installment_config.part2_due_date|date:'Y-m-d' }}{% endif %}" />
+                        </div>
+                        <div class="mb-4">
+                            <label for="part2_late_fee_per_day" class="form-label text-secondary small fw-bold">Part 2 Late Fee (₹/Day)</label>
+                            <input type="number" name="part2_late_fee_per_day" class="form-control form-control-premium" step="0.01" value="{{ installment_config.part2_late_fee_per_day|default:'0.00' }}" required />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-sm rounded-3 w-100 py-2 fw-semibold">
+                            <i class="bi bi-save me-1"></i>Save Schedule
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
     </div>
 </div>
-</div>
-{% endblock %}
+{% endblock %}

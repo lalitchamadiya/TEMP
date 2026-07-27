@@ -112,7 +112,7 @@
                             <tbody>
                                 {% for leave in recent_leaves %}
                                 <tr>
-                                    <td class="px-4 fw-medium">{{ leave.leave_date }}</td>
+                                    <td class="px-4 fw-medium">{{ leave.leave_from }}</td>
                                     <td class="text-truncate" style="max-width: 200px;">{{ leave.reason }}</td>
                                     <td>
                                         {% if leave.status == 'approved' %}

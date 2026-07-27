@@ -58,6 +58,14 @@
     }
     .filter-badge.active { background: var(--accent); color: #fff; }
     .filter-badge:hover { background: var(--accent); color: #fff; }
+    .building-card.is-inactive {
+        opacity: 0.8;
+        background: rgba(241, 245, 249, 0.85);
+        border-color: #cbd5e1;
+    }
+    .building-card.is-inactive .building-card-header {
+        background: linear-gradient(135deg, #64748b, #94a3b8);
+    }
 </style>
 
 <div class="container-fluid py-3 px-md-4">
@@ -89,7 +97,7 @@
     <div class="row g-4">
         {% for building in buildings %}
         <div class="col-sm-6 col-lg-4 col-xl-3">
-            <div class="building-card h-100">
+            <div class="building-card h-100 {% if not building.is_active %}is-inactive{% endif %}">
                 <div class="building-card-header d-flex justify-content-between align-items-start">
                     <div>
                         <div class="building-card-title">{{ building.name }}</div>
@@ -124,45 +132,42 @@
                                 <i class="bi bi-power"></i>
                             </button>
                         </form>
-                        {% if building.room_count == 0 %}
                         <button type="button" class="action-btn btn-del2" data-bs-toggle="modal"
-                                data-bs-target="#deleteBuildingModal{{ building.pk }}" title="Delete">
+                                data-bs-target="#deleteBuildingModal{{ building.pk }}" title="Delete Building">
                             <i class="bi bi-trash"></i>
                         </button>
-                        {% else %}
-                        <span class="action-btn" style="background:#f1f5f9; color:#94a3b8; cursor:not-allowed;" title="Has rooms — cannot delete">
-                            <i class="bi bi-trash"></i>
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Delete Modal -->
-            <div class="modal fade" id="deleteBuildingModal{{ building.pk }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content border-0 shadow rounded-4 p-2">
-                        <div class="modal-header border-0">
-                            <h5 class="modal-title fw-bold text-danger">Delete Building?</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body text-center py-3">
-                            <i class="bi bi-building-x display-4 text-danger d-block mb-2"></i>
-                            <p class="text-muted">Are you sure you want to permanently delete <strong>{{ building.name }}</strong>?</p>
-                        </div>
-                        <div class="modal-footer border-0">
-                            <button class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
-                            <form method="post" action="{% url 'building_delete' building.pk %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger rounded-3 px-4 fw-bold">Delete</button>
-                            </form>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+
+    <!-- Delete Modals Outside Stacking Context -->
+    {% for building in buildings %}
+    <div class="modal fade" id="deleteBuildingModal{{ building.pk }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4 p-2">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-danger">Delete Building?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-3">
+                    <i class="bi bi-building-x display-4 text-danger d-block mb-2"></i>
+                    <p class="text-muted">Are you sure you want to permanently delete <strong>{{ building.name }}</strong>?</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'building_delete' building.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger rounded-3 px-4 fw-bold">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
     {% else %}
     <div class="building-card">
         <div class="empty-state">

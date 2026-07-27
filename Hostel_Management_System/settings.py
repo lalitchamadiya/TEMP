@@ -38,7 +38,7 @@ from django.contrib import messages
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-1%8h(#9yx%1ywjw^!=8!a!#q)@dw6o!(*!5vyb69k2@dr7k@9m')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
 
@@ -104,6 +104,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'authentication.context_processors.rbac_context',
+                'authentication.context_processors.hostel_context',
+                'authentication.context_processors.system_settings_context',
             ],
         },
     },
@@ -112,12 +114,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Hostel_Management_System.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-# Database: use DATABASE_URL env var if set (Railway PostgreSQL), otherwise fall back to SQLite for local dev
 DATABASE_URL = os.getenv('DATABASE_URL', '')
+
 if DATABASE_URL and HAS_DJ_DATABASE_URL:
+    # Production: PostgreSQL via Railway DATABASE_URL
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -126,6 +126,7 @@ if DATABASE_URL and HAS_DJ_DATABASE_URL:
         )
     }
 else:
+    # Fallback to SQLite (Development or if Railway PostgreSQL is not linked yet)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -173,8 +174,17 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise: serve compressed static files efficiently
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise: serve compressed static files efficiently (Django 5+ STORAGES format)
+# Using CompressedStaticFilesStorage (not Manifest) to avoid MissingFileError
+# for source map references in third-party CSS like bootstrap.min.css.map
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -189,11 +199,51 @@ MESSAGE_TAGS={
 
 SESSION_COOKIE_AGE = 900  # 15 minutes in seconds
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+# Only enforce secure cookies over HTTPS in production
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
 
 LOGIN_URL = '/authentication/login/'  # Update this to the correct path for your login page
 
 # Media files (User uploaded content)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Standard Django console logging configurations for production environments
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
+# Forced reload to register newly added module catalog routes.
+
+

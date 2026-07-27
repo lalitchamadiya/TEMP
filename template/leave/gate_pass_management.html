@@ -7,23 +7,48 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-    body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+    body { font-family: 'Outfit', sans-serif; }
     
     .glass-card {
-        background: rgba(255, 255, 255, 0.7);
+        background: var(--card-bg, rgba(255,255,255,0.7));
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 1px solid var(--header-border, rgba(255,255,255,0.4));
         border-radius: 1.25rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
     }
 
     .search-input {
         border-radius: 0.75rem;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--header-border, #e2e8f0) !important;
         padding: 0.6rem 1rem;
         font-size: 0.9rem;
+        background: var(--input-bg, rgba(255,255,255,0.9)) !important;
+        color: var(--text-main, #1e293b) !important;
     }
+    .search-input::placeholder { color: var(--text-muted, #94a3b8); }
+    .search-input:focus {
+        border-color: #f43f5e !important;
+        box-shadow: 0 0 0 3px rgba(244,63,94,0.1) !important;
+    }
+
+    /* Table head dark mode */
+    .table thead th {
+        background: var(--table-head-bg, rgba(241,245,249,0.5));
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: var(--text-muted, #64748b);
+        border-bottom: 2px solid var(--border-color, #f1f5f9);
+        padding: 1rem;
+    }
+    html[data-theme="dark"] .table thead th {
+        background: rgba(255,255,255,0.04);
+        border-bottom-color: rgba(255,255,255,0.08);
+    }
+    html[data-theme="dark"] .table tbody tr { border-color: rgba(255,255,255,0.06); }
+    html[data-theme="dark"] .table-hover tbody tr:hover { background: rgba(255,255,255,0.04); }
 
     .badge-gp {
         padding: 0.4rem 0.8rem;
@@ -33,29 +58,32 @@
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
-    .badge-active { background: #dcfce7; color: #15803d; }
+    .badge-active    { background: #dcfce7; color: #15803d; }
     .badge-cancelled { background: #fee2e2; color: #b91c1c; }
 
     .btn-download {
-        background: #6366f1;
-        color: white;
-        border: none;
-        border-radius: 0.5rem;
+        background: #6366f1; color: white;
+        border: none; border-radius: 0.5rem;
         padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
+        font-size: 0.8rem; font-weight: 600;
+        transition: all 0.2s ease; display: inline-block; text-decoration: none;
     }
-    .btn-download:hover { background: #4f46e5; transform: translateY(-1px); }
+    .btn-download:hover { background: #4f46e5; transform: translateY(-1px); color: white; }
+
+    @media (max-width: 640px) {
+        .col-hide-mobile  { display: none !important; }
+        .table td, .table th { padding: 0.75rem 0.5rem; }
+        .page-header-btns { margin-top: 0.5rem; }
+    }
 </style>
 
 <div class="container-fluid py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2 flex-wrap gap-2">
         <div>
-            <h2 class="fw-bold text-dark mb-0" style="letter-spacing: -0.02em;">Gate Pass Management</h2>
-            <p class="text-muted small mb-0">Track and manage all student gate passes</p>
+            <h2 class="fw-bold mb-0" style="letter-spacing:-0.02em; color:var(--text-main,#1e293b);">Gate Pass Management</h2>
+            <p class="small mb-0" style="color:var(--text-muted,#64748b);">Track and manage all student gate passes</p>
         </div>
-        <a href="{% url 'leave_reports' %}" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold">
+        <a href="{% url 'leave_reports' %}" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold page-header-btns">
             <i class="bi bi-file-earmark-bar-graph me-2"></i> View Reports
         </a>
     </div>
@@ -90,12 +118,12 @@
     <div class="glass-card overflow-hidden">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
+                <thead>
                     <tr>
                         <th class="ps-4">Gate Pass No</th>
                         <th>Student</th>
-                        <th>Leave Date</th>
-                        <th>Return Date</th>
+                        <th class="col-hide-mobile">Leave Date</th>
+                        <th class="col-hide-mobile">Return Date</th>
                         <th>Status</th>
                         <th class="text-end pe-4">Actions</th>
                     </tr>
@@ -104,15 +132,15 @@
                     {% if gate_passes %}
                         {% for gp in gate_passes %}
                         <tr>
-                            <td class="ps-4 fw-bold text-primary">{{ gp.gate_pass_no }}</td>
+                            <td class="ps-4 fw-bold" style="color:var(--accent,#6366f1);">{{ gp.gate_pass_no }}</td>
                             <td>
                                 <div class="d-flex flex-column">
-                                    <span class="fw-bold text-dark small">{{ gp.leave_request.student.name }}</span>
-                                    <span class="text-muted x-small">Roll: {{ gp.leave_request.student.roll }}</span>
+                                    <span class="fw-bold small" style="color:var(--text-main,#1e293b);">{{ gp.leave_request.student.name }}</span>
+                                    <span class="x-small" style="color:var(--text-muted,#64748b);">Roll: {{ gp.leave_request.student.roll }}</span>
                                 </div>
                             </td>
-                            <td><span class="small">{{ gp.leave_request.leave_date }}</span></td>
-                            <td><span class="small">{{ gp.leave_request.return_date|default:"---" }}</span></td>
+                            <td class="col-hide-mobile"><span class="small">{{ gp.leave_request.leave_from }}</span></td>
+                            <td class="col-hide-mobile"><span class="small">{{ gp.leave_request.leave_to|default:"---" }}</span></td>
                             <td>
                                 <span class="badge-gp {% if gp.status == 'Active' %}badge-active{% else %}badge-cancelled{% endif %}">
                                     {{ gp.status }}
@@ -123,9 +151,12 @@
                                     <i class="bi bi-download me-1"></i> PDF
                                 </a>
                                 {% if gp.status == 'Active' %}
-                                <button class="btn btn-sm btn-outline-danger border-0 rounded-3" title="Cancel Gate Pass">
-                                    <i class="bi bi-x-circle"></i>
-                                </button>
+                                <form method="post" action="{% url 'cancel_gate_pass' gp.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this gate pass?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-3" title="Cancel Gate Pass">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </form>
                                 {% endif %}
                             </td>
                         </tr>

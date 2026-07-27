@@ -194,6 +194,8 @@ class Student(models.Model):
     STATUS_CHOICES = STATUS_CHOICES
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='students', null=True, blank=True)
+
     student_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     roll = models.CharField(max_length=50, blank=True)
@@ -264,6 +266,10 @@ class Student(models.Model):
     def is_active(self):
         return self.status == 'Active'
 
+    @property
+    def bed_set(self):
+        return self.allocated_beds
+
 class Attendance(models.Model):
     ATTENDANCE_CHOICES = [
         ('Present', 'Present'),
@@ -307,20 +313,32 @@ def deallocate_student_before_delete(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Student)
 def create_student_user_account(sender, instance, created, **kwargs):
-    if created and not instance.user:
-        username = instance.roll.strip() if (instance.roll and instance.roll.strip()) else f"std_{instance.student_id}"
-        email = instance.email
-        
-        # Ensure we don't crash on existing username or email
-        if not User.objects.filter(username=username).exists():
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password='User1234'
-            )
-            # Add to Students group
-            group, _ = Group.objects.get_or_create(name='Students')
-            user.groups.add(group)
+    from authentication.models import Role, UserProfile
+
+    if created:
+        user = instance.user
+        if not user:
+            username = instance.roll.strip() if (instance.roll and instance.roll.strip()) else f"std_{instance.student_id}"
+            email = instance.email
             
-            # Link back using update (to avoid post_save recursion)
-            Student.objects.filter(pk=instance.pk).update(user=user)
+            # Ensure we don't crash on existing username or email
+            if not User.objects.filter(username=username).exists():
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password='User1234'
+                )
+                # Add to Students group
+                group, _ = Group.objects.get_or_create(name='Students')
+                user.groups.add(group)
+                
+                # Link back using update (to avoid post_save recursion)
+                Student.objects.filter(pk=instance.pk).update(user=user)
+                
+        # Ensure the UserProfile with Student role exists for this user
+        if user:
+            student_role = Role.objects.filter(name='Student').first()
+            UserProfile.objects.get_or_create(
+                user=user,
+                defaults={'role': student_role}
+            )

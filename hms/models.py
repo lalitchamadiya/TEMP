@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 from student.models import Student
-from room.models import HostelBuilding, HostelBlock, Floor, Room, Bed
 from django.utils import timezone
 
 class StaffProfile(models.Model):
@@ -32,6 +31,7 @@ class StaffProfile(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_profile')
+    hostel = models.ForeignKey('authentication.Hostel', on_delete=models.CASCADE, related_name='staff', null=True, blank=True)
     name = models.CharField(max_length=150)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
@@ -46,60 +46,6 @@ class StaffProfile(models.Model):
     def __str__(self):
         return f"{self.name} - {self.get_designation_display()}"
 
-
-class Visitor(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending Approval'),
-        ('approved', 'Approved Entry'),
-        ('denied', 'Entry Denied'),
-        ('completed', 'Checked Out'),
-    ]
-    name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=20)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='visitors')
-    relation = models.CharField(max_length=50, help_text="Relation to the student")
-    visit_date = models.DateField(default=timezone.now)
-    purpose = models.CharField(max_length=255)
-    entry_time = models.TimeField(null=True, blank=True)
-    exit_time = models.TimeField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    pass_code = models.CharField(max_length=20, unique=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        if not self.pass_code:
-            import random
-            self.pass_code = f"VIS-{random.randint(100000, 999999)}"
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.name} - Visiting {self.student.name}"
-
-
-class InventoryItem(models.Model):
-    CATEGORY_CHOICES = [
-        ('furniture', 'Furniture'),
-        ('assets', 'Assets/Appliances'),
-        ('stock', 'Stock/Ration'),
-        ('consumables', 'Consumables/Cleaning'),
-    ]
-    STATUS_CHOICES = [
-        ('good', 'Good Condition'),
-        ('damaged', 'Damaged'),
-        ('maintenance', 'Under Maintenance'),
-        ('oos', 'Out of Stock'),
-    ]
-    name = models.CharField(max_length=150)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    quantity = models.IntegerField(default=1)
-    available_quantity = models.IntegerField(default=1)
-    vendor_name = models.CharField(max_length=150, blank=True)
-    vendor_contact = models.CharField(max_length=50, blank=True)
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='good')
-    purchase_date = models.DateField(default=timezone.now)
-    purchase_order_no = models.CharField(max_length=100, blank=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.get_category_display()})"
 
 
 class ComplaintTicket(models.Model):
@@ -131,49 +77,59 @@ class ComplaintTicket(models.Model):
         return f"#{self.id or 'New'} - {self.title} ({self.get_status_display()})"
 
 
-class SecurityGuard(models.Model):
-    name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=20)
-    gate_no = models.CharField(max_length=50, default='Main Gate 1')
-    shift = models.CharField(max_length=50, default='morning')
-    status = models.CharField(max_length=20, default='active')
-
-    def __str__(self):
-        return f"Guard: {self.name} ({self.gate_no})"
-
-
-class IncidentReport(models.Model):
-    TITLE_CHOICES = [
-        ('theft', 'Theft Alert'),
-        ('trespassing', 'Unauthorized Entry'),
-        ('damage', 'Property Damage'),
-        ('disorder', 'Disorderly Conduct'),
-        ('medical', 'Medical Emergency'),
-        ('fire', 'Fire Alarm'),
-        ('other', 'Other Incident'),
-    ]
-    SEVERITY_CHOICES = [
+class Duty(models.Model):
+    PRIORITY_CHOICES = [
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High/Critical'),
     ]
-    title = models.CharField(max_length=50, choices=TITLE_CHOICES, default='other')
-    description = models.TextField()
-    guard = models.ForeignKey(SecurityGuard, on_delete=models.SET_NULL, null=True, blank=True)
-    date = models.DateField(default=timezone.now)
-    severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, default='low')
-    action_taken = models.TextField(blank=True)
+    REPEAT_CHOICES = [
+        ('none', 'None'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+    ]
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+    ]
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=100, default='Custom Duty')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    repeat_type = models.CharField(max_length=20, choices=REPEAT_CHOICES, default='none')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.get_title_display()} - {self.date}"
+        return self.name
+
+
+class DutyPermission(models.Model):
+    duty = models.ForeignKey(Duty, on_delete=models.CASCADE, related_name='permissions')
+    module_name = models.CharField(max_length=50) # e.g. leave, students, fees, attendance
+    can_view = models.BooleanField(default=False)
+    can_add = models.BooleanField(default=False)
+    can_edit = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'duty_permissions'
+        unique_together = ('duty', 'module_name')
+
+    def __str__(self):
+        return f"{self.duty.name} - {self.module_name}"
 
 
 class DutyAssignment(models.Model):
+    duty = models.ForeignKey(Duty, on_delete=models.SET_NULL, null=True, blank=True, related_name='assignments')
     staff = models.ForeignKey(StaffProfile, on_delete=models.CASCADE, related_name='duties')
     duty_title = models.CharField(max_length=100, help_text="e.g. Floor Supervisor, Guard, Kitchen Help")
-    building = models.ForeignKey(HostelBuilding, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_duties')
-    block = models.ForeignKey(HostelBlock, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_duties')
-    floor = models.ForeignKey(Floor, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_duties')
     specific_location = models.CharField(max_length=150, blank=True, help_text="e.g. Main Gate 1, Kitchen, Mess hall")
     shift_start = models.TimeField(null=True, blank=True)
     shift_end = models.TimeField(null=True, blank=True)
@@ -186,14 +142,7 @@ class DutyAssignment(models.Model):
         ordering = ['-assigned_date', 'staff__name']
 
     def __str__(self):
-        dest = ""
-        if self.building:
-            dest += f" {self.building.name}"
-        if self.block:
-            dest += f" Block {self.block.name}"
-        if self.floor:
-            dest += f" Floor {self.floor.floor_number}"
-        if self.specific_location:
-            dest += f" ({self.specific_location})"
-        return f"{self.staff.name} - {self.duty_title}:{dest or ' General'}"
+        dest = f" ({self.specific_location})" if self.specific_location else ""
+        return f"{self.staff.name} - {self.duty_title}{dest or ' General'}"
+
 
