@@ -308,7 +308,7 @@
                                 <div class="text-muted x-small mb-2">Roll: {{ leave.student.roll }}</div>
                                 <div class="d-flex justify-content-between align-items-center small text-muted border-top pt-2">
                                     <span>Date: <strong>{{ leave.leave_from }}</strong></span>
-                                    <span>Room: <strong>{{ leave.student.bed_set.first.room.room_number|default:"N/A" }}</strong></span>
+                                    <span>Room: <strong>{{ leave.student.allocated_beds.first.room.room_number|default:"N/A" }}</strong></span>
                                 </div>
                             </div>
                         </div>

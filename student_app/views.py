@@ -27,7 +27,7 @@ def student_dashboard(request):
     student = get_object_or_404(Student, user=request.user)
     
     # Bed/Room info
-    bed = student.bed_set.first()
+    bed = student.allocated_beds.first()
     
     # Fee Info
     total_fee = FeeStructure.objects.aggregate(total=Sum('amount'))['total'] or 0
@@ -249,7 +249,7 @@ def student_pay_fee(request):
     from datetime import date
     from decimal import Decimal
     
-    bed = student.bed_set.first()
+    bed = student.allocated_beds.first()
     yearly_fee = bed.total_amount if bed else 0
     if yearly_fee == 0:
         yearly_fee = FeeStructure.objects.aggregate(total=models.Sum('amount'))['total'] or 0
@@ -497,7 +497,7 @@ def student_fee_details(request):
     from datetime import date
     from decimal import Decimal
     
-    bed = student.bed_set.first()
+    bed = student.allocated_beds.first()
     yearly_fee = bed.total_amount if bed else 0
     if yearly_fee == 0:
         yearly_fee = FeeStructure.objects.aggregate(total=models.Sum('amount'))['total'] or 0
@@ -658,7 +658,7 @@ def view_active_pass(request, leave_id):
         'student': student,
         'leave': leave,
         'active_pass': active_pass,
-        'bed': student.bed_set.first(),
+        'bed': student.allocated_beds.first(),
     }
     return render(request, 'student_app/student_pass_view.html', context)
 

@@ -536,7 +536,7 @@ def scan_gate_pass(request, qr_token):
         'qr': qr,
         'leave': leave,
         'student': student,
-        'bed': student.bed_set.first(),
+        'bed': student.allocated_beds.first(),
         'error_msg': error_msg,
         'success_msg': success_msg,
     }

@@ -266,6 +266,10 @@ class Student(models.Model):
     def is_active(self):
         return self.status == 'Active'
 
+    @property
+    def bed_set(self):
+        return self.allocated_beds
+
 class Attendance(models.Model):
     ATTENDANCE_CHOICES = [
         ('Present', 'Present'),

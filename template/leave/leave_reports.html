@@ -96,7 +96,7 @@
                                     <div class="text-muted x-small">{{ student.roll }}</div>
                                 </td>
                                 <td>
-                                    {% with bed=student.bed_set.first %}
+                                    {% with bed=student.allocated_beds.first %}
                                     <span class="badge bg-light text-dark border small fw-bold">{{ bed.room.room_number|default:"N/A" }}</span>
                                     {% endwith %}
                                 </td>

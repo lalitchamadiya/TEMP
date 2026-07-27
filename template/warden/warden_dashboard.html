@@ -240,8 +240,8 @@
                                     </td>
                                     <td class="small fw-medium">{{ student.roll }}</td>
                                     <td class="small">
-                                        {% if student.bed_set.first %}
-                                            <span class="badge bg-soft-primary text-primary">{{ student.bed_set.first.room.room_number }}</span>
+                                        {% if student.allocated_beds.first %}
+                                            <span class="badge bg-soft-primary text-primary">{{ student.allocated_beds.first.room.room_number }}</span>
                                         {% else %}
                                             <span class="text-muted italic">No Bed</span>
                                         {% endif %}
