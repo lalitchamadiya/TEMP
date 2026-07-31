@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Receipt #{{ receipt.receipt_number }}{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
+    .receipt-box {
+        max-width: 780px; margin: 2rem auto; background: white; border: 1px solid #e2e8f0;
+        border-radius: 1rem; padding: 2.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    @media print {
+        body { background: white; }
+        .no-print { display: none !important; }
+        .receipt-box { border: none; box-shadow: none; margin: 0; max-width: 100%; padding: 0; }
+    }
+</style>
+
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center max-w-780 mx-auto mb-3 no-print" style="max-width: 780px;">
+        <a href="{% url 'fees:transaction_history' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="bi bi-arrow-left me-1"></i>Back</a>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold"><i class="bi bi-printer me-1"></i>Print Receipt</button>
+        </div>
+    </div>
+
+    <div class="receipt-box">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+            <div>
+                <h3 class="fw-bold text-primary mb-1">SHREE NEW BEST NAVKAR HOSTEL</h3>
+                <p class="text-muted small mb-0">Official Fee Payment Receipt & Acknowledgment</p>
+                <div class="small text-muted mt-1">GSTIN: 24AAACN9012K1Z9 | Phone: +91 98765 43210</div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-success bg-opacity-10 text-success fs-6 px-3 py-2 fw-bold">PAID RECEIPT</span>
+                <div class="mt-2 fw-bold text-dark fs-5">{{ receipt.receipt_number }}</div>
+                <div class="text-muted small">Date: {{ receipt.created_at|date:"d M Y, h:i A" }}</div>
+            </div>
+        </div>
+
+        <!-- Student & Invoice Info Grid -->
+        <div class="row g-3 p-3 bg-light rounded-3 mb-4 small">
+            <div class="col-6">
+                <div class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;">Student Details</div>
+                <div class="fw-bold text-dark fs-6">{{ receipt.student.name }}</div>
+                <div>Roll / ID: <strong>{{ receipt.student.roll|default:receipt.student.student_id }}</strong></div>
+                <div>Course: {{ receipt.student.course }}</div>
+                <div>Mobile: {{ receipt.student.phone_number }}</div>
+            </div>
+            <div class="col-6 text-end">
+                <div class="text-uppercase fw-bold text-muted" style="font-size:0.7rem;">Invoice Reference</div>
+                <div class="fw-bold text-dark fs-6">{{ receipt.invoice.invoice_number }}</div>
+                <div>Payment Method: <strong>{{ receipt.transaction.get_payment_method_display }}</strong></div>
+                <div>Transaction ID: {{ receipt.transaction.transaction_id }}</div>
+                <div>Recorded By: {{ receipt.created_by.username|default:'System Admin' }}</div>
+            </div>
+        </div>
+
+        <!-- Line Item Table -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered align-middle small">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Fee Description</th>
+                        <th class="text-end">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Payment Towards Invoice #{{ receipt.invoice.invoice_number }}</td>
+                        <td class="text-end fw-bold">₹{{ receipt.transaction.amount_paid }}</td>
+                    </tr>
+                    {% if receipt.transaction.fine_applied > 0 %}
+                    <tr>
+                        <td class="text-danger">Late Payment Fine Applied</td>
+                        <td class="text-end text-danger">+ ₹{{ receipt.transaction.fine_applied }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if receipt.transaction.discount_applied > 0 %}
+                    <tr>
+                        <td class="text-info">Discount Received</td>
+                        <td class="text-end text-info">- ₹{{ receipt.transaction.discount_applied }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="row align-items-center border-top border-bottom py-3 mb-4">
+            <div class="col-7">
+                <div class="small text-muted">Verification QR Code</div>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=http://127.0.0.1:8000/fees/verify-receipt/{{ receipt.qr_code_hash }}/" alt="Receipt Verification QR" class="border rounded p-1 mt-1" style="width:90px; height:90px;">
+                <div class="small text-muted mt-1">Scan to verify online authenticity</div>
+            </div>
+            <div class="col-5 text-end">
+                <div class="text-muted small">Total Amount Received</div>
+                <div class="fs-3 fw-bold text-success">₹{{ receipt.transaction.amount_paid }}</div>
+                <div class="small text-muted mt-1">Remaining Balance Due: <strong>₹{{ receipt.transaction.remaining_balance }}</strong></div>
+            </div>
+        </div>
+
+        <!-- Footer Signatures -->
+        <div class="d-flex justify-content-between align-items-end pt-4 mt-4 text-center">
+            <div style="width: 180px;">
+                <div class="border-top pt-2 small text-muted">Student Signature</div>
+            </div>
+            <div style="width: 220px;">
+                <div class="fw-bold text-dark mb-4">Shree New Best Navkar Hostel</div>
+                <div class="border-top pt-2 small text-muted">Authorized Signature & Stamp</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

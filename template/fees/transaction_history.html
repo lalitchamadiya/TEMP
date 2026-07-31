@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Payment Transaction History & Audit Ledger{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Outfit', sans-serif; background: #f1f5f9; }
+    .page-header {
+        background: rgba(255,255,255,0.88); backdrop-filter: blur(14px);
+        border: 1px solid rgba(226,232,240,0.85); border-radius: 1rem;
+        padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 1.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    .section-card {
+        background: rgba(255,255,255,0.88); backdrop-filter: blur(12px);
+        border: 1px solid rgba(226,232,240,0.85); border-radius: 1rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.025); margin-bottom: 1.25rem; overflow: hidden;
+    }
+</style>
+
+<div class="container-fluid py-3 px-md-4">
+    <div class="page-header">
+        <div>
+            <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-journal-check text-primary me-2"></i>Payment Transaction Audit Log</h4>
+            <p class="text-muted small mb-0">Search, filter, export, and manage student fee receipts and refund requests.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="?{% if search %}q={{ search }}&{% endif %}{% if selected_method %}method={{ selected_method }}&{% endif %}export=csv" class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold">
+                <i class="bi bi-file-earmark-excel me-1"></i>Export CSV
+            </a>
+            <a href="{% url 'fees:student_payment' %}" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">
+                <i class="bi bi-plus-lg me-1"></i>Record New Payment
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="section-card p-3 mb-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="Search Txn ID, Receipt No, Student Name, Roll...">
+            </div>
+            <div class="col-md-2">
+                <select name="method" class="form-select form-select-sm">
+                    <option value="">All Payment Methods</option>
+                    <option value="UPI" {% if selected_method == 'UPI' %}selected{% endif %}>UPI</option>
+                    <option value="CASH" {% if selected_method == 'CASH' %}selected{% endif %}>Cash</option>
+                    <option value="BANK" {% if selected_method == 'BANK' %}selected{% endif %}>Bank Transfer</option>
+                    <option value="CHEQUE" {% if selected_method == 'CHEQUE' %}selected{% endif %}>Cheque</option>
+                    <option value="CARD" {% if selected_method == 'CARD' %}selected{% endif %}>Card</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="SUCCESSFUL" {% if selected_status == 'SUCCESSFUL' %}selected{% endif %}>Successful</option>
+                    <option value="REFUNDED" {% if selected_status == 'REFUNDED' %}selected{% endif %}>Refunded</option>
+                    <option value="FAILED" {% if selected_status == 'FAILED' %}selected{% endif %}>Failed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm rounded-2 w-100 fw-bold">Filter Ledger</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="section-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size:0.88rem;">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-3">Receipt No</th>
+                        <th>Transaction ID</th>
+                        <th>Student</th>
+                        <th>Payment Method</th>
+                        <th>Amount Paid</th>
+                        <th>Fine / Disc</th>
+                        <th>Payment Date</th>
+                        <th>Status</th>
+                        <th class="text-end pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td class="ps-3 fw-bold text-primary">
+                            {% if t.receipt %}{{ t.receipt.receipt_number }}{% else %}N/A{% endif %}
+                        </td>
+                        <td class="small text-muted">{{ t.transaction_id }}</td>
+                        <td>
+                            <a href="{% url 'fees:student_ledger' t.student.student_id %}" class="fw-semibold text-dark text-decoration-none">
+                                {{ t.student.name }}
+                            </a>
+                            <div class="small text-muted">Roll: {{ t.student.roll|default:t.student.student_id }}</div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ t.get_payment_method_display }}</span></td>
+                        <td class="fw-bold text-success">₹{{ t.amount_paid }}</td>
+                        <td class="small">
+                            {% if t.fine_applied > 0 %}<span class="text-danger">+₹{{ t.fine_applied }} Fine</span><br>{% endif %}
+                            {% if t.discount_applied > 0 %}<span class="text-info">-₹{{ t.discount_applied }} Disc</span>{% endif %}
+                            {% if t.fine_applied == 0 and t.discount_applied == 0 %}—{% endif %}
+                        </td>
+                        <td class="small text-muted">{{ t.payment_date|date:"d M Y, h:i A" }}</td>
+                        <td>
+                            {% if t.status == 'SUCCESSFUL' %}<span class="badge bg-success">Successful</span>
+                            {% elif t.status == 'REFUNDED' %}<span class="badge bg-danger">Refunded</span>
+                            {% else %}<span class="badge bg-secondary">Failed</span>{% endif %}
+                        </td>
+                        <td class="text-end pe-3">
+                            <div class="btn-group btn-group-sm">
+                                {% if t.receipt %}
+                                <a href="{% url 'fees:receipt_detail' t.receipt.pk %}" class="btn btn-outline-primary" title="Print Receipt">
+                                    <i class="bi bi-printer"></i>
+                                </a>
+                                {% endif %}
+                                {% if t.status == 'SUCCESSFUL' %}
+                                <button type="button" class="btn btn-outline-danger" onclick="triggerRefund('{{ t.id }}', '{{ t.amount_paid }}')" title="Issue Refund">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">No transactions found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+async function triggerRefund(txnId, amount) {
+    const reason = prompt(`Issue Refund of ₹${amount}?\nEnter Reason:`);
+    if (!reason) return;
+
+    const formData = new FormData();
+    formData.append('transaction_id', txnId);
+    formData.append('reason', reason);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    try {
+        const res = await fetch('{% url "fees:ajax_refund" %}', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Refund Error: ' + data.error);
+        }
+    } catch (e) {
+        alert('Network error issuing refund.');
+    }
+}
+</script>
+{% endblock %}

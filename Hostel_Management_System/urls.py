@@ -10,6 +10,7 @@ urlpatterns = [
     path('leave/', include('leave.urls')),
     path('student_app/', include('student_app.urls')),
     path('warden/', include('warden.urls')),
+    path('fees/', include(('fees.urls', 'fees'), namespace='fees')),
     
     path('admin/', admin.site.urls),
 

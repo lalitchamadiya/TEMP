@@ -1,0 +1,404 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Student Payment & Fee Processing{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --accent: #6366f1;
+        --accent-2: #a855f7;
+        --glass-bg: rgba(255,255,255,0.88);
+        --border: rgba(226,232,240,0.85);
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+    }
+    body { font-family: 'Outfit', sans-serif; background: #f1f5f9; }
+
+    .page-header {
+        background: var(--glass-bg); backdrop-filter: blur(14px);
+        border: 1px solid var(--border); border-radius: 1rem;
+        padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 1.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    .section-card {
+        background: var(--glass-bg); backdrop-filter: blur(12px);
+        border: 1px solid var(--border); border-radius: 1rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.025); margin-bottom: 1.25rem; overflow: hidden;
+    }
+    .section-card-header {
+        display: flex; align-items: center; gap: 0.6rem; padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.6);
+    }
+    .section-title { font-weight: 700; font-size: 0.9rem; color: var(--text-main); margin: 0; }
+    .section-card-body { padding: 1.25rem; }
+
+    .student-search-box { position: relative; }
+    .search-results-dropdown {
+        position: absolute; top: 100%; left: 0; right: 0; z-index: 1000;
+        background: white; border: 1px solid var(--border); border-radius: 0.75rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 280px; overflow-y: auto; display: none;
+    }
+    .search-result-item {
+        padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.15s;
+    }
+    .search-result-item:hover { background: rgba(99,102,241,0.05); }
+
+    .student-avatar-lg {
+        width: 80px; height: 80px; border-radius: 1rem; object-fit: cover;
+        border: 2px solid var(--accent); box-shadow: 0 4px 12px rgba(99,102,241,0.2);
+    }
+
+    .fin-summary-card {
+        background: linear-gradient(135deg, #1e293b, #0f172a); color: white; border-radius: 1rem; padding: 1.25rem;
+    }
+    .fin-metric-val { font-size: 1.4rem; font-weight: 700; }
+    .fin-metric-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; }
+</style>
+
+<div class="container-fluid py-3 px-md-4">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-credit-card-2-front text-primary me-2"></i>Student Fee Payment Module</h4>
+            <p class="text-muted small mb-0">Search allocated student, verify outstanding balance ledger, and record payment transaction.</p>
+        </div>
+        <div>
+            <a href="{% url 'fees:transaction_history' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold">
+                <i class="bi bi-clock-history me-1"></i>Transaction Ledger
+            </a>
+        </div>
+    </div>
+
+    <!-- Student Search Section -->
+    <div class="section-card">
+        <div class="section-card-body">
+            <div class="student-search-box">
+                <label class="form-label text-uppercase fw-bold text-muted small">Search Allocated Student</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="studentSearchInput" class="form-control border-start-0 ps-0" placeholder="Type Student Name, Enrollment / Roll No, Mobile, or Email..." autocomplete="off">
+                </div>
+                <div id="searchResultsDropdown" class="search-results-dropdown"></div>
+            </div>
+        </div>
+    </div>
+
+    {% if student %}
+    <div class="row g-4">
+
+        <!-- LEFT COLUMN: Student Profile & Payment Form -->
+        <div class="col-lg-8">
+
+            <!-- Allocated Student Info Card -->
+            <div class="section-card">
+                <div class="section-card-header d-flex justify-content-between">
+                    <span class="section-title"><i class="bi bi-person-badge me-1 text-primary"></i>Allocated Student Details</span>
+                    <span class="badge bg-success bg-opacity-10 text-success fw-semibold">Active Allocated Bed</span>
+                </div>
+                <div class="section-card-body">
+                    <div class="d-flex gap-3 align-items-center">
+                        <img src="{% if student.photo %}{{ student.photo.url }}{% else %}https://ui-avatars.com/api/?name={{ student.name|urlencode }}&background=6366f1&color=fff{% endif %}" class="student-avatar-lg" alt="{{ student.name }}">
+                        <div class="flex-grow-1">
+                            <h5 class="fw-bold text-dark mb-1">{{ student.name }}</h5>
+                            <div class="d-flex flex-wrap gap-2 text-muted small">
+                                <span><i class="bi bi-hash"></i> Roll: <strong>{{ student.roll|default:student.student_id }}</strong></span> |
+                                <span><i class="bi bi-telephone"></i> {{ student.phone_number }}</span> |
+                                <span><i class="bi bi-book"></i> {{ student.course }} ({{ student.department }})</span>
+                            </div>
+                            <div class="mt-2 p-2 bg-light rounded-2 border d-flex gap-3 text-dark small">
+                                <div><i class="bi bi-building me-1 text-primary"></i>Building: <strong>{{ bed.room.building.name|default:'N/A' }}</strong></div>
+                                <div><i class="bi bi-door-open me-1 text-primary"></i>Room: <strong>{{ bed.room.room_number|default:'N/A' }}</strong></div>
+                                <div><i class="bi bi-box me-1 text-primary"></i>Bed Slot: <strong>{{ bed.bed_number|default:'N/A' }}</strong></div>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="{% url 'fees:student_ledger' student.student_id %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                                <i class="bi bi-journal-text me-1"></i>View Full Ledger
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Installment Schedule Breakdown -->
+            {% if invoice %}
+            <div class="section-card">
+                <div class="section-card-header">
+                    <span class="section-title"><i class="bi bi-calendar3 me-1 text-info"></i>Active Fee Installment Schedule</span>
+                </div>
+                <div class="section-card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size:0.88rem;">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3">Installment</th>
+                                    <th>Due Date</th>
+                                    <th>Amount</th>
+                                    <th>Paid</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inst in installments %}
+                                <tr>
+                                    <td class="ps-3 fw-semibold">Installment #{{ inst.installment_no }}</td>
+                                    <td>{{ inst.due_date|date:"d M Y" }}</td>
+                                    <td>₹{{ inst.amount }}</td>
+                                    <td class="text-success">₹{{ inst.paid_amount }}</td>
+                                    <td>
+                                        {% if inst.status == 'PAID' %}<span class="badge bg-success">Paid</span>
+                                        {% elif inst.status == 'PARTIAL' %}<span class="badge bg-warning text-dark">Partial</span>
+                                        {% else %}<span class="badge bg-danger">Unpaid</span>{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Payment Processing Card -->
+            <div class="section-card">
+                <div class="section-card-header">
+                    <span class="section-title"><i class="bi bi-cash-stack me-1 text-success"></i>Record Payment Transaction</span>
+                </div>
+                <div class="section-card-body">
+                    <form id="paymentProcessForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Payment Method <span class="text-danger">*</span></label>
+                                <select name="payment_method" id="pay_method_select" class="form-select" onchange="toggleMethodFields()">
+                                    <option value="UPI">UPI Payment (GPay / PhonePe / Paytm)</option>
+                                    <option value="CASH">Cash Payment</option>
+                                    <option value="BANK">Bank Transfer / NEFT / RTGS</option>
+                                    <option value="CARD">Debit / Credit Card</option>
+                                    <option value="CHEQUE">Cheque Payment</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Amount Paid (₹) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" name="amount_paid" class="form-control fw-bold text-success fs-5" value="{{ summary.pending_amount }}" required>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Fine Applied (₹)</label>
+                                <input type="number" step="0.01" name="fine_applied" class="form-control" value="0.00">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Discount Adjustment (₹)</label>
+                                <input type="number" step="0.01" name="discount_applied" class="form-control" value="0.00">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Upload Payment Receipt</label>
+                                <input type="file" name="receipt_file" class="form-control">
+                            </div>
+
+                            <!-- Dynamic Payment Reference Fields -->
+                            <div class="col-md-6 d-none" id="field_upi">
+                                <label class="form-label">UPI Reference / UTR Number</label>
+                                <input type="text" name="upi_ref" class="form-control" placeholder="e.g. 320984920194">
+                            </div>
+                            <div class="col-md-6 d-none" id="field_bank">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" name="bank_name" class="form-control" placeholder="e.g. HDFC Bank">
+                            </div>
+                            <div class="col-md-6 d-none" id="field_cheque">
+                                <label class="form-label">Cheque Number</label>
+                                <input type="text" name="cheque_no" class="form-control" placeholder="e.g. CHQ-901241">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Remarks / Notes</label>
+                                <input type="text" name="remarks" class="form-control" placeholder="e.g. Paid first installment via Google Pay">
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success rounded-3 px-4 py-2 fw-bold text-white shadow-sm w-100">
+                                <i class="bi bi-check-circle-fill me-1"></i>Process Payment & Issue Receipt
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Financial Summary Panel -->
+        <div class="col-lg-4">
+            <div class="fin-summary-card shadow-sm mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-light text-dark fw-bold">Student Financial Summary</span>
+                    <span class="small opacity-75">Academic Year {{ invoice.academic_year|default:'2026-27' }}</span>
+                </div>
+
+                <div class="mb-3">
+                    <div class="fin-metric-label">Outstanding Balance Due</div>
+                    <div class="fin-metric-val text-warning">₹{{ summary.pending_amount|floatformat:2 }}</div>
+                </div>
+
+                <div class="row g-2 mb-3 border-top border-bottom border-secondary py-2">
+                    <div class="col-6">
+                        <div class="fin-metric-label">Total Fee</div>
+                        <div class="fw-semibold">₹{{ summary.total_due|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="fin-metric-label">Total Paid</div>
+                        <div class="fw-semibold text-success">₹{{ summary.paid_amount|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-6 mt-2">
+                        <div class="fin-metric-label">Fines Applied</div>
+                        <div class="fw-semibold text-danger">₹{{ summary.fine_amount|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-6 mt-2">
+                        <div class="fin-metric-label">Discounts Received</div>
+                        <div class="fw-semibold text-info">₹{{ summary.discount_amount|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Payment Progress</span>
+                        <span class="fw-bold">{{ summary.progress_pct }}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ summary.progress_pct }}%;"></div>
+                    </div>
+                </div>
+
+                {% if summary.next_due_date %}
+                <div class="mt-3 p-2 bg-white bg-opacity-10 rounded-2 text-center small">
+                    Next Due Date: <strong class="text-warning">{{ summary.next_due_date|date:"d M Y" }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+    {% else %}
+    <div class="card text-center p-5 border-0 shadow-sm rounded-4">
+        <i class="bi bi-search text-primary display-4 mb-3"></i>
+        <h5 class="fw-bold">Search for an Allocated Student</h5>
+        <p class="text-muted small">Enter student name or roll number above to load active room allocation and fee ledger details.</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Payment Receipt Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-check-circle-fill me-2"></i>Payment Successful!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3 text-success display-5"><i class="bi bi-receipt"></i></div>
+                <h4 class="fw-bold text-dark mb-1" id="rec-number-val">NBNH-2026-07-000001</h4>
+                <p class="text-muted small">Transaction ID: <span id="rec-txn-val">NBNH-TXN-1029</span></p>
+
+                <div class="p-3 bg-light rounded-3 text-start small mb-3">
+                    <div class="d-flex justify-content-between mb-1"><span>Amount Paid:</span><strong class="text-success" id="rec-amt-val">₹5,000.00</strong></div>
+                    <div class="d-flex justify-content-between mb-1"><span>Remaining Balance:</span><strong class="text-dark" id="rec-bal-val">₹2,500.00</strong></div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-center">
+                    <a id="rec-view-link" href="#" class="btn btn-primary rounded-3 px-3"><i class="bi bi-printer me-1"></i>Print Receipt</a>
+                    <button type="button" class="btn btn-outline-success rounded-3 px-3" onclick="alert('Receipt sent to student WhatsApp number!')"><i class="bi bi-whatsapp me-1"></i>WhatsApp Receipt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Student Search Autocomplete AJAX
+const searchInput = document.getElementById('studentSearchInput');
+const dropdown = document.getElementById('searchResultsDropdown');
+
+if (searchInput) {
+    searchInput.addEventListener('input', async function() {
+        const query = this.value.trim();
+        if (query.length < 2) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        try {
+            const res = await fetch(`{% url 'fees:ajax_student_search' %}?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            dropdown.innerHTML = '';
+
+            if (data.students && data.students.length > 0) {
+                data.students.forEach(s => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item d-flex align-items-center justify-content-between';
+                    item.innerHTML = `
+                        <div>
+                            <strong class="text-dark d-block">${s.name}</strong>
+                            <small class="text-muted">Roll: ${s.roll} | ${s.room_desc}</small>
+                        </div>
+                        <span class="btn btn-xs btn-primary rounded-pill px-2">Select</span>
+                    `;
+                    item.onclick = () => {
+                        window.location.href = `{% url 'fees:student_payment' %}?student_id=${s.id}`;
+                    };
+                    dropdown.appendChild(item);
+                });
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.innerHTML = '<div class="p-3 text-muted text-center small">No allocated students found matching query.</div>';
+                dropdown.style.display = 'block';
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    });
+}
+
+function toggleMethodFields() {
+    const val = document.getElementById('pay_method_select').value;
+    document.getElementById('field_upi').classList.toggle('d-none', val !== 'UPI');
+    document.getElementById('field_bank').classList.toggle('d-none', val !== 'BANK' && val !== 'CARD');
+    document.getElementById('field_cheque').classList.toggle('d-none', val !== 'CHEQUE');
+}
+
+// Process Payment AJAX Form Submission
+document.getElementById('paymentProcessForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    try {
+        const res = await fetch('{% url "fees:ajax_process_payment" %}', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            document.getElementById('rec-number-val').textContent = data.receipt_number;
+            document.getElementById('rec-txn-val').textContent = data.transaction_id;
+            document.getElementById('rec-amt-val').textContent = `₹${data.paid_amount.toFixed(2)}`;
+            document.getElementById('rec-bal-val').textContent = `₹${data.remaining_balance.toFixed(2)}`;
+            document.getElementById('rec-view-link').href = `/fees/receipt/${data.receipt_id}/`;
+
+            const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+            modal.show();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (err) {
+        alert('Payment submission error.');
+    }
+});
+</script>
+{% endblock %}
