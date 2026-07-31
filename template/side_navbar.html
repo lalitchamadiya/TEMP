@@ -323,6 +323,7 @@
                         </ul>
                     </div>
                 </li>
+                {% elif module.code == 'fee_manager' or module.code == 'fees' or module.url_name == 'fee_manager' or module.url_name == 'fees:payment_dashboard' %}
                 <!-- Fees & Transactions Module -->
                 <li class="nav-item">
                     <a class="nav-link nav-link-collapse {% if not '/fees' in request.path %}collapsed{% endif %} {% if '/fees' in request.path %}active{% endif %}"
@@ -365,6 +366,18 @@
                             </li>
                         </ul>
                     </div>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name or module.code in request.path %}active{% endif %}"
+                        href="{% safe_url module.url_name %}" title="{{ module.menu_label }}">
+                        {% if "bi-" in module.icon %}
+                        <i class="bi {{ module.icon }} opacity-75 me-2"></i>
+                        {% else %}
+                        <span class="material-symbols-outlined me-2">{{ module.icon }}</span>
+                        {% endif %}
+                        <span class="sidebar-label">{{ module.menu_label }}</span>
+                    </a>
                 </li>
                 {% endif %}
                 {% endfor %}
