@@ -75,7 +75,6 @@ INSTALLED_APPS = [
     'student_app',
     'warden',
     'hms',
-    'fees',
 ]
 
 MIDDLEWARE = [

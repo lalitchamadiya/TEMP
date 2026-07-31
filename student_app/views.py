@@ -27,22 +27,12 @@ def student_dashboard(request):
     # Bed/Room info
     bed = student.allocated_beds.first()
     
-    # Fee Info
-    total_fee = 0
-    paid_fee = 0
-    pending_fee = 0
-    payment_percentage = 0
-    
     # Leave Info
     recent_leaves = HostelLeave.objects.filter(student=student).order_by('-created_at')[:5]
     
     context = {
         'student': student,
         'bed': bed,
-        'total_fee': total_fee,
-        'paid_fee': paid_fee,
-        'pending_fee': pending_fee,
-        'payment_percentage': payment_percentage,
         'recent_leaves': recent_leaves,
     }
     return render(request, 'student_app/student_dashboard.html', context)

@@ -572,7 +572,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for mod in 'leave,students,fees,attendance'|split:',' %}
+                                        {% for mod in 'leave,students,attendance'|split:',' %}
                                         <tr>
                                             <td class="text-start fw-medium text-capitalize">{{ mod }} Module</td>
                                             <td><input class="form-check-input" type="checkbox" name="perm_{{ mod }}_view"></td>
@@ -671,7 +671,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="edit_def_permissions_tbody">
-                                        {% for mod in 'leave,students,fees,attendance'|split:',' %}
+                                        {% for mod in 'leave,students,attendance'|split:',' %}
                                         <tr>
                                             <td class="text-start fw-medium text-capitalize">{{ mod }} Module</td>
                                             <td><input class="form-check-input" type="checkbox" name="perm_{{ mod }}_view" id="edit_perm_{{ mod }}_view"></td>
@@ -876,7 +876,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('edit_def_repeat_type').value = repeat;
             
             // Checkboxes
-            const modules = ['leave', 'students', 'fees', 'attendance'];
+            const modules = ['leave', 'students', 'attendance'];
             modules.forEach(m => {
                 document.getElementById(`edit_perm_${m}_view`).checked = btn.dataset[`perm${m.charAt(0).toUpperCase() + m.slice(1)}View`] === 'on';
                 document.getElementById(`edit_perm_${m}_add`).checked = btn.dataset[`perm${m.charAt(0).toUpperCase() + m.slice(1)}Add`] === 'on';

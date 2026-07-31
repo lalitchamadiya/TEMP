@@ -230,7 +230,7 @@
                     </a>
                 </li>
                 <li class="nav-section">
-                    <span class="section-title">Logistics & Fees</span>
+                    <span class="section-title">Logistics</span>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#" title="My Room">
@@ -318,50 +318,6 @@
                                     href="{% url 'student_details_list' %}" title="Residents">
                                     <i class="bi bi-people opacity-75 me-2"></i>
                                     <span class="sidebar-label">Residents</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-                {% elif module.code == 'fee_manager' or module.code == 'fees' or module.url_name == 'fee_manager' or module.url_name == 'fees:payment_dashboard' %}
-                <!-- Fees & Transactions Module -->
-                <li class="nav-item">
-                    <a class="nav-link nav-link-collapse {% if not '/fees' in request.path %}collapsed{% endif %} {% if '/fees' in request.path %}active{% endif %}"
-                        data-bs-toggle="collapse" href="#feesModuleCollapse" role="button"
-                        aria-expanded="{% if '/fees' in request.path %}true{% else %}false{% endif %}"
-                        aria-controls="feesModuleCollapse" title="Fees & Transactions">
-                        <span class="material-symbols-outlined me-2">payments</span>
-                        <span class="sidebar-label">Fees & Finance</span>
-                        <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
-                    </a>
-                    <div class="collapse {% if '/fees' in request.path %}show{% endif %}" id="feesModuleCollapse">
-                        <ul class="collapse-submenu-list">
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'payment_dashboard' %}active{% endif %}"
-                                    href="{% url 'fees:payment_dashboard' %}" title="Dashboard">
-                                    <i class="bi bi-speedometer2 opacity-75 me-2"></i>
-                                    <span class="sidebar-label">Finance Dashboard</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'student_payment' %}active{% endif %}"
-                                    href="{% url 'fees:student_payment' %}" title="Student Payment">
-                                    <i class="bi bi-credit-card opacity-75 me-2"></i>
-                                    <span class="sidebar-label">Collect Payment</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'fee_structure_list' or request.resolver_match.url_name == 'fee_structure_create' %}active{% endif %}"
-                                    href="{% url 'fees:fee_structure_list' %}" title="Fee Structures">
-                                    <i class="bi bi-sliders opacity-75 me-2"></i>
-                                    <span class="sidebar-label">Fee Structures</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'transaction_history' %}active{% endif %}"
-                                    href="{% url 'fees:transaction_history' %}" title="Transaction History">
-                                    <i class="bi bi-journal-check opacity-75 me-2"></i>
-                                    <span class="sidebar-label">Transactions</span>
                                 </a>
                             </li>
                         </ul>

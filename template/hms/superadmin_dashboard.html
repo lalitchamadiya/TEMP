@@ -574,17 +574,7 @@ html[data-theme="light"] {
     </div>
 
 
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'fee_manager' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(34,197,94,0.15); color:var(--accent-green);">
-          <i class="bi bi-cash-stack"></i>
-        </div>
-        <div>
-          <div style="font-size:0.85rem; font-weight:600;">Fees</div>
-          <div class="kpi-sub">₹{{ monthly_revenue|floatformat:0 }} this month</div>
-        </div>
-      </a>
-    </div>
+
     <div class="col-6 col-md-4 col-lg-3">
       <a href="{% url 'reports_dashboard' %}" class="shortcut-card">
         <div class="shortcut-icon" style="background:rgba(168,85,247,0.12); color:var(--accent-purple);">
@@ -612,36 +602,7 @@ html[data-theme="light"] {
 
   <!-- ── Row 6: Recent Activity Tables ── -->
   <div class="row g-3 mb-4">
-    <!-- Recent Payments -->
-    <div class="col-12 col-lg-6">
-      <div class="panel-card">
-        <div class="panel-title">
-          <i class="bi bi-credit-card-fill"></i> Recent Payments
-          <a href="{% url 'fee_manager' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
-        </div>
-        <div class="table-responsive">
-          <table class="table sa-table mb-0">
-            <thead>
-              <tr>
-                <th>Student</th><th>Amount</th><th>Type</th><th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for p in recent_payments %}
-              <tr>
-                <td>{{ p.user_name|truncatechars:18 }}</td>
-                <td class="fw-bold" style="color:var(--accent-green);">₹{{ p.amount|floatformat:0 }}</td>
-                <td>{{ p.payment_type }}</td>
-                <td class="text-muted">{{ p.created_at|date:"d M" }}</td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="4" class="text-center text-muted py-3">No payments yet</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+
 
     <!-- Recent Complaints -->
     <div class="col-12 col-lg-6">

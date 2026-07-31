@@ -163,7 +163,7 @@ class SuperAdminDashboardAuditLogTests(TestCase):
 
 class DutyAssignmentDashboardTests(TestCase):
     def setUp(self):
-        from room.models import HostelBuilding, HostelBlock, Floor, Room, Bed
+        from room.models import HostelBuilding, Room, Bed
         from hms.models import StaffProfile, Duty, DutyPermission, DutyAssignment
         from student.models import Student
         from leave.models import HostelLeave
@@ -200,21 +200,11 @@ class DutyAssignmentDashboardTests(TestCase):
         self.building_a = HostelBuilding.objects.create(name='Building A')
         self.building_b = HostelBuilding.objects.create(name='Building B')
 
-        self.block_a = HostelBlock.objects.create(name='Block A', building=self.building_a)
-        self.block_b = HostelBlock.objects.create(name='Block B', building=self.building_b)
+        self.room_a = Room.objects.create(room_number='101', building=self.building_a, floor=1)
+        self.room_b = Room.objects.create(room_number='201', building=self.building_b, floor=1)
 
-        from authentication.models import WardenProfile
-        self.warden_profile = WardenProfile.objects.create(user=self.warden_user)
-        self.warden_profile.assigned_blocks.add(self.block_a, self.block_b)
-
-        self.floor_a = Floor.objects.create(floor_number=1, block=self.block_a, building=self.building_a)
-        self.floor_b = Floor.objects.create(floor_number=1, block=self.block_b, building=self.building_b)
-
-        self.room_a = Room.objects.create(room_number='101', floor=self.floor_a)
-        self.room_b = Room.objects.create(room_number='201', floor=self.floor_b)
-
-        self.bed_a = Bed.objects.create(bed_number='101-A', room=self.room_a, total_amount=1000)
-        self.bed_b = Bed.objects.create(bed_number='201-A', room=self.room_b, total_amount=1000)
+        self.bed_a = Bed.objects.create(bed_number='101-A', room=self.room_a)
+        self.bed_b = Bed.objects.create(bed_number='201-A', room=self.room_b)
 
         # Create test students
         self.student_a = Student.objects.create(name='Student A', email='student_a@hms.com', roll='123456', status='Active')
@@ -241,14 +231,16 @@ class DutyAssignmentDashboardTests(TestCase):
         self.assign_warden = DutyAssignment.objects.create(
             staff=self.warden_staff,
             duty=self.duty_warden,
-            building=self.building_a,
+            duty_title='Warden Duty',
+            specific_location='Building A',
             is_active=True
         )
         # Security assigned to Building B only
         self.assign_sec = DutyAssignment.objects.create(
             staff=self.sec_staff,
             duty=self.duty_sec,
-            building=self.building_b,
+            duty_title='Gate Duty',
+            specific_location='Building B',
             is_active=True
         )
 

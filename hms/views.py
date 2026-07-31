@@ -783,73 +783,7 @@ def complaint_resolve(request, pk):
 
 
 
-# ──────────────────────────────────────────────────────
-# FEE MANAGEMENT
-# ──────────────────────────────────────────────────────
-@login_required(login_url='/authentication/login')
-def fee_manager(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    fee_structures = FeeStructure.objects.all()
-    recent_payments = Payment.objects.order_by('-created_at')[:15]
-    today = timezone.now().date()
-    context = {
-        'fee_structures': fee_structures,
-        'recent_payments': recent_payments,
-        'today_revenue': Payment.objects.filter(
-            transaction_status='SUCCESSFUL', created_at__date=today
-        ).aggregate(t=Sum('amount'))['t'] or 0,
-        'monthly_revenue': Payment.objects.filter(
-            transaction_status='SUCCESSFUL',
-            created_at__date__gte=today.replace(day=1)
-        ).aggregate(t=Sum('amount'))['t'] or 0,
-        'total_revenue': Payment.objects.filter(
-            transaction_status='SUCCESSFUL'
-        ).aggregate(t=Sum('amount'))['t'] or 0,
-        'pending_count': Payment.objects.filter(transaction_status='PENDING').count(),
-        'page_title': 'Fee & Financial Management',
-        'fee_types': FeeStructure.FEE_TYPES,
-    }
-    return render(request, 'hms/fee_manager.html', context)
 
-
-@login_required(login_url='/authentication/login')
-def fee_structure_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        data = request.POST
-        FeeStructure.objects.update_or_create(
-            fee_type=data['fee_type'],
-            defaults={
-                'amount': float(data['amount']),
-                'due_date': data.get('due_date') or None,
-                'late_fee_per_day': float(data.get('late_fee_per_day', 0)),
-            }
-        )
-        messages.success(request, 'Fee structure saved.')
-    return redirect('fee_manager')
-
-
-@login_required(login_url='/authentication/login')
-def fee_payment_create(request):
-    if not _is_admin(request.user):
-        return redirect('dashboard')
-    if request.method == 'POST':
-        data = request.POST
-        student = Student.objects.filter(pk=data.get('student_id')).first()
-        Payment.objects.create(
-            student=student,
-            transaction_id=f'ADMIN-{timezone.now().timestamp():.0f}',
-            enrollment_number=student.roll if student else data.get('enrollment_number', ''),
-            user_name=student.name if student else data.get('user_name', ''),
-            contact_no=student.phone_number if student else '',
-            amount=float(data['amount']),
-            payment_type=data.get('payment_type', 'Cash'),
-            transaction_status='SUCCESSFUL',
-        )
-        messages.success(request, 'Payment recorded.')
-    return redirect('fee_manager')
 
 
 # ──────────────────────────────────────────────────────
@@ -862,10 +796,6 @@ def reports_dashboard(request):
     context = {
         'page_title': 'Reports & Analytics',
         'total_students': Student.objects.count(),
-        'total_payments': Payment.objects.filter(transaction_status='SUCCESSFUL').count(),
-        'total_revenue': Payment.objects.filter(
-            transaction_status='SUCCESSFUL'
-        ).aggregate(t=Sum('amount'))['t'] or 0,
         'total_complaints': ComplaintTicket.objects.count(),
         'staff_count': StaffProfile.objects.count(),
     }
@@ -885,11 +815,6 @@ def export_report(request, module):
         writer.writerow(['ID', 'Name', 'Email', 'Course', 'Department', 'Status', 'Admission Date'])
         for s in Student.objects.all():
             writer.writerow([s.student_id, s.name, s.email, s.course, s.department, s.status, s.admission_date])
-
-    elif module == 'payments':
-        writer.writerow(['Transaction ID', 'Student', 'Amount', 'Type', 'Status', 'Date'])
-        for p in Payment.objects.all():
-            writer.writerow([p.transaction_id, p.user_name, p.amount, p.payment_type, p.transaction_status, p.created_at.date()])
 
     elif module == 'staff':
         writer.writerow(['ID', 'Name', 'Email', 'Designation', 'Shift', 'Status', 'Salary'])
@@ -1043,7 +968,7 @@ def duty_create(request):
         )
         
         # Save permissions for each module
-        modules = ['leave', 'students', 'fees', 'attendance']
+        modules = ['leave', 'students', 'attendance']
         for mod in modules:
             can_view = request.POST.get(f'perm_{mod}_view') == 'on'
             can_add = request.POST.get(f'perm_{mod}_add') == 'on'
@@ -1084,7 +1009,7 @@ def duty_edit_definition(request, pk):
         
         # Reset permissions
         duty.permissions.all().delete()
-        modules = ['leave', 'students', 'fees', 'attendance']
+        modules = ['leave', 'students', 'attendance']
         for mod in modules:
             can_view = request.POST.get(f'perm_{mod}_view') == 'on'
             can_add = request.POST.get(f'perm_{mod}_add') == 'on'

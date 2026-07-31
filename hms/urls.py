@@ -27,11 +27,7 @@ urlpatterns = [
     path("complaints/<int:pk>/resolve/", views.complaint_resolve, name='complaint_resolve'),
 
 
-    # Fee Management
-    path("fees/", views.fee_manager, name='fee_manager'),
-    path("fees/structure/create/", views.fee_structure_create, name='fee_structure_create'),
-    path("fees/payment/create/", views.fee_payment_create, name='fee_payment_create'),
-    
+
     # Reports
     path("reports/", views.reports_dashboard, name='reports_dashboard'),
     path("reports/export/<str:module>/", views.export_report, name='export_report'),

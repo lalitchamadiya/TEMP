@@ -23,7 +23,7 @@
     <!-- Stats Overview -->
     <div class="row g-4 mb-4">
         <!-- Room Info -->
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="pro-card p-4 h-100 border-0 shadow-sm border-start border-4 border-primary">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
@@ -49,32 +49,8 @@
             </div>
         </div>
 
-        <!-- Fee Status -->
-        <div class="col-md-4">
-            <div class="pro-card p-4 h-100 border-0 shadow-sm border-start border-4 border-warning">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <p class="text-muted small text-uppercase fw-bold mb-1">Pending Fees</p>
-                        <h3 class="h2 mb-0 fw-bold text-slate-800">₹{{ pending_fee }}</h3>
-                    </div>
-                    <div class="bg-warning bg-opacity-10 p-2 rounded-2">
-                        <span class="material-symbols-outlined text-warning">payments</span>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {% if total_fee > 0 %}{{ paid_fee|divisibleby:total_fee }}{% else %}0{% endif %}%"></div>
-                    </div>
-                    <div class="d-flex justify-content-between mt-1">
-                        <span class="text-muted small">Total: ₹{{ total_fee }}</span>
-                        <span class="text-success small fw-bold">Paid: ₹{{ paid_fee }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Attendance / Leave -->
-        <div class="col-md-4">
+        <div class="col-md-6">
             <div class="pro-card p-4 h-100 border-0 shadow-sm border-start border-4 border-success">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
