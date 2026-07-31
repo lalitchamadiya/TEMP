@@ -429,9 +429,11 @@ html[data-theme="dark"] .dropdown-menu .dropdown-item.text-danger:hover {
 .sidebar-menu-body {
     flex: 1 1 auto !important;
     overflow-y: auto !important;
+    overflow-y: overlay !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     padding-bottom: 12px;
+    scrollbar-gutter: auto;
 }
 
 /* Animated Sleek Custom Scrollbar on Navbar Hover */
