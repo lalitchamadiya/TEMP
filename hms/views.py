@@ -14,7 +14,6 @@ from .models import (
 )
 from student.models import Student
 from room.models import HostelBuilding, Room, Bed
-from paybill.models import Payment, FeeStructure
 from leave.models import HostelLeave
 from django.contrib.auth.models import Group
 from authentication.models import Role, UserProfile, AuditLog
@@ -94,23 +93,12 @@ def superadmin_dashboard(request):
     occupancy_pct = round((occupied_beds / total_beds * 100), 1) if total_beds > 0 else 0
 
     # ── Financials ──
-    today_revenue = Payment.objects.filter(
-        transaction_status='SUCCESSFUL', created_at__date=today
-    ).aggregate(total=Sum('amount'))['total'] or 0
-
-    month_start = today.replace(day=1)
-    monthly_revenue = Payment.objects.filter(
-        transaction_status='SUCCESSFUL', created_at__date__gte=month_start
-    ).aggregate(total=Sum('amount'))['total'] or 0
-
-    total_revenue = Payment.objects.filter(
-        transaction_status='SUCCESSFUL'
-    ).aggregate(total=Sum('amount'))['total'] or 0
-
-    pending_payments = Payment.objects.filter(transaction_status='PENDING').count()
-
+    today_revenue = 0
+    monthly_revenue = 0
+    total_revenue = 0
+    pending_payments = 0
     total_expected = 0
-    total_paid = total_revenue
+    total_paid = 0
     total_outstanding = 0
 
     # ── Leaves ──
@@ -141,17 +129,11 @@ def superadmin_dashboard(request):
     for i in range(5, -1, -1):
         d = (today.replace(day=1) - timedelta(days=1) * (i * 30)).replace(day=1)
         label = d.strftime('%b %Y')
-        amt = Payment.objects.filter(
-            transaction_status='SUCCESSFUL',
-            created_at__year=d.year, created_at__month=d.month
-        ).aggregate(t=Sum('amount'))['t'] or 0
         monthly_labels.append(label)
-        monthly_data.append(float(amt))
+        monthly_data.append(0.0)
 
     # Recent payments
-    recent_payments = Payment.objects.filter(
-        transaction_status='SUCCESSFUL'
-    ).order_by('-created_at')[:8]
+    recent_payments = []
 
     # Recent complaints
     recent_complaints = ComplaintTicket.objects.order_by('-created_at')[:6]
@@ -283,13 +265,8 @@ def live_dashboard_stats(request):
     occupancy_pct = round((occupied_beds / total_beds * 100), 1) if total_beds > 0 else 0
 
     # Financials
-    month_start = today.replace(day=1)
-    monthly_revenue = Payment.objects.filter(
-        transaction_status='SUCCESSFUL', created_at__date__gte=month_start
-    ).aggregate(total=Sum('amount'))['total'] or 0
-    today_revenue = Payment.objects.filter(
-        transaction_status='SUCCESSFUL', created_at__date=today
-    ).aggregate(total=Sum('amount'))['total'] or 0
+    monthly_revenue = 0
+    today_revenue = 0
 
     # Complaints
     open_complaints = ComplaintTicket.objects.filter(status__in=['pending', 'assigned', 'in_progress']).count()

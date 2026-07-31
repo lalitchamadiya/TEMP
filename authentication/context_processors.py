@@ -102,7 +102,7 @@ def rbac_context(request):
             assignment = DutyAssignment.objects.filter(staff__user=request.user, is_active=True).first()
             if assignment and assignment.duty:
                 duty_perms = {dp.module_name: dp for dp in assignment.duty.permissions.all()}
-                reg_mapping = [('leave', 'leave'), ('students', 'student'), ('fees', 'paybill'), ('attendance', 'attendance')]
+                reg_mapping = [('leave', 'leave'), ('students', 'student'), ('attendance', 'attendance')]
                 
                 for duty_mod, core_mod in reg_mapping:
                     dp = duty_perms.get(duty_mod)

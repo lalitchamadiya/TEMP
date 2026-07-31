@@ -45,15 +45,6 @@ class Command(BaseCommand):
                 'parent_code': ''
             },
             {
-                'code': 'paybill',
-                'name': 'Payments & Billing',
-                'menu_label': 'Fees & Invoices',
-                'icon': 'bi-wallet2',
-                'url_name': 'paybill_base',
-                'order': 40,
-                'parent_code': ''
-            },
-            {
                 'code': 'leave',
                 'name': 'Leave Requests',
                 'menu_label': 'Leave Requests',
@@ -242,22 +233,6 @@ class Command(BaseCommand):
                 'category': 'button',
                 'description': 'Allows triggering browser print view of student table.',
                 'module_code': 'student'
-            },
-
-            # PAYBILL MODULE
-            {
-                'code': 'btn_paybill_add',
-                'name': 'New Paybill / Fee Invoice Button',
-                'category': 'button',
-                'description': 'Allows generating a new fee invoice or transaction bill.',
-                'module_code': 'paybill'
-            },
-            {
-                'code': 'btn_paybill_delete',
-                'name': 'Delete Paybill Button',
-                'category': 'button',
-                'description': 'Allows deleting paybills or invoices.',
-                'module_code': 'paybill'
             },
 
             # LEAVE MODULE

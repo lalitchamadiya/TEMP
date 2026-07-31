@@ -70,7 +70,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'student',
     'room',
-    'paybill',
     'leave',
     'authentication',
     'student_app',

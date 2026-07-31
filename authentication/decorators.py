@@ -38,7 +38,6 @@ def check_perm(user, module_code, action):
             core_to_duty = {
                 'leave': 'leave',
                 'student': 'students',
-                'paybill': 'fees',
                 'attendance': 'attendance',
             }
             duty_mod = core_to_duty.get(module_code)

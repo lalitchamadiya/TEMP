@@ -7,7 +7,6 @@ urlpatterns = [
     path('student/',include('student.urls')),
     path('room/', include('room.urls')),
     path('authentication/',include('authentication.urls')),
-    path('paybill/', include('paybill.urls')),
     path('leave/', include('leave.urls')),
     path('student_app/', include('student_app.urls')),
     path('warden/', include('warden.urls')),

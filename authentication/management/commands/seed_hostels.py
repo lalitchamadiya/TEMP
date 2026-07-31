@@ -3,7 +3,6 @@ from authentication.models import Hostel
 from room.models import HostelBuilding, Room
 from student.models import Student
 from hms.models import StaffProfile
-from paybill.models import Payment, FeeStructure, InstallmentConfig
 
 class Command(BaseCommand):
     help = 'Seed default Central Hostel and associate existing hostelless records'
@@ -39,19 +38,5 @@ class Command(BaseCommand):
         # Update staff profiles
         staff_updated = StaffProfile.objects.filter(hostel__isnull=True).update(hostel=default_hostel)
         self.stdout.write(f"Updated {staff_updated} StaffProfiles.")
-
-
-
-        # Update payments
-        payments_updated = Payment.objects.filter(hostel__isnull=True).update(hostel=default_hostel)
-        self.stdout.write(f"Updated {payments_updated} Payments.")
-
-        # Update fee structures
-        fee_structures_updated = FeeStructure.objects.filter(hostel__isnull=True).update(hostel=default_hostel)
-        self.stdout.write(f"Updated {fee_structures_updated} FeeStructures.")
-
-        # Update installment configurations
-        installments_updated = InstallmentConfig.objects.filter(hostel__isnull=True).update(hostel=default_hostel)
-        self.stdout.write(f"Updated {installments_updated} InstallmentConfigs.")
 
         self.stdout.write(self.style.SUCCESS("Hostel seeding complete!"))
