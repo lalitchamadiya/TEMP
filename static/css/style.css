@@ -432,6 +432,8 @@ html[data-theme="dark"] .dropdown-menu .dropdown-item.text-danger:hover {
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     padding-bottom: 12px;
+}
+
 /* Completely hide visual scrollbar tracks on all browsers while keeping scrolling fully functional */
 .sidebar-wrapper,
 .sidebar-wrapper *,
