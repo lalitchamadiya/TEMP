@@ -6,604 +6,774 @@
 {% block content %}
 <style>
 :root {
-  --glass-bg: rgba(255,255,255,0.06);
-  --glass-border: rgba(255,255,255,0.12);
-  --accent-blue: #4f9cf9;
-  --accent-green: #22c55e;
-  --accent-purple: #a855f7;
-  --accent-orange: #f97316;
-  --accent-red: #ef4444;
-  --accent-cyan: #06b6d4;
-  --accent-yellow: #eab308;
-  --card-bg: #161b22;
-  
-  --sa-header-bg: linear-gradient(135deg, #1a1f35 0%, #131825 50%, #0f1420 100%);
-  --sa-title-color: #f0f6ff;
-  --sa-sub-color: rgba(255,255,255,0.5);
-  --sa-muted-color: rgba(255,255,255,0.3);
-  --sa-border: rgba(255,255,255,0.04);
+  --sa-bg-card: #161b22;
+  --sa-border: rgba(255, 255, 255, 0.08);
+  --sa-border-hover: rgba(59, 130, 246, 0.4);
+  --sa-text-main: #f0f6ff;
+  --sa-text-sub: rgba(255, 255, 255, 0.65);
+  --sa-text-muted: rgba(255, 255, 255, 0.45);
+  --sa-hero-bg: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+  --sa-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+  --sa-shadow-hover: 0 20px 35px -5px rgba(0, 0, 0, 0.4);
 }
 
 html[data-theme="light"] {
-  --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --sa-header-bg: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-  --sa-title-color: #0f172a;
-  --sa-sub-color: #475569;
-  --sa-muted-color: #64748b;
-  --sa-border: rgba(0, 0, 0, 0.05);
+  --sa-bg-card: rgba(255, 255, 255, 0.95);
+  --sa-border: rgba(0, 0, 0, 0.08);
+  --sa-border-hover: rgba(37, 99, 235, 0.35);
+  --sa-text-main: #0f172a;
+  --sa-text-sub: #475569;
+  --sa-text-muted: #64748b;
+  --sa-hero-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  --sa-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  --sa-shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.08);
 }
 
-.sa-page { padding: 1.5rem 0; }
+.sa-page {
+  padding: 0.5rem 0 2rem 0;
+}
 
 /* ── Hero Header ── */
-.sa-header {
-  background: var(--sa-header-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  padding: 2rem 2.5rem;
-  margin-bottom: 2rem;
+.sa-hero {
+  background: var(--sa-hero-bg);
+  border: 1px solid var(--sa-border);
+  border-radius: 20px;
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.75rem;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
+  box-shadow: var(--sa-shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
-.sa-header .text-white {
-  color: var(--sa-title-color) !important;
-  transition: color 0.3s ease;
-}
-.sa-header .btn-outline-light {
-  border-color: var(--sa-title-color) !important;
-  color: var(--sa-title-color) !important;
-  transition: all 0.3s ease;
-}
-.sa-header .btn-outline-light:hover {
-  background-color: var(--sa-title-color) !important;
-  color: var(--card-bg) !important;
-}
-.sa-header::before {
+.sa-hero::before {
   content: '';
   position: absolute;
-  top: -60px; right: -60px;
-  width: 220px; height: 220px;
-  background: radial-gradient(circle, rgba(79,156,249,0.15) 0%, transparent 70%);
+  top: -80px; right: -60px;
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%);
   border-radius: 50%;
+  pointer-events: none;
 }
-.sa-header .badge-live {
-  background: rgba(34,197,94,0.2);
-  color: var(--accent-green);
-  border: 1px solid rgba(34,197,94,0.4);
-  font-size: 0.7rem;
-  padding: 3px 10px;
-  border-radius: 20px;
-  animation: pulse-dot 2s infinite;
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.sa-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -90px; left: 10%;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-/* ── Section Label ── */
-.sa-section-label {
+.badge-live-pulse {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
   font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.05em;
+}
+.pulse-dot-green {
+  width: 7px; height: 7px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulseGlow 1.8s infinite;
+}
+@keyframes pulseGlow {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.5; }
+}
+
+/* ── Section Header ── */
+.sa-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--sa-sub-color);
-  margin-bottom: 0.75rem;
-  padding-left: 4px;
-}
-
-/* ── KPI Card ── */
-.kpi-card {
-  background: var(--card-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  padding: 1.25rem 1.5rem;
-  transition: transform 0.2s, border-color 0.2s, background-color 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-.kpi-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--sa-title-color);
-}
-.kpi-card::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 3px;
-  border-radius: 0 0 14px 14px;
-}
-.kpi-blue::after  { background: var(--accent-blue); }
-.kpi-green::after { background: var(--accent-green); }
-.kpi-purple::after{ background: var(--accent-purple);}
-.kpi-orange::after{ background: var(--accent-orange);}
-.kpi-red::after   { background: var(--accent-red);  }
-.kpi-cyan::after  { background: var(--accent-cyan);  }
-.kpi-yellow::after{ background: var(--accent-yellow);}
-
-.kpi-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem;
-  flex-shrink: 0;
-}
-.kpi-icon.blue   { background: rgba(79,156,249,0.15); color: var(--accent-blue); }
-.kpi-icon.green  { background: rgba(34,197,94,0.15);  color: var(--accent-green);}
-.kpi-icon.purple { background: rgba(168,85,247,0.15); color: var(--accent-purple);}
-.kpi-icon.orange { background: rgba(249,115,22,0.15); color: var(--accent-orange);}
-.kpi-icon.red    { background: rgba(239,68,68,0.15);  color: var(--accent-red);  }
-.kpi-icon.cyan   { background: rgba(6,182,212,0.15);  color: var(--accent-cyan); }
-.kpi-icon.yellow { background: rgba(234,179,8,0.15);  color: var(--accent-yellow);}
-
-.kpi-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--sa-title-color);
-  line-height: 1.1;
-  transition: color 0.3s ease;
-}
-.kpi-label {
-  font-size: 0.78rem;
-  color: var(--sa-sub-color);
-  margin-top: 2px;
-  transition: color 0.3s ease;
-}
-.kpi-sub {
-  font-size: 0.72rem;
-  color: var(--sa-muted-color);
-  transition: color 0.3s ease;
-}
-
-/* ── Progress Bars ── */
-.mini-progress {
-  height: 6px;
-  border-radius: 10px;
-  background: var(--glass-bg);
-}
-.mini-progress-bar {
-  height: 6px;
-  border-radius: 10px;
-  transition: width 0.8s ease;
-}
-
-/* ── Panel Card ── */
-.panel-card {
-  background: var(--card-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-}
-.panel-card .text-white {
-  color: var(--sa-title-color) !important;
-  transition: color 0.3s ease;
-}
-.panel-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--sa-title-color);
-  margin-bottom: 1.25rem;
+  color: var(--sa-text-muted);
+  margin-bottom: 0.85rem;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: color 0.3s ease;
 }
-.panel-title i { color: var(--accent-blue); }
+.sa-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--sa-border);
+}
 
-/* ── Data Table ── */
-.sa-table { color: var(--sa-title-color); font-size: 0.82rem; transition: color 0.3s ease; }
-.sa-table thead th {
-  color: var(--sa-sub-color);
-  font-size: 0.72rem;
+/* ── SaaS KPI Cards ── */
+.sa-kpi-card {
+  background: var(--sa-bg-card);
+  border: 1px solid var(--sa-border);
+  border-radius: 16px;
+  padding: 1.25rem 1.4rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sa-shadow);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.sa-kpi-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--sa-border-hover);
+  box-shadow: var(--sa-shadow-hover);
+}
+
+.kpi-grad-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.35rem;
+  color: #ffffff !important;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+.kpi-grad-icon.blue   { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+.kpi-grad-icon.emerald{ background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+.kpi-grad-icon.purple { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); }
+.kpi-grad-icon.amber  { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.kpi-grad-icon.indigo { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); }
+.kpi-grad-icon.cyan   { background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); }
+.kpi-grad-icon.rose   { background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%); }
+
+.kpi-val {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--sa-text-main);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.kpi-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sa-text-sub);
+  margin-top: 2px;
+}
+.kpi-meta {
+  font-size: 0.74rem;
+  color: var(--sa-text-muted);
+  font-weight: 500;
+}
+
+.kpi-trend-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+}
+.trend-up { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); }
+.trend-amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+.trend-blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.25); }
+
+/* Progress bar inside card */
+.sa-progress-track {
+  height: 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+html[data-theme="light"] .sa-progress-track {
+  background: rgba(0, 0, 0, 0.06);
+}
+.sa-progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Panel Cards ── */
+.sa-panel {
+  background: var(--sa-bg-card);
+  border: 1px solid var(--sa-border);
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: var(--sa-shadow);
+  transition: all 0.25s ease;
+}
+.sa-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.sa-panel-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sa-text-main);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sa-panel-title i {
+  color: #3b82f6;
+  font-size: 1.1rem;
+}
+
+/* ── Chart Container ── */
+.chart-box {
+  position: relative;
+  height: 230px;
+}
+
+/* Donut Chart Center Text Overlay */
+.donut-overlay {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+.donut-overlay-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--sa-text-main);
+  line-height: 1;
+}
+.donut-overlay-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--sa-text-muted);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ── System Health Items ── */
+.health-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0;
+  border-bottom: 1px dashed var(--sa-border);
+}
+.health-item:last-child {
+  border-bottom: none;
+}
+
+/* ── Shortcut Tile ── */
+.shortcut-tile {
+  background: var(--sa-bg-card);
+  border: 1px solid var(--sa-border);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--sa-shadow);
+}
+.shortcut-tile:hover {
+  transform: translateY(-3px);
+  border-color: #3b82f6;
+  box-shadow: var(--sa-shadow-hover);
+}
+.shortcut-icon-box {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* ── Data Tables ── */
+.sa-modern-table {
+  width: 100%;
+  color: var(--sa-text-main);
+  font-size: 0.84rem;
+}
+.sa-modern-table thead th {
+  color: var(--sa-text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  border-bottom: 1px solid var(--glass-border);
-  background: transparent;
-  padding: 0.6rem 0.75rem;
-  transition: color 0.3s ease;
-}
-.sa-table tbody td {
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--sa-border);
-  padding: 0.6rem 0.75rem;
+  background: transparent;
+}
+.sa-modern-table tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--sa-border);
   vertical-align: middle;
 }
-.sa-table tbody tr:hover { background: var(--glass-bg); }
+.sa-modern-table tbody tr {
+  transition: background 0.15s ease;
+}
+.sa-modern-table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
 
-/* ── Status Badges ── */
-.badge-status {
-  font-size: 0.68rem;
-  padding: 3px 9px;
+.status-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
   border-radius: 20px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
-.s-success  { background: rgba(34,197,94,0.15);  color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
-.s-warning  { background: rgba(234,179,8,0.15);  color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
-.s-danger   { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
-.s-info     { background: rgba(6,182,212,0.15);  color: #06b6d4; border: 1px solid rgba(6,182,212,0.3); }
-.s-purple   { background: rgba(168,85,247,0.15); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
+.status-pill.success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+.status-pill.warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+.status-pill.danger  { background: rgba(239, 68, 68, 0.15);  color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+.status-pill.info    { background: rgba(6, 182, 212, 0.15);  color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.3); }
+.status-pill.purple  { background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); }
 
-/* ── System Health ── */
-.health-row {
-  display: flex; align-items: center;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid var(--sa-border);
-}
-.health-row:last-child { border-bottom: none; }
-.health-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-right: 0.75rem;
-  flex-shrink: 0;
-}
-.h-ok   { background: var(--accent-green); box-shadow: 0 0 6px rgba(34,197,94,0.5); }
-.h-warn { background: var(--accent-yellow); box-shadow: 0 0 6px rgba(234,179,8,0.5); }
-.h-err  { background: var(--accent-red); box-shadow: 0 0 6px rgba(239,68,68,0.5); }
-
-/* ── Module Shortcut Cards ── */
-.shortcut-card {
-  background: var(--card-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  display: flex; align-items: center; gap: 12px;
-  text-decoration: none;
-  transition: all 0.2s;
-  color: var(--sa-sub-color);
-}
-.shortcut-card:hover {
-  border-color: var(--accent-blue);
-  background: rgba(79,156,249,0.06);
-  color: var(--sa-title-color);
-  transform: translateY(-2px);
-}
-.shortcut-icon {
-  width: 38px; height: 38px;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-/* ── Chart ── */
-.chart-wrap {
-  position: relative;
-  height: 220px;
-}
 </style>
 
 <div class="sa-page">
 
-  <!-- ── Header ── -->
-  <div class="sa-header mb-4">
-    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+  <!-- ── Hero Banner ── -->
+  <div class="sa-hero">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
       <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
-          <span class="badge-live"><i class="bi bi-circle-fill me-1" style="font-size:6px;"></i>LIVE</span>
-          <small class="text-white opacity-40" id="live-refresh-status">Last refreshed on page load</small>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="badge-live-pulse">
+            <span class="pulse-dot-green"></span> LIVE STATS
+          </span>
+          <span class="text-muted opacity-75" style="font-size: 0.78rem;" id="sa-live-clock">
+            Updated <span id="clock-display">12:00:00 PM</span>
+          </span>
         </div>
-        <h1 class="text-white fw-bold mb-1" style="font-size:1.75rem;">
-          <i class="bi bi-speedometer2 me-2 text-primary"></i>Super Admin Dashboard
+        <h1 class="fw-bold mb-1 d-flex align-items-center gap-2" style="font-size: 1.85rem; color: var(--sa-text-main);">
+          <i class="bi bi-speedometer2 text-primary"></i> Super Admin Command Center
         </h1>
-        <p class="text-white opacity-50 mb-0" style="font-size:0.9rem;">
-          Central control panel — Hostel Management System
+        <p class="mb-0" style="font-size: 0.92rem; color: var(--sa-text-sub);">
+          Central control panel & operational intelligence — Hostel Management System
         </p>
       </div>
-      <div class="d-flex gap-2 flex-wrap">
-        <a href="{% url 'reports_dashboard' %}" class="btn btn-sm btn-outline-light">
-          <i class="bi bi-bar-chart-line me-1"></i> Reports
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a href="{% url 'reports_dashboard' %}" class="btn btn-sm btn-outline-secondary px-3 py-2 rounded-pill fw-semibold" style="color: var(--sa-text-main); border-color: var(--sa-border);">
+          <i class="bi bi-bar-chart-line me-1 text-primary"></i> Reports
         </a>
-        <a href="{% url 'export_report' 'students' %}" class="btn btn-sm btn-outline-light">
-          <i class="bi bi-download me-1"></i> Export
+        <a href="{% url 'export_report' 'students' %}" class="btn btn-sm btn-outline-secondary px-3 py-2 rounded-pill fw-semibold" style="color: var(--sa-text-main); border-color: var(--sa-border);">
+          <i class="bi bi-download me-1 text-success"></i> Export Data
         </a>
-        <a href="{% url 'staff_create' %}" class="btn btn-sm btn-primary">
+        <a href="{% url 'staff_create' %}" class="btn btn-sm btn-primary px-3 py-2 rounded-pill fw-semibold shadow-sm">
           <i class="bi bi-plus-circle me-1"></i> Add Staff
         </a>
       </div>
     </div>
   </div>
 
-  <!-- ── Row 1: Top KPI Cards ── -->
-  <p class="sa-section-label">Key Performance Indicators</p>
+  <!-- ── Row 1: Key Performance Indicators ── -->
+  <div class="sa-section-title">
+    <i class="bi bi-grid-fill text-primary"></i> Key Performance Indicators
+  </div>
   <div class="row g-3 mb-4">
-    <!-- Students -->
-    <div class="col-6 col-md-4 col-xl-2">
-      <div class="kpi-card kpi-blue h-100">
-        <div class="d-flex align-items-center gap-3 mb-2">
-          <div class="kpi-icon blue"><i class="bi bi-mortarboard-fill"></i></div>
-          <div>
-            <div class="kpi-value" id="kpi-total-students">{{ total_students }}</div>
-            <div class="kpi-label">Total Students</div>
+    
+    <!-- Total Students -->
+    <div class="col-12 col-sm-6 col-xl-2.4 col-lg-4">
+      <div class="sa-kpi-card h-100">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="kpi-grad-icon blue">
+            <i class="bi bi-mortarboard-fill"></i>
+          </div>
+          <span class="kpi-trend-pill trend-blue">
+            <i class="bi bi-check-circle-fill me-1"></i> Active
+          </span>
+        </div>
+        <div>
+          <div class="kpi-val" id="kpi-total-students">{{ total_students }}</div>
+          <div class="kpi-title">Total Students</div>
+          <div class="kpi-meta mt-1" id="kpi-students-sub">
+            <span class="text-success fw-bold">{{ active_students }} active</span> · {{ inactive_students }} inactive
           </div>
         </div>
-        <div class="kpi-sub" id="kpi-students-sub">{{ active_students }} active · {{ inactive_students }} inactive</div>
       </div>
     </div>
+
     <!-- Occupied Beds -->
-    <div class="col-6 col-md-4 col-xl-2">
-      <div class="kpi-card kpi-green h-100">
-        <div class="d-flex align-items-center gap-3 mb-2">
-          <div class="kpi-icon green"><i class="bi bi-bed-fill"></i></div>
-          <div>
-            <div class="kpi-value" id="kpi-occupied-beds">{{ occupied_beds }}</div>
-            <div class="kpi-label">Beds Occupied</div>
+    <div class="col-12 col-sm-6 col-xl-2.4 col-lg-4">
+      <div class="sa-kpi-card h-100">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="kpi-grad-icon emerald">
+            <i class="bi bi-bed-fill"></i>
+          </div>
+          <span class="kpi-trend-pill trend-up">
+            {{ occupancy_pct }}% Occupancy
+          </span>
+        </div>
+        <div>
+          <div class="kpi-val" id="kpi-occupied-beds">{{ occupied_beds }}</div>
+          <div class="kpi-title">Beds Occupied</div>
+          <div class="sa-progress-track mt-2">
+            <div class="sa-progress-fill" id="kpi-occupancy-progress" style="width: {{ occupancy_pct }}%; background: linear-gradient(90deg, #10b981, #34d399);"></div>
+          </div>
+          <div class="kpi-meta mt-1" id="kpi-occupancy-sub">
+            {{ vacant_beds }} vacant beds available
           </div>
         </div>
-        <div class="mini-progress mt-1">
-          <div class="mini-progress-bar" id="kpi-occupancy-progress" data-width="{{ occupancy_pct }}" style="background: var(--accent-green); width: {{ occupancy_pct }}%;"></div>
-        </div>
-        <div class="kpi-sub mt-1" id="kpi-occupancy-sub">{{ occupancy_pct }}% occupancy · {{ vacant_beds }} vacant</div>
       </div>
     </div>
-    <!-- Revenue -->
-    <div class="col-6 col-md-4 col-xl-2">
-      <div class="kpi-card kpi-purple h-100">
-        <div class="d-flex align-items-center gap-3 mb-2">
-          <div class="kpi-icon purple"><i class="bi bi-currency-rupee"></i></div>
-          <div>
-            <div class="kpi-value" id="kpi-monthly-revenue">₹{{ monthly_revenue|floatformat:0 }}</div>
-            <div class="kpi-label">Monthly Revenue</div>
+
+    <!-- Monthly Revenue -->
+    <div class="col-12 col-sm-6 col-xl-2.4 col-lg-4">
+      <div class="sa-kpi-card h-100">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="kpi-grad-icon purple">
+            <i class="bi bi-currency-rupee"></i>
+          </div>
+          <span class="kpi-trend-pill trend-up">
+            <i class="bi bi-graph-up-arrow me-1"></i> Revenue
+          </span>
+        </div>
+        <div>
+          <div class="kpi-val" id="kpi-monthly-revenue">₹{{ monthly_revenue|floatformat:0 }}</div>
+          <div class="kpi-title">Monthly Revenue</div>
+          <div class="kpi-meta mt-1" id="kpi-revenue-sub">
+            <span class="text-primary fw-semibold">₹{{ today_revenue|floatformat:0 }}</span> collected today
           </div>
         </div>
-        <div class="kpi-sub" id="kpi-revenue-sub">₹{{ today_revenue|floatformat:0 }} today</div>
       </div>
     </div>
-    <!-- Complaints -->
-    <div class="col-6 col-md-4 col-xl-2">
-      <div class="kpi-card kpi-orange h-100">
-        <div class="d-flex align-items-center gap-3 mb-2">
-          <div class="kpi-icon orange"><i class="bi bi-exclamation-triangle-fill"></i></div>
-          <div>
-            <div class="kpi-value" id="kpi-open-complaints">{{ open_complaints }}</div>
-            <div class="kpi-label">Open Complaints</div>
+
+    <!-- Open Complaints -->
+    <div class="col-12 col-sm-6 col-xl-2.4 col-lg-4">
+      <div class="sa-kpi-card h-100">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="kpi-grad-icon amber">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <span class="kpi-trend-pill trend-amber">
+            {{ open_complaints }} Open
+          </span>
+        </div>
+        <div>
+          <div class="kpi-val" id="kpi-open-complaints">{{ open_complaints }}</div>
+          <div class="kpi-title">Open Complaints</div>
+          <div class="kpi-meta mt-1" id="kpi-complaints-sub">
+            <span class="text-success fw-semibold">{{ resolved_complaints }}</span> resolved total
           </div>
         </div>
-        <div class="kpi-sub" id="kpi-complaints-sub">{{ resolved_complaints }} resolved total</div>
       </div>
     </div>
-    <!-- Staff -->
-    <div class="col-6 col-md-4 col-xl-2">
-      <div class="kpi-card kpi-yellow h-100">
-        <div class="d-flex align-items-center gap-3 mb-2">
-          <div class="kpi-icon yellow"><i class="bi bi-people-fill"></i></div>
-          <div>
-            <div class="kpi-value" id="kpi-total-staff">{{ total_staff }}</div>
-            <div class="kpi-label">Total Staff</div>
+
+    <!-- Total Staff -->
+    <div class="col-12 col-sm-6 col-xl-2.4 col-lg-4">
+      <div class="sa-kpi-card h-100">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="kpi-grad-icon indigo">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <span class="kpi-trend-pill trend-blue">
+            {{ active_staff }} Active
+          </span>
+        </div>
+        <div>
+          <div class="kpi-val" id="kpi-total-staff">{{ total_staff }}</div>
+          <div class="kpi-title">Total Staff</div>
+          <div class="kpi-meta mt-1" id="kpi-staff-sub">
+            HMS operational staff members
           </div>
         </div>
-        <div class="kpi-sub" id="kpi-staff-sub">{{ active_staff }} active</div>
       </div>
     </div>
+
   </div>
 
-  <!-- ── Row 2: Charts + System Health ── -->
+  <!-- ── Row 2: Revenue Trend + System Health ── -->
   <div class="row g-3 mb-4">
-    <!-- Revenue Chart -->
+    <!-- Revenue Bar Chart -->
     <div class="col-12 col-lg-8">
-      <div class="panel-card h-100">
-        <div class="panel-title">
-          <i class="bi bi-graph-up-arrow"></i> Monthly Revenue Trend (Last 6 Months)
-          <span class="ms-auto badge s-success">₹{{ total_revenue|floatformat:0 }} Total</span>
+      <div class="sa-panel h-100">
+        <div class="sa-panel-header">
+          <div class="sa-panel-title">
+            <i class="bi bi-bar-chart-fill"></i> Monthly Revenue Trend (Last 6 Months)
+          </div>
+          <span class="status-pill success">
+            ₹{{ total_revenue|floatformat:0 }} Total Collected
+          </span>
         </div>
-        <div class="chart-wrap">
+        <div class="chart-box">
           <canvas id="revenueChart"></canvas>
         </div>
       </div>
     </div>
 
-    <!-- System Health + Quick Stats -->
+    <!-- System Health & Live Metrics -->
     <div class="col-12 col-lg-4">
-      <div class="panel-card h-100">
-        <div class="panel-title"><i class="bi bi-activity"></i> System Health</div>
-
-        <div class="health-row">
-          <div class="health-dot h-ok"></div>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Database</span>
-          <span class="badge s-success">Online</span>
-        </div>
-        <div class="health-row">
-          {% if disk_pct > 90 %}
-          <div class="health-dot h-err"></div>
-          {% elif disk_pct > 75 %}
-          <div class="health-dot h-warn"></div>
-          {% else %}
-          <div class="health-dot h-ok"></div>
-          {% endif %}
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Disk Storage</span>
-          <span class="badge {% if disk_pct > 90 %}s-danger{% elif disk_pct > 75 %}s-warning{% else %}s-success{% endif %}">{{ disk_pct }}%</span>
-        </div>
-        <div class="health-row">
-          <div class="health-dot h-ok"></div>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Web Server</span>
-          <span class="badge s-success">Running</span>
-        </div>
-        <div class="health-row">
-          <div class="health-dot h-ok"></div>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Session Service</span>
-          <span class="badge s-success">Active</span>
+      <div class="sa-panel h-100">
+        <div class="sa-panel-header">
+          <div class="sa-panel-title">
+            <i class="bi bi-activity"></i> System Health & Metrics
+          </div>
+          <span class="badge-live-pulse">
+            <span class="pulse-dot-green"></span> Normal
+          </span>
         </div>
 
-        <hr style="border-color: var(--glass-border);">
+        <div class="health-item">
+          <div class="d-flex align-items-center gap-2">
+            <span class="pulse-dot-green"></span>
+            <span style="font-weight: 500; color: var(--sa-text-main);">Database</span>
+          </div>
+          <span class="status-pill success">Online</span>
+        </div>
 
-        <div class="row g-2 text-center mt-1">
+        <div class="health-item">
+          <div class="d-flex align-items-center gap-2">
+            {% if disk_pct > 90 %}
+            <span class="pulse-dot-green" style="background:#ef4444; box-shadow:0 0 8px #ef4444;"></span>
+            {% elif disk_pct > 75 %}
+            <span class="pulse-dot-green" style="background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></span>
+            {% else %}
+            <span class="pulse-dot-green"></span>
+            {% endif %}
+            <span style="font-weight: 500; color: var(--sa-text-main);">Disk Storage</span>
+          </div>
+          <span class="status-pill {% if disk_pct > 90 %}danger{% elif disk_pct > 75 %}warning{% else %}success{% endif %}">
+            {{ disk_pct }}%
+          </span>
+        </div>
+
+        <div class="health-item">
+          <div class="d-flex align-items-center gap-2">
+            <span class="pulse-dot-green"></span>
+            <span style="font-weight: 500; color: var(--sa-text-main);">Web Server</span>
+          </div>
+          <span class="status-pill success">Running</span>
+        </div>
+
+        <div class="health-item">
+          <div class="d-flex align-items-center gap-2">
+            <span class="pulse-dot-green"></span>
+            <span style="font-weight: 500; color: var(--sa-text-main);">Session Service</span>
+          </div>
+          <span class="status-pill success">Active</span>
+        </div>
+
+        <hr style="border-color: var(--sa-border); margin: 1rem 0;">
+
+        <!-- Active Users Metrics -->
+        <div class="row g-2 text-center">
           <div class="col-4">
-            <div class="kpi-value" id="kpi-total-users" style="font-size:1.5rem; color: var(--accent-blue);">{{ total_users }}</div>
-            <div class="kpi-sub">Total Users</div>
+            <div class="fw-bold fs-4" style="color: #3b82f6;">{{ total_users }}</div>
+            <div class="kpi-meta">Total Users</div>
           </div>
           <div class="col-4">
-            <div class="kpi-value" id="kpi-active-users" style="font-size:1.5rem; color: var(--accent-green);">{{ active_users }}</div>
-            <div class="kpi-sub">Active Users</div>
+            <div class="fw-bold fs-4" style="color: #10b981;">{{ active_users }}</div>
+            <div class="kpi-meta">Active Users</div>
           </div>
           <div class="col-4">
-            <div class="kpi-value" id="kpi-pending-leaves" style="font-size:1.5rem; color: var(--accent-orange);">{{ pending_leaves }}</div>
-            <div class="kpi-sub">Pending Leaves</div>
+            <div class="fw-bold fs-4" style="color: #f59e0b;">{{ pending_leaves }}</div>
+            <div class="kpi-meta">Pending Leaves</div>
           </div>
         </div>
 
         <div class="mt-3">
-          <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:rgba(255,255,255,0.5);">
-            <span id="kpi-disk-text">Disk: {{ disk_used_gb }} GB / {{ disk_total_gb }} GB</span>
-            <span id="kpi-disk-pct-text">{{ disk_pct }}%</span>
+          <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color: var(--sa-text-muted);">
+            <span>Disk: {{ disk_used_gb }} GB / {{ disk_total_gb }} GB</span>
+            <span class="fw-bold">{{ disk_pct }}%</span>
           </div>
-          <div class="mini-progress">
-            <div class="mini-progress-bar" id="kpi-disk-progress" data-width="{{ disk_pct }}" data-bg="{% if disk_pct > 90 %}var(--accent-red){% elif disk_pct > 75 %}var(--accent-yellow){% else %}var(--accent-green){% endif %}" style="width: {{ disk_pct }}%;"></div>
+          <div class="sa-progress-track">
+            <div class="sa-progress-fill" style="width: {{ disk_pct }}%; background: {% if disk_pct > 90 %}linear-gradient(90deg, #ef4444, #f43f5e){% elif disk_pct > 75 %}linear-gradient(90deg, #f59e0b, #fbbf24){% else %}linear-gradient(90deg, #10b981, #34d399){% endif %};"></div>
           </div>
         </div>
+
       </div>
     </div>
   </div>
 
   <!-- ── Row 3: Infrastructure Overview ── -->
-  <p class="sa-section-label">Infrastructure & Occupancy</p>
+  <div class="sa-section-title">
+    <i class="bi bi-building text-primary"></i> Infrastructure & Capacity
+  </div>
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-      <div class="kpi-card kpi-blue text-center">
-        <div class="kpi-value text-center" style="color: var(--accent-blue);">{{ total_blocks }}</div>
-        <div class="kpi-label text-center">Hostel Blocks</div>
+      <div class="sa-kpi-card text-center py-3">
+        <div class="kpi-val text-primary">{{ total_blocks }}</div>
+        <div class="kpi-title">Hostel Blocks</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="kpi-card kpi-cyan text-center">
-        <div class="kpi-value text-center" style="color: var(--accent-cyan);">{{ total_floors }}</div>
-        <div class="kpi-label text-center">Floors</div>
+      <div class="sa-kpi-card text-center py-3">
+        <div class="kpi-val" style="color: #06b6d4;">{{ total_floors }}</div>
+        <div class="kpi-title">Total Floors</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="kpi-card kpi-green text-center">
-        <div class="kpi-value text-center" style="color: var(--accent-green);">{{ total_rooms }}</div>
-        <div class="kpi-label text-center">Rooms</div>
+      <div class="sa-kpi-card text-center py-3">
+        <div class="kpi-val text-success">{{ total_rooms }}</div>
+        <div class="kpi-title">Hostel Rooms</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
-      <div class="kpi-card kpi-purple text-center">
-        <div class="kpi-value text-center" style="color: var(--accent-purple);">{{ total_beds }}</div>
-        <div class="kpi-label text-center">Total Beds</div>
+      <div class="sa-kpi-card text-center py-3">
+        <div class="kpi-val" style="color: #a855f7;">{{ total_beds }}</div>
+        <div class="kpi-title">Total Bed Capacity</div>
       </div>
     </div>
   </div>
 
-  <!-- ── Row 4: Pie Charts + Financial Summary ── -->
+  <!-- ── Row 4: Analytics Donuts & Financial Summary ── -->
   <div class="row g-3 mb-4">
-    <!-- Student Gender Chart -->
+    <!-- Student Gender Split -->
     <div class="col-12 col-md-4">
-      <div class="panel-card h-100">
-        <div class="panel-title"><i class="bi bi-gender-ambiguous"></i> Student Gender Split</div>
-        <div class="chart-wrap" style="height:180px;">
-          <canvas id="genderChart"></canvas>
+      <div class="sa-panel h-100">
+        <div class="sa-panel-header">
+          <div class="sa-panel-title"><i class="bi bi-gender-ambiguous"></i> Student Gender Split</div>
         </div>
-        <div class="d-flex justify-content-center gap-4 mt-2" style="font-size:0.78rem; color:rgba(255,255,255,0.6);">
-          <span><span style="color:var(--accent-blue);">&#9632;</span> Male: {{ gender_male }}</span>
-          <span><span style="color:var(--accent-purple);">&#9632;</span> Female: {{ gender_female }}</span>
+        <div class="chart-box" style="height:190px;">
+          <canvas id="genderChart"></canvas>
+          <div class="donut-overlay">
+            <div class="donut-overlay-val">{{ total_students }}</div>
+            <div class="donut-overlay-label">Students</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center gap-4 mt-2" style="font-size:0.8rem; color: var(--sa-text-sub);">
+          <span><span style="color:#3b82f6;">&#9632;</span> Male: <strong>{{ gender_male }}</strong></span>
+          <span><span style="color:#a855f7;">&#9632;</span> Female: <strong>{{ gender_female }}</strong></span>
         </div>
       </div>
     </div>
 
-    <!-- Bed Occupancy -->
+    <!-- Bed Occupancy Donut -->
     <div class="col-12 col-md-4">
-      <div class="panel-card h-100">
-        <div class="panel-title"><i class="bi bi-house-fill"></i> Bed Occupancy</div>
-        <div class="chart-wrap" style="height:180px;">
-          <canvas id="bedChart"></canvas>
+      <div class="sa-panel h-100">
+        <div class="sa-panel-header">
+          <div class="sa-panel-title"><i class="bi bi-pie-chart-fill"></i> Bed Occupancy</div>
         </div>
-        <div class="d-flex justify-content-center gap-4 mt-2" style="font-size:0.78rem; color:rgba(255,255,255,0.6);">
-          <span><span style="color:var(--accent-green);">&#9632;</span> Occupied: {{ occupied_beds }}</span>
-          <span><span style="color:rgba(255,255,255,0.2);">&#9632;</span> Vacant: {{ vacant_beds }}</span>
+        <div class="chart-box" style="height:190px;">
+          <canvas id="bedChart"></canvas>
+          <div class="donut-overlay">
+            <div class="donut-overlay-val" style="color:#10b981;">{{ occupancy_pct }}%</div>
+            <div class="donut-overlay-label">Filled</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center gap-4 mt-2" style="font-size:0.8rem; color: var(--sa-text-sub);">
+          <span><span style="color:#10b981;">&#9632;</span> Occupied: <strong>{{ occupied_beds }}</strong></span>
+          <span><span style="color:var(--sa-text-muted);">&#9632;</span> Vacant: <strong>{{ vacant_beds }}</strong></span>
         </div>
       </div>
     </div>
 
     <!-- Financial Summary -->
     <div class="col-12 col-md-4">
-      <div class="panel-card h-100">
-        <div class="panel-title"><i class="bi bi-wallet2"></i> Financial Summary</div>
-        <div class="health-row">
-          <i class="bi bi-arrow-up-circle-fill me-2" style="color:var(--accent-green);"></i>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Total Revenue</span>
-          <span class="fw-bold" style="color:var(--accent-green);">₹{{ total_revenue|floatformat:0 }}</span>
+      <div class="sa-panel h-100">
+        <div class="sa-panel-header">
+          <div class="sa-panel-title"><i class="bi bi-wallet2"></i> Financial Summary</div>
         </div>
-        <div class="health-row">
-          <i class="bi bi-calendar-check me-2" style="color:var(--accent-blue);"></i>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">This Month</span>
-          <span class="fw-bold" style="color:var(--accent-blue);">₹{{ monthly_revenue|floatformat:0 }}</span>
+        
+        <div class="health-item">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-up-circle-fill text-success"></i>
+            <span style="color: var(--sa-text-sub); font-size: 0.84rem;">Total Revenue</span>
+          </div>
+          <span class="fw-bold text-success">₹{{ total_revenue|floatformat:0 }}</span>
         </div>
-        <div class="health-row">
-          <i class="bi bi-sun me-2" style="color:var(--accent-yellow);"></i>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Today's Collection</span>
-          <span class="fw-bold" style="color:var(--accent-yellow);">₹{{ today_revenue|floatformat:0 }}</span>
+
+        <div class="health-item">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar-check text-primary"></i>
+            <span style="color: var(--sa-text-sub); font-size: 0.84rem;">This Month</span>
+          </div>
+          <span class="fw-bold text-primary">₹{{ monthly_revenue|floatformat:0 }}</span>
         </div>
-        <div class="health-row">
-          <i class="bi bi-clock-history me-2" style="color:var(--accent-orange);"></i>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Pending Payments</span>
-          <span class="fw-bold" style="color:var(--accent-orange);">{{ pending_payments }}</span>
+
+        <div class="health-item">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-sun text-warning"></i>
+            <span style="color: var(--sa-text-sub); font-size: 0.84rem;">Today's Collection</span>
+          </div>
+          <span class="fw-bold text-warning">₹{{ today_revenue|floatformat:0 }}</span>
         </div>
-        <div class="health-row">
-          <i class="bi bi-exclamation-circle me-2" style="color:var(--accent-red);"></i>
-          <span class="flex-grow-1 text-white opacity-70" style="font-size:0.82rem;">Outstanding Dues</span>
-          <span class="fw-bold" style="color:var(--accent-red);">₹{{ total_outstanding|floatformat:0 }}</span>
+
+        <div class="health-item">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-info"></i>
+            <span style="color: var(--sa-text-sub); font-size: 0.84rem;">Pending Payments</span>
+          </div>
+          <span class="fw-bold text-info">{{ pending_payments }}</span>
         </div>
+
+        <div class="health-item">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-circle text-danger"></i>
+            <span style="color: var(--sa-text-sub); font-size: 0.84rem;">Outstanding Dues</span>
+          </div>
+          <span class="fw-bold text-danger">₹{{ total_outstanding|floatformat:0 }}</span>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <!-- ── Row 5: Module Quick Access ── -->
-  <p class="sa-section-label">Module Navigation</p>
+  <!-- ── Row 5: Quick Module Shortcuts ── -->
+  <div class="sa-section-title">
+    <i class="bi bi-compass-fill text-primary"></i> Quick Module Shortcuts
+  </div>
   <div class="row g-2 mb-4">
     {% if user.is_superuser or user.profile.role.is_superadmin %}
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'staff_list' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(234,179,8,0.15); color:var(--accent-yellow);">
+    <div class="col-6 col-md-4 col-lg-2.4">
+      <a href="{% url 'staff_list' %}" class="shortcut-tile">
+        <div class="shortcut-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
           <i class="bi bi-person-vcard-fill"></i>
         </div>
         <div>
-          <div style="font-size:0.85rem; font-weight:600;">Staff</div>
-          <div class="kpi-sub">{{ total_staff }} members</div>
+          <div class="fw-bold text-truncate" style="font-size: 0.88rem; color: var(--sa-text-main);">Staff Roster</div>
+          <div class="kpi-meta">{{ total_staff }} members</div>
         </div>
       </a>
     </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'complaint_list' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(249,115,22,0.15); color:var(--accent-orange);">
+
+    <div class="col-6 col-md-4 col-lg-2.4">
+      <a href="{% url 'complaint_list' %}" class="shortcut-tile">
+        <div class="shortcut-icon-box" style="background: rgba(249, 115, 22, 0.15); color: #f97316;">
           <i class="bi bi-ticket-perforated-fill"></i>
         </div>
         <div>
-          <div style="font-size:0.85rem; font-weight:600;">Complaints</div>
-          <div class="kpi-sub">{{ open_complaints }} open</div>
+          <div class="fw-bold text-truncate" style="font-size: 0.88rem; color: var(--sa-text-main);">Complaints</div>
+          <div class="kpi-meta">{{ open_complaints }} open</div>
         </div>
       </a>
     </div>
 
-
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'fee_manager' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(34,197,94,0.15); color:var(--accent-green);">
+    <div class="col-6 col-md-4 col-lg-2.4">
+      <a href="{% url 'fee_manager' %}" class="shortcut-tile">
+        <div class="shortcut-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
           <i class="bi bi-cash-stack"></i>
         </div>
         <div>
-          <div style="font-size:0.85rem; font-weight:600;">Fees</div>
-          <div class="kpi-sub">₹{{ monthly_revenue|floatformat:0 }} this month</div>
+          <div class="fw-bold text-truncate" style="font-size: 0.88rem; color: var(--sa-text-main);">Fee Manager</div>
+          <div class="kpi-meta">₹{{ monthly_revenue|floatformat:0 }} collected</div>
         </div>
       </a>
     </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'reports_dashboard' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(168,85,247,0.12); color:var(--accent-purple);">
+
+    <div class="col-6 col-md-4 col-lg-2.4">
+      <a href="{% url 'reports_dashboard' %}" class="shortcut-tile">
+        <div class="shortcut-icon-box" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
           <i class="bi bi-bar-chart-fill"></i>
         </div>
         <div>
-          <div style="font-size:0.85rem; font-weight:600;">Reports</div>
-          <div class="kpi-sub">Export CSV & Data</div>
+          <div class="fw-bold text-truncate" style="font-size: 0.88rem; color: var(--sa-text-main);">Reports</div>
+          <div class="kpi-meta">Analytics & CSV</div>
         </div>
       </a>
     </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <a href="{% url 'system_settings_view' %}" class="shortcut-card">
-        <div class="shortcut-icon" style="background:rgba(239,68,68,0.12); color:var(--accent-red);">
+
+    <div class="col-6 col-md-4 col-lg-2.4">
+      <a href="{% url 'system_settings_view' %}" class="shortcut-tile">
+        <div class="shortcut-icon-box" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
           <i class="bi bi-gear-fill"></i>
         </div>
         <div>
-          <div style="font-size:0.85rem; font-weight:600;">System Settings</div>
-          <div class="kpi-sub">Configure and white-label</div>
+          <div class="fw-bold text-truncate" style="font-size: 0.88rem; color: var(--sa-text-main);">System Settings</div>
+          <div class="kpi-meta">Configuration</div>
         </div>
       </a>
     </div>
@@ -614,28 +784,33 @@ html[data-theme="light"] {
   <div class="row g-3 mb-4">
     <!-- Recent Payments -->
     <div class="col-12 col-lg-6">
-      <div class="panel-card">
-        <div class="panel-title">
-          <i class="bi bi-credit-card-fill"></i> Recent Payments
-          <a href="{% url 'fee_manager' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
+      <div class="sa-panel">
+        <div class="sa-panel-header">
+          <div class="sa-panel-title">
+            <i class="bi bi-credit-card-fill"></i> Recent Fee Collections
+          </div>
+          <a href="{% url 'fee_manager' %}" class="text-primary fw-semibold text-decoration-none" style="font-size:0.78rem;">View All →</a>
         </div>
         <div class="table-responsive">
-          <table class="table sa-table mb-0">
+          <table class="sa-modern-table mb-0">
             <thead>
               <tr>
-                <th>Student</th><th>Amount</th><th>Type</th><th>Date</th>
+                <th>Student</th>
+                <th>Amount</th>
+                <th>Payment Mode</th>
+                <th>Date</th>
               </tr>
             </thead>
             <tbody>
               {% for p in recent_payments %}
               <tr>
-                <td>{{ p.user_name|truncatechars:18 }}</td>
-                <td class="fw-bold" style="color:var(--accent-green);">₹{{ p.amount|floatformat:0 }}</td>
-                <td>{{ p.payment_type }}</td>
-                <td class="text-muted">{{ p.created_at|date:"d M" }}</td>
+                <td class="fw-semibold">{{ p.user_name|truncatechars:20 }}</td>
+                <td class="fw-bold text-success">₹{{ p.amount|floatformat:0 }}</td>
+                <td><span class="status-pill info">{{ p.payment_type }}</span></td>
+                <td class="text-muted" style="font-size:0.78rem;">{{ p.created_at|date:"d M, Y" }}</td>
               </tr>
               {% empty %}
-              <tr><td colspan="4" class="text-center text-muted py-3">No payments yet</td></tr>
+              <tr><td colspan="4" class="text-center text-muted py-4">No recent payment transactions recorded</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -645,29 +820,35 @@ html[data-theme="light"] {
 
     <!-- Recent Complaints -->
     <div class="col-12 col-lg-6">
-      <div class="panel-card">
-        <div class="panel-title">
-          <i class="bi bi-chat-left-text-fill"></i> Recent Complaints
-          <a href="{% url 'complaint_list' %}" class="ms-auto text-primary" style="font-size:0.75rem;">View All →</a>
+      <div class="sa-panel">
+        <div class="sa-panel-header">
+          <div class="sa-panel-title">
+            <i class="bi bi-chat-left-text-fill"></i> Recent Student Complaints
+          </div>
+          <a href="{% url 'complaint_list' %}" class="text-primary fw-semibold text-decoration-none" style="font-size:0.78rem;">View All →</a>
         </div>
         <div class="table-responsive">
-          <table class="table sa-table mb-0">
+          <table class="sa-modern-table mb-0">
             <thead>
-              <tr><th>Title</th><th>Category</th><th>Status</th></tr>
+              <tr>
+                <th>Subject</th>
+                <th>Category</th>
+                <th>Status</th>
+              </tr>
             </thead>
             <tbody>
               {% for c in recent_complaints %}
               <tr>
-                <td>{{ c.title|truncatechars:22 }}</td>
+                <td class="fw-semibold">{{ c.title|truncatechars:24 }}</td>
                 <td>{{ c.get_category_display }}</td>
                 <td>
-                  <span class="badge-status {% if c.status == 'resolved' %}s-success{% elif c.status == 'pending' %}s-warning{% else %}s-info{% endif %}">
+                  <span class="status-pill {% if c.status == 'resolved' %}success{% elif c.status == 'pending' %}warning{% else %}info{% endif %}">
                     {{ c.get_status_display }}
                   </span>
                 </td>
               </tr>
               {% empty %}
-              <tr><td colspan="3" class="text-center text-muted py-3">No complaints yet</td></tr>
+              <tr><td colspan="3" class="text-center text-muted py-4">No recent student complaints submitted</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -676,33 +857,35 @@ html[data-theme="light"] {
     </div>
   </div>
 
-  <!-- ── Row 8: System Audit Logs ── -->
-  <p class="sa-section-label" id="logs-anchor">System Audit Logs</p>
-  <div class="panel-card mb-4" id="logs-panel">
-    <div class="panel-title d-flex align-items-center justify-content-between flex-wrap gap-3">
-      <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-clock-history"></i>
-        <span>Security & Administrative Audit Logs</span>
+  <!-- ── Row 7: Security & System Audit Logs ── -->
+  <div class="sa-section-title" id="logs-anchor">
+    <i class="bi bi-shield-lock-fill text-primary"></i> System Audit Logs
+  </div>
+  <div class="sa-panel mb-4" id="logs-panel">
+    <div class="sa-panel-header flex-wrap gap-3 mb-3">
+      <div class="sa-panel-title">
+        <i class="bi bi-clock-history"></i> Administrative & Security Audit Trail
       </div>
-      <!-- Log filters -->
+      
+      <!-- Filter Form -->
       <form method="get" action="{% url 'superadmin_dashboard' %}#logs-anchor" class="d-flex align-items-center gap-2 flex-wrap" id="logs-filter-form">
-        <input type="text" name="log_q" value="{{ log_search_query|default:'' }}" placeholder="Search details, actor, IP..." class="form-control form-control-sm rounded-pill text-white bg-dark border-secondary px-3" style="width:180px; font-size:0.8rem;">
+        <input type="text" name="log_q" value="{{ log_search_query|default:'' }}" placeholder="Search details, actor, IP..." class="form-control form-control-sm rounded-pill px-3" style="width:180px; font-size:0.8rem; background: var(--sa-bg-card); border-color: var(--sa-border); color: var(--sa-text-main);">
         
-        <select name="log_action" class="form-select form-select-sm rounded-pill text-white bg-dark border-secondary px-3" style="width:130px; font-size:0.8rem;">
+        <select name="log_action" class="form-select form-select-sm rounded-pill px-3" style="width:130px; font-size:0.8rem; background: var(--sa-bg-card); border-color: var(--sa-border); color: var(--sa-text-main);">
           <option value="">All Actions</option>
           {% for code, label in log_actions %}
           <option value="{{ code }}" {% if log_action_selected == code %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
 
-        <span class="text-white opacity-60" style="font-size: 0.75rem;">From:</span>
-        <input type="date" name="log_start_date" value="{{ log_start_date|default:'' }}" class="form-control form-control-sm rounded-pill text-white bg-dark border-secondary px-2" style="width:120px; font-size:0.75rem;">
+        <span class="text-muted" style="font-size: 0.75rem;">From:</span>
+        <input type="date" name="log_start_date" value="{{ log_start_date|default:'' }}" class="form-control form-control-sm rounded-pill px-2" style="width:125px; font-size:0.75rem; background: var(--sa-bg-card); border-color: var(--sa-border); color: var(--sa-text-main);">
         
-        <span class="text-white opacity-60" style="font-size: 0.75rem;">To:</span>
-        <input type="date" name="log_end_date" value="{{ log_end_date|default:'' }}" class="form-control form-control-sm rounded-pill text-white bg-dark border-secondary px-2" style="width:120px; font-size:0.75rem;">
+        <span class="text-muted" style="font-size: 0.75rem;">To:</span>
+        <input type="date" name="log_end_date" value="{{ log_end_date|default:'' }}" class="form-control form-control-sm rounded-pill px-2" style="width:125px; font-size:0.75rem; background: var(--sa-bg-card); border-color: var(--sa-border); color: var(--sa-text-main);">
 
-        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3" title="Apply Filter"><i class="bi bi-filter"></i> Filter</button>
-        <button type="submit" name="log_export" value="csv" class="btn btn-sm btn-outline-success rounded-pill px-3" title="Export to CSV"><i class="bi bi-file-earmark-arrow-down"></i> Export</button>
+        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold" title="Apply Filter"><i class="bi bi-filter"></i> Filter</button>
+        <button type="submit" name="log_export" value="csv" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold" title="Export to CSV"><i class="bi bi-file-earmark-arrow-down"></i> Export</button>
 
         {% if log_search_query or log_action_selected or log_start_date or log_end_date %}
         <a href="{% url 'superadmin_dashboard' %}#logs-anchor" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Clear</a>
@@ -710,14 +893,14 @@ html[data-theme="light"] {
       </form>
     </div>
 
-    <div class="table-responsive mt-3" id="audit-logs-table-container" style="max-height: 520px; overflow-y: auto;">
-      <table class="table sa-table mb-0">
+    <div class="table-responsive" id="audit-logs-table-container" style="max-height: 520px; overflow-y: auto;">
+      <table class="sa-modern-table mb-0">
         <thead>
           <tr>
             <th>Timestamp</th>
             <th>Actor</th>
             <th>Action</th>
-            <th>Affected Target</th>
+            <th>Target</th>
             <th>IP Address</th>
             <th class="text-end">Details</th>
           </tr>
@@ -728,149 +911,185 @@ html[data-theme="light"] {
       </table>
     </div>
 
-    <!-- Pagination -->
+    <!-- Pagination fallback for non-JS -->
     <div id="audit-logs-pagination">
       {% if recent_logs.has_other_pages %}
-      <nav class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="border-color: var(--glass-border) !important;">
+      <nav class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="border-color: var(--sa-border) !important;">
         <small class="text-muted">Showing {{ recent_logs.start_index }} to {{ recent_logs.end_index }} of {{ recent_logs.paginator.count }} logs</small>
         <ul class="pagination pagination-sm mb-0">
           {% if recent_logs.has_previous %}
-          <li class="page-item"><a class="page-link text-white bg-dark border-secondary" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ recent_logs.previous_page_number }}#logs-anchor"><i class="bi bi-chevron-left"></i></a></li>
+          <li class="page-item"><a class="page-link" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ recent_logs.previous_page_number }}#logs-anchor"><i class="bi bi-chevron-left"></i></a></li>
           {% else %}
-          <li class="page-item disabled"><span class="page-link bg-dark border-secondary opacity-50"><i class="bi bi-chevron-left"></i></span></li>
+          <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
           {% endif %}
 
           {% for num in recent_logs.paginator.page_range %}
             {% if recent_logs.number == num %}
-            <li class="page-item active"><span class="page-link bg-primary border-primary">{{ num }}</span></li>
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
             {% elif num > recent_logs.number|add:'-3' and num < recent_logs.number|add:'3' %}
-            <li class="page-item"><a class="page-link text-white bg-dark border-secondary" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ num }}#logs-anchor">{{ num }}</a></li>
+            <li class="page-item"><a class="page-link" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ num }}#logs-anchor">{{ num }}</a></li>
             {% endif %}
           {% endfor %}
 
           {% if recent_logs.has_next %}
-          <li class="page-item"><a class="page-link text-white bg-dark border-secondary" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ recent_logs.next_page_number }}#logs-anchor"><i class="bi bi-chevron-right"></i></a></li>
+          <li class="page-item"><a class="page-link" href="?log_q={{ log_search_query|default:'' }}&log_action={{ log_action_selected }}&log_start_date={{ log_start_date|default:'' }}&log_end_date={{ log_end_date|default:'' }}&log_page={{ recent_logs.next_page_number }}#logs-anchor"><i class="bi bi-chevron-right"></i></a></li>
           {% else %}
-          <li class="page-item disabled"><span class="page-link bg-dark border-secondary opacity-50"><i class="bi bi-chevron-right"></i></span></li>
+          <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
           {% endif %}
         </ul>
       </nav>
       {% endif %}
     </div>
 
-    <!-- Scroll Loading States -->
+    <!-- Scroll Loading Indicator -->
     <div id="logs-loading-spinner" class="text-center py-3" style="display: none;">
       <div class="spinner-border spinner-border-sm text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <span class="ms-2 text-white opacity-70" style="font-size: 0.8rem;">Loading more logs...</span>
+      <span class="ms-2 text-muted" style="font-size: 0.8rem;">Loading audit logs...</span>
     </div>
     <div id="logs-no-more" class="text-center text-muted py-3" style="display: none; font-size: 0.8rem;">
-      <i class="bi bi-info-circle me-1"></i> No more logs to load.
+      <i class="bi bi-check-circle me-1 text-success"></i> All audit logs loaded.
     </div>
   </div>
 
-  <!-- ── Chart.js Scripts ── -->
+</div>
+
+<!-- ── Chart.js Setup ── -->
 <script id="chart-monthly-labels" type="application/json">{{ monthly_labels|safe }}</script>
 <script id="chart-monthly-data" type="application/json">{{ monthly_data|safe }}</script>
 <script id="chart-gender-data" type="application/json">[{{ gender_male }}, {{ gender_female }}]</script>
 <script id="chart-bed-data" type="application/json">[{{ occupied_beds }}, {{ vacant_beds }}]</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-const monthlyLabels = JSON.parse(document.getElementById('chart-monthly-labels').textContent);
-const monthlyData = JSON.parse(document.getElementById('chart-monthly-data').textContent);
-const genderData = JSON.parse(document.getElementById('chart-gender-data').textContent);
-const bedData = JSON.parse(document.getElementById('chart-bed-data').textContent);
-const chartDefaults = {
-  color: isLight ? '#475569' : 'rgba(255,255,255,0.6)',
-  borderColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
-};
-const chartTextMuted = isLight ? '#64748b' : 'rgba(255,255,255,0.45)';
-const chartGridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
-const chartVacantBg = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
-const chartVacantBorder = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)';
 
-// Revenue Bar Chart
-const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-new Chart(revenueCtx, {
-  type: 'bar',
-  data: {
-    labels: monthlyLabels,
-    datasets: [{
-      label: 'Revenue (₹)',
-      data: monthlyData,
-      backgroundColor: 'rgba(79,156,249,0.25)',
-      borderColor: 'rgba(79,156,249,0.8)',
-      borderWidth: 2,
-      borderRadius: 8,
-      borderSkipped: false,
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: {
-        ticks: { color: chartTextMuted, font: { size: 11 } },
-        grid: { color: chartGridColor }
+<script>
+// Dynamic Clock Script
+(function updateClock() {
+  const clockEl = document.getElementById('clock-display');
+  if (clockEl) {
+    const now = new Date();
+    clockEl.textContent = now.toLocaleTimeString();
+  }
+  setTimeout(updateClock, 1000);
+})();
+
+// Render Charts
+(function() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const monthlyLabels = JSON.parse(document.getElementById('chart-monthly-labels').textContent);
+  const monthlyData = JSON.parse(document.getElementById('chart-monthly-data').textContent);
+  const genderData = JSON.parse(document.getElementById('chart-gender-data').textContent);
+  const bedData = JSON.parse(document.getElementById('chart-bed-data').textContent);
+
+  const chartTextMuted = isLight ? '#64748b' : 'rgba(255,255,255,0.5)';
+  const chartGridColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.06)';
+  const chartVacantBg = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+
+  // 1. Revenue Bar Chart with Canvas Gradient
+  const revenueCanvas = document.getElementById('revenueChart');
+  if (revenueCanvas) {
+    const revenueCtx = revenueCanvas.getContext('2d');
+    const gradient = revenueCtx.createLinearGradient(0, 0, 0, 220);
+    gradient.addColorStop(0, '#3b82f6');
+    gradient.addColorStop(1, '#1d4ed8');
+
+    new Chart(revenueCtx, {
+      type: 'bar',
+      data: {
+        labels: monthlyLabels,
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: monthlyData,
+          backgroundColor: gradient,
+          borderRadius: 8,
+          borderSkipped: false,
+          maxBarThickness: 36
+        }]
       },
-      y: {
-        ticks: { color: chartTextMuted, font: { size: 11 },
-          callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v)
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: isLight ? '#0f172a' : '#161b22',
+            titleColor: '#ffffff',
+            bodyColor: '#3b82f6',
+            padding: 10,
+            cornerRadius: 8,
+            callbacks: {
+              label: ctx => ' Revenue: ₹' + Number(ctx.raw).toLocaleString()
+            }
+          }
         },
-        grid: { color: chartGridColor }
+        scales: {
+          x: {
+            ticks: { color: chartTextMuted, font: { size: 11, weight: '600' } },
+            grid: { display: false }
+          },
+          y: {
+            ticks: {
+              color: chartTextMuted,
+              font: { size: 11 },
+              callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v)
+            },
+            grid: { color: chartGridColor }
+          }
+        }
       }
-    }
+    });
   }
-});
 
-// Gender Donut Chart
-const gCtx = document.getElementById('genderChart').getContext('2d');
-new Chart(gCtx, {
-  type: 'doughnut',
-  data: {
-    labels: ['Male', 'Female'],
-    datasets: [{
-      data: genderData,
-      backgroundColor: ['rgba(79,156,249,0.8)', 'rgba(168,85,247,0.8)'],
-      borderColor: ['#4f9cf9', '#a855f7'],
-      borderWidth: 2,
-      hoverOffset: 6,
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    cutout: '68%',
-    plugins: {
-      legend: { display: false }
-    }
+  // 2. Gender Split Doughnut Chart
+  const gCanvas = document.getElementById('genderChart');
+  if (gCanvas) {
+    new Chart(gCanvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Male', 'Female'],
+        datasets: [{
+          data: genderData,
+          backgroundColor: ['#3b82f6', '#a855f7'],
+          borderColor: isLight ? '#ffffff' : '#161b22',
+          borderWidth: 3,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: { legend: { display: false } }
+      }
+    });
   }
-});
 
-// Bed Occupancy Donut
-const bCtx = document.getElementById('bedChart').getContext('2d');
-new Chart(bCtx, {
-  type: 'doughnut',
-  data: {
-    labels: ['Occupied', 'Vacant'],
-    datasets: [{
-      data: bedData,
-      backgroundColor: ['rgba(34,197,94,0.8)', chartVacantBg],
-      borderColor: ['#22c55e', chartVacantBorder],
-      borderWidth: 2,
-      hoverOffset: 6,
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    cutout: '68%',
-    plugins: { legend: { display: false } }
+  // 3. Bed Occupancy Doughnut Chart
+  const bCanvas = document.getElementById('bedChart');
+  if (bCanvas) {
+    new Chart(bCanvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Occupied', 'Vacant'],
+        datasets: [{
+          data: bedData,
+          backgroundColor: ['#10b981', chartVacantBg],
+          borderColor: isLight ? '#ffffff' : '#161b22',
+          borderWidth: 3,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: { legend: { display: false } }
+      }
+    });
   }
-});
-</script>
+})();
 
-<script>
+// Infinite Scroll AJAX Pagination for Audit Logs
 (function() {
   document.addEventListener('DOMContentLoaded', function() {
     const tableContainer = document.getElementById('audit-logs-table-container');
@@ -881,17 +1100,13 @@ new Chart(bCtx, {
     let hasNext = {% if recent_logs.has_next %}true{% else %}false{% endif %};
     let loading = false;
 
-    // Helper to dynamically move modals to body (avoids backdrop z-index overlay issue)
     function moveNewModalsToBody() {
       tableBody.querySelectorAll('.modal').forEach(function(modal) {
         document.body.appendChild(modal);
       });
     }
-
-    // Move initial dashboard log modals
     moveNewModalsToBody();
 
-    // Hide pagination controls if JS is active
     const paginationEl = document.getElementById('audit-logs-pagination');
     if (paginationEl) {
       paginationEl.style.setProperty('display', 'none', 'important');
@@ -900,11 +1115,8 @@ new Chart(bCtx, {
     const spinner = document.getElementById('logs-loading-spinner');
     const noMoreEl = document.getElementById('logs-no-more');
 
-    // Scroll listener on the scrollable container itself
     tableContainer.addEventListener('scroll', function() {
       if (!hasNext || loading) return;
-
-      // When the user has scrolled to the bottom of the container
       if (tableContainer.scrollHeight - tableContainer.scrollTop <= tableContainer.clientHeight + 40) {
         loadMoreLogs();
       }
