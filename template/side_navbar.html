@@ -6,14 +6,17 @@
     .sidebar-pro .nav-link-collapse {
         position: relative;
     }
+
     .sidebar-pro .collapse-chevron {
         transition: transform 0.2s ease;
         margin-right: 0 !important;
         margin-left: auto;
     }
+
     .sidebar-pro .nav-link-collapse:not(.collapsed) .collapse-chevron {
         transform: rotate(180deg);
     }
+
     .sidebar-pro .collapse-submenu-list {
         background: rgba(255, 255, 255, 0.02);
         border-radius: 8px;
@@ -22,29 +25,34 @@
         list-style: none;
         border-left: 1px dashed var(--border-light);
     }
+
     html[data-theme="light"] .sidebar-pro .collapse-submenu-list {
         background: rgba(0, 0, 0, 0.02);
     }
+
     .sidebar-pro .collapse-submenu-list .nav-link {
         margin: 1px 8px !important;
         height: 32px;
         font-size: 0.8rem;
         padding-left: 20px !important;
     }
+
     .sidebar-pro .collapse-submenu-list .nav-link.active::before {
         display: none !important;
     }
-    
+
     /* Collapsed Sidebar Adjustments */
     .sidebar-wrapper.sidebar-collapsed .collapse-chevron {
         display: none !important;
     }
+
     .sidebar-wrapper.sidebar-collapsed .collapse-submenu-list {
         margin: 2px auto !important;
         width: 100%;
         background: transparent;
         border-left: none;
     }
+
     .sidebar-wrapper.sidebar-collapsed .collapse-submenu-list .nav-link {
         margin: 2px auto !important;
         width: 38px !important;
@@ -58,10 +66,12 @@
         opacity: 0.6;
         transition: all 0.2s ease;
     }
+
     .quick-logout-btn:hover {
         opacity: 1;
         color: var(--primary) !important;
     }
+
     html[data-theme="dark"] .quick-logout-btn:hover {
         color: #ef4444 !important;
     }
@@ -69,15 +79,17 @@
 
 <div class="p-0 sidebar-wrapper">
     <nav id="sidebarMenu" class="sidebar-pro">
-        
+
         <!-- Brand Header (56px Height) -->
         <div class="sidebar-brand">
-            <div class="brand-icon rounded-3 bg-gradient-primary d-flex align-items-center justify-content-center text-white shadow-sm" style="width:34px; height:34px;">
+            <div class="brand-icon rounded-3 bg-gradient-primary d-flex align-items-center justify-content-center text-white shadow-sm"
+                style="width:34px; height:34px;">
                 <span class="material-symbols-outlined fs-5" style="color: #ffffff !important;">apartment</span>
             </div>
             <div class="d-flex flex-column ms-2 sidebar-label">
                 <span class="fw-bold fs-6 lh-1" style="color: var(--text-main, #2B2F38);">Apex Hostel</span>
-                <span class="mt-1" style="font-size: 0.65rem; color: var(--text-muted, #6B7280);">Management System</span>
+                <span class="mt-1" style="font-size: 0.65rem; color: var(--text-muted, #6B7280);">Management
+                    System</span>
             </div>
         </div>
 
@@ -86,7 +98,8 @@
             <ul class="nav flex-column mb-auto">
                 {% if is_superadmin or user.profile.role.name == 'Admin' or user.profile.role.name == 'Staff' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'superadmin_dashboard' %}active{% endif %}" aria-current="page" href="{% url 'superadmin_dashboard' %}" title="Dashboard">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'superadmin_dashboard' %}active{% endif %}"
+                        aria-current="page" href="{% url 'superadmin_dashboard' %}" title="Dashboard">
                         <span class="material-symbols-outlined">speed</span>
                         <span class="sidebar-label">Dashboard</span>
                     </a>
@@ -98,46 +111,55 @@
                     <span class="section-title">System Controls</span>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link nav-link-collapse collapsed {% if request.resolver_match.url_name == 'system_settings_view' %}active{% endif %}" 
-                       data-bs-toggle="collapse" href="#settingsCollapse" role="button" aria-expanded="{% if request.resolver_match.url_name == 'system_settings_view' %}true{% else %}false{% endif %}" aria-controls="settingsCollapse" title="System Settings">
+                    <a class="nav-link nav-link-collapse collapsed {% if request.resolver_match.url_name == 'system_settings_view' %}active{% endif %}"
+                        data-bs-toggle="collapse" href="#settingsCollapse" role="button"
+                        aria-expanded="{% if request.resolver_match.url_name == 'system_settings_view' %}true{% else %}false{% endif %}"
+                        aria-controls="settingsCollapse" title="System Settings">
                         <span class="material-symbols-outlined">settings</span>
                         <span class="sidebar-label">System Settings</span>
                         <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
                     </a>
-                    <div class="collapse {% if request.resolver_match.url_name == 'system_settings_view' %}show{% endif %}" id="settingsCollapse">
+                    <div class="collapse {% if request.resolver_match.url_name == 'system_settings_view' %}show{% endif %}"
+                        id="settingsCollapse">
                         <ul class="collapse-submenu-list">
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'branding' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=branding" title="Identity & Branding">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'branding' %}active{% endif %}"
+                                    href="{% url 'system_settings_view' %}?tab=branding" title="Identity & Branding">
                                     <i class="bi bi-shield-lock opacity-75 fs-6 me-2"></i>
                                     <span class="sidebar-label">Identity & Branding</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'theme' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=theme" title="Theme & Styling">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'theme' %}active{% endif %}"
+                                    href="{% url 'system_settings_view' %}?tab=theme" title="Theme & Styling">
                                     <i class="bi bi-palette opacity-75 fs-6 me-2"></i>
                                     <span class="sidebar-label">Theme & Styling</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'regional' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=regional" title="Regional Defaults">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'regional' %}active{% endif %}"
+                                    href="{% url 'system_settings_view' %}?tab=regional" title="Regional Defaults">
                                     <i class="bi bi-globe opacity-75 fs-6 me-2"></i>
                                     <span class="sidebar-label">Regional Defaults</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'security' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=security" title="Security & Sessions">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'security' %}active{% endif %}"
+                                    href="{% url 'system_settings_view' %}?tab=security" title="Security & Sessions">
                                     <i class="bi bi-shield-check opacity-75 fs-6 me-2"></i>
                                     <span class="sidebar-label">Security & Sessions</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'access' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=access" title="Access Control">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'access' %}active{% endif %}"
+                                    href="{% url 'system_settings_view' %}?tab=access" title="Access Control">
                                     <i class="bi bi-shield-slash opacity-75 fs-6 me-2"></i>
                                     <span class="sidebar-label">Access Control</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'operations' %}active{% endif %}" href="{% url 'system_settings_view' %}?tab=operations" title="Data & Systems">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'system_settings_view' and request.GET.tab == 'operations' %}active{% endif %}"
+                                    href="{% url 'system_settings_view' %}?tab=operations" title="Data & Systems">
                                     <i class="bi bi-clipboard-pulse opacity-75 fs-6 me-2"></i>
                                     <span class="sidebar-label">Data & Systems</span>
                                 </a>
@@ -146,13 +168,15 @@
                     </div>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'role_list' or request.resolver_match.url_name == 'role_create' or request.resolver_match.url_name == 'role_edit' or request.resolver_match.url_name == 'role_delete' %}active{% endif %}" href="{% url 'role_list' %}" title="Roles & Permissions">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'role_list' or request.resolver_match.url_name == 'role_create' or request.resolver_match.url_name == 'role_edit' or request.resolver_match.url_name == 'role_delete' %}active{% endif %}"
+                        href="{% url 'role_list' %}" title="Roles & Permissions">
                         <span class="material-symbols-outlined">verified_user</span>
                         <span class="sidebar-label">Roles & Perms</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'user_management' or request.resolver_match.url_name == 'user_create' or request.resolver_match.url_name == 'user_edit' or request.resolver_match.url_name == 'user_delete' %}active{% endif %}" href="{% url 'user_management' %}" title="User Accounts">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'user_management' or request.resolver_match.url_name == 'user_create' or request.resolver_match.url_name == 'user_edit' or request.resolver_match.url_name == 'user_delete' %}active{% endif %}"
+                        href="{% url 'user_management' %}" title="User Accounts">
                         <span class="material-symbols-outlined">manage_accounts</span>
                         <span class="sidebar-label">User Accounts</span>
                     </a>
@@ -161,7 +185,8 @@
 
                 {% if user.profile.role.name == 'Warden' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'warden_dashboard' %}active{% endif %}" href="{% url 'warden_dashboard' %}" title="Warden Dashboard">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'warden_dashboard' %}active{% endif %}"
+                        href="{% url 'warden_dashboard' %}" title="Warden Dashboard">
                         <span class="material-symbols-outlined">dashboard</span>
                         <span class="sidebar-label">Warden Dashboard</span>
                     </a>
@@ -170,20 +195,24 @@
 
                 {% if user.profile.role.name == 'Student' %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}" href="{% url 'student_app:student_dashboard' %}" title="My Dashboard">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}"
+                        href="{% url 'student_app:student_dashboard' %}" title="My Dashboard">
                         <span class="material-symbols-outlined">person_pin</span>
                         <span class="sidebar-label">My Dashboard</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'my_gate_passes' %}active{% endif %}" href="{% url 'student_app:my_gate_passes' %}" title="My Gate Passes">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'my_gate_passes' %}active{% endif %}"
+                        href="{% url 'student_app:my_gate_passes' %}" title="My Gate Passes">
                         <span class="material-symbols-outlined">qr_code</span>
                         <span class="sidebar-label">My Gate Passes</span>
-                        <span class="badge rounded-pill bg-primary bg-opacity-20 text-primary ms-auto px-1.5 py-0.5 sidebar-label" style="font-size:0.625rem; border:1px solid rgba(37,99,235,0.2);">Live</span>
+                        <span
+                            class="badge rounded-pill bg-primary bg-opacity-20 text-primary ms-auto px-1.5 py-0.5 sidebar-label"
+                            style="font-size:0.625rem; border:1px solid rgba(37,99,235,0.2);">Live</span>
                     </a>
                 </li>
                 {% endif %}
-                
+
                 {% if user.profile.role.name == 'Student' %}
                 <li class="nav-section">
                     <span class="section-title">My Profile</span>
@@ -213,7 +242,9 @@
                     <a class="nav-link" href="{% url 'student_app:student_leave_details' %}" title="My Leave Requests">
                         <span class="material-symbols-outlined">event_note</span>
                         <span class="sidebar-label">My Leave Requests</span>
-                        <span class="badge rounded-pill bg-danger bg-opacity-20 text-danger ms-auto px-1.5 py-0.5 sidebar-label" style="font-size:0.625rem; border:1px solid rgba(220,53,69,0.2);">Alert</span>
+                        <span
+                            class="badge rounded-pill bg-danger bg-opacity-20 text-danger ms-auto px-1.5 py-0.5 sidebar-label"
+                            style="font-size:0.625rem; border:1px solid rgba(220,53,69,0.2);">Alert</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -236,10 +267,10 @@
                 {% for module in visible_modules %}
                 {% if module.url_name == 'room_base' or module.url_name == 'room_manage' or module.code == 'room' %}
                 <li class="nav-item">
-                    <a class="nav-link nav-link-collapse {% if not '/room' in request.path %}collapsed{% endif %} {% if '/room' in request.path %}active{% endif %}" 
-                       data-bs-toggle="collapse" href="#roomBedsCollapse" role="button" 
-                       aria-expanded="{% if '/room' in request.path %}true{% else %}false{% endif %}" 
-                       aria-controls="roomBedsCollapse" title="Rooms & Beds">
+                    <a class="nav-link nav-link-collapse {% if not '/room' in request.path %}collapsed{% endif %} {% if '/room' in request.path %}active{% endif %}"
+                        data-bs-toggle="collapse" href="#roomBedsCollapse" role="button"
+                        aria-expanded="{% if '/room' in request.path %}true{% else %}false{% endif %}"
+                        aria-controls="roomBedsCollapse" title="Rooms & Beds">
                         <span class="material-symbols-outlined me-2">bed</span>
                         <span class="sidebar-label">Rooms & Beds</span>
                         <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
@@ -247,43 +278,50 @@
                     <div class="collapse {% if '/room' in request.path %}show{% endif %}" id="roomBedsCollapse">
                         <ul class="collapse-submenu-list">
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'room_base' %}active{% endif %}" href="{% url 'room_base' %}" title="Overview">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'room_base' %}active{% endif %}"
+                                    href="{% url 'room_base' %}" title="Overview">
                                     <i class="bi bi-grid-1x2 opacity-75 me-2"></i>
                                     <span class="sidebar-label">Overview</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'room_manage' %}active{% endif %}" href="{% url 'room_manage' %}" title="Room Management">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'room_manage' %}active{% endif %}"
+                                    href="{% url 'room_manage' %}" title="Room Management">
                                     <i class="bi bi-door-open opacity-75 me-2"></i>
                                     <span class="sidebar-label">Room Management</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'room_allocate' %}active{% endif %}" href="{% url 'room_allocate' %}" title="Allocate">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'room_allocate' %}active{% endif %}"
+                                    href="{% url 'room_allocate' %}" title="Allocate">
                                     <i class="bi bi-person-plus opacity-75 me-2"></i>
                                     <span class="sidebar-label">Allocate</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'room_auto_allocate' %}active{% endif %}" href="{% url 'room_auto_allocate' %}" title="Auto Allocate">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'room_auto_allocate' %}active{% endif %}"
+                                    href="{% url 'room_auto_allocate' %}" title="Auto Allocate">
                                     <i class="bi bi-gear-wide-connected opacity-75 me-2"></i>
                                     <span class="sidebar-label">Auto Allocate</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'create_room' %}active{% endif %}" href="{% url 'create_room' %}" title="New Room">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'create_room' %}active{% endif %}"
+                                    href="{% url 'create_room' %}" title="New Room">
                                     <i class="bi bi-plus-circle opacity-75 me-2"></i>
                                     <span class="sidebar-label">New Room</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'building_list' or 'buildings' in request.path %}active{% endif %}" href="{% url 'building_list' %}" title="Buildings">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'building_list' or 'buildings' in request.path %}active{% endif %}"
+                                    href="{% url 'building_list' %}" title="Buildings">
                                     <i class="bi bi-building opacity-75 me-2"></i>
                                     <span class="sidebar-label">Buildings</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'student_details_list' %}active{% endif %}" href="{% url 'student_details_list' %}" title="Residents">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'student_details_list' %}active{% endif %}"
+                                    href="{% url 'student_details_list' %}" title="Residents">
                                     <i class="bi bi-people opacity-75 me-2"></i>
                                     <span class="sidebar-label">Residents</span>
                                 </a>
@@ -293,7 +331,8 @@
                 </li>
                 {% else %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name or module.code in request.path %}active{% endif %}" href="{% safe_url module.url_name %}" title="{{ module.menu_label }}">
+                    <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name or module.code in request.path %}active{% endif %}"
+                        href="{% safe_url module.url_name %}" title="{{ module.menu_label }}">
                         {% if "bi-" in module.icon %}
                         <i class="bi {{ module.icon }} opacity-75 me-2"></i>
                         {% else %}
@@ -308,14 +347,16 @@
                 {% endif %}
             </ul>
         </div>
-        
+
         <!-- Pinned Bottom Role/User Profile Card (54px Height) -->
         <div class="user-role-card">
             <div class="user-role-icon shadow-sm" style="width:34px; height:34px; border-radius: 50%;">
                 {% if request.user.student and request.user.student.photo %}
-                    <img src="{{ request.user.student.photo.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">
+                <img src="{{ request.user.student.photo.url }}"
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">
                 {% else %}
-                    <img src="{% static 'image/User.jpg' %}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">
+                <img src="{% static 'image/User.jpg' %}"
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">
                 {% endif %}
             </div>
             <div class="d-flex flex-column ms-2 sidebar-label" style="overflow: hidden; max-width: 110px;">
@@ -323,14 +364,16 @@
                 {% if is_superadmin %}
                 <span class="user-role-text text-truncate" style="display: block;">Super Admin</span>
                 {% else %}
-                <span class="user-role-text text-truncate" style="display: block;">{{ user.profile.role.name|default:"No Role" }}</span>
+                <span class="user-role-text text-truncate" style="display: block;">{{ user.profile.role.name|default:"No
+                    Role" }}</span>
                 {% endif %}
             </div>
-            <a href="#" onclick="event.preventDefault(); document.getElementById('autoLogoutForm').submit();" class="ms-auto btn p-0 quick-logout-btn sidebar-label" title="Logout">
+            <a href="#" onclick="event.preventDefault(); document.getElementById('autoLogoutForm').submit();"
+                class="ms-auto btn p-0 quick-logout-btn sidebar-label" title="Logout">
                 <span class="material-symbols-outlined" style="font-size: 18px;">logout</span>
             </a>
         </div>
-        
+
     </nav>
 </div>
 {% endblock %}

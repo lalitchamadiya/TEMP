@@ -208,10 +208,10 @@
                 </thead>
                 <tbody>
                     {% for bed in beds %}
-                    {% if bed.student.roll %}
+                    {% if bed.student %}
                     <tr class="registry-row" 
                         data-name="{{ bed.student.name }}" 
-                        data-roll="{{ bed.student.roll }}" 
+                        data-roll="{{ bed.student.roll|default:bed.student.student_id }}" 
                         data-phone="{{ bed.student.phone_number }}"
                         data-email="{{ bed.student.email }}"
                         data-room="{{ bed.room.room_number }}"
@@ -230,7 +230,7 @@
                                 {% endif %}
                                 <div class="d-flex flex-column">
                                     <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ bed.student.name }}</span>
-                                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing:0.02em;">Roll No: {{ bed.student.roll }}</span>
+                                    <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing:0.02em;">Roll No: {{ bed.student.roll|default:bed.student.student_id }}</span>
                                 </div>
                             </div>
                         </td>

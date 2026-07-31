@@ -624,12 +624,15 @@ def building_toggle(request, pk):
 # ── Residents & Student Views ──
 @login_required(login_url='/authentication/login')
 def student_details_list(request):
+    beds = Bed.objects.filter(student__isnull=False).select_related('student', 'room', 'room__building')
     students = Student.objects.filter(status='Active').order_by('-student_id')
     context = {
         'page_title': 'Hostel Residents',
+        'beds': beds,
         'students': students,
     }
     return render(request, 'room/student_details_list.html', context)
+
 
 
 @login_required(login_url='/authentication/login')
