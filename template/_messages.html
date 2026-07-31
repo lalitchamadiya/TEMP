@@ -1,14 +1,111 @@
-{% if messages %}
-<div id="popup-messages" class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1055;">
+<div id="hms-toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
+    {% if messages %}
     {% for message in messages %}
-    <div class="toast align-items-center text-bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="3000">
-        <div class="d-flex">
-            <div class="toast-body">
-                {{ message|safe }}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    <div class="custom-toast toast-{{ message.tags|default:'info' }}" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-icon">
+            {% if message.tags == 'success' or 'success' in message.tags %}
+                <i class="bi bi-check-circle-fill"></i>
+            {% elif message.tags == 'error' or message.tags == 'danger' or 'error' in message.tags %}
+                <i class="bi bi-exclamation-octagon-fill"></i>
+            {% elif message.tags == 'warning' or 'warning' in message.tags %}
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            {% else %}
+                <i class="bi bi-info-circle-fill"></i>
+            {% endif %}
         </div>
+        <div class="toast-content">
+            <div class="toast-title">
+                {% if message.tags == 'success' or 'success' in message.tags %}Success
+                {% elif message.tags == 'error' or message.tags == 'danger' or 'error' in message.tags %}Error
+                {% elif message.tags == 'warning' or 'warning' in message.tags %}Warning
+                {% else %}Notification{% endif %}
+            </div>
+            <div class="toast-message">{{ message|safe }}</div>
+        </div>
+        <button type="button" class="toast-close-btn" onclick="dismissCustomToast(this.closest('.custom-toast'))" aria-label="Close">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="toast-progress"></div>
     </div>
     {% endfor %}
+    {% endif %}
 </div>
-{% endif %}
+
+<script>
+function dismissCustomToast(toastEl) {
+    if (!toastEl || toastEl.classList.contains('toast-hiding')) return;
+    toastEl.classList.add('toast-hiding');
+    setTimeout(function() {
+        toastEl.remove();
+    }, 350);
+}
+
+function initToastAutoDismiss(toastEl) {
+    if (!toastEl) return;
+    var timer = setTimeout(function() {
+        dismissCustomToast(toastEl);
+    }, 4500);
+
+    toastEl.addEventListener('mouseenter', function() {
+        clearTimeout(timer);
+    });
+
+    toastEl.addEventListener('mouseleave', function() {
+        timer = setTimeout(function() {
+            dismissCustomToast(toastEl);
+        }, 2000);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var existingToasts = document.querySelectorAll('#hms-toast-container .custom-toast');
+    existingToasts.forEach(function(toast) {
+        initToastAutoDismiss(toast);
+    });
+});
+
+window.showToastNotification = function(message, type, title) {
+    type = type || 'info';
+    var container = document.getElementById('hms-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'hms-toast-container';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '1090';
+        document.body.appendChild(container);
+    }
+
+    var iconClass = 'bi-info-circle-fill';
+    var defaultTitle = 'Notification';
+    if (type === 'success') {
+        iconClass = 'bi-check-circle-fill';
+        defaultTitle = 'Success';
+    } else if (type === 'error' || type === 'danger') {
+        iconClass = 'bi-exclamation-octagon-fill';
+        defaultTitle = 'Error';
+    } else if (type === 'warning') {
+        iconClass = 'bi-exclamation-triangle-fill';
+        defaultTitle = 'Warning';
+    }
+
+    var toastHtml = `
+        <div class="custom-toast toast-${type}" role="alert">
+            <div class="toast-icon"><i class="bi ${iconClass}"></i></div>
+            <div class="toast-content">
+                <div class="toast-title">${title || defaultTitle}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button type="button" class="toast-close-btn" onclick="dismissCustomToast(this.closest('.custom-toast'))" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="toast-progress"></div>
+        </div>
+    `;
+
+    var tempDiv = document.createElement('div');
+    tempDiv.innerHTML = toastHtml.trim();
+    var newToast = tempDiv.firstChild;
+    container.appendChild(newToast);
+    initToastAutoDismiss(newToast);
+};
+</script>
