@@ -40,23 +40,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-1%8h(#9yx%1ywjw^!=8!a!#q)@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
-
-# Allow Vercel domain automatically if provided in environment
-VERCEL_URL = os.getenv('VERCEL_URL', '')
-if VERCEL_URL and VERCEL_URL not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(VERCEL_URL)
-
-# Allow all Railway subdomains automatically
-RAILWAY_STATIC_URL = os.getenv('RAILWAY_STATIC_URL', '')
-if RAILWAY_STATIC_URL and RAILWAY_STATIC_URL not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(RAILWAY_STATIC_URL)
-
-# Default allowed hosts if none specified
-if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app', '.up.railway.app', '.vercel.app', '127.0.0.1']
-elif '.vercel.app' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('.vercel.app')
+# ALLOWED_HOSTS configuration for local, Railway, and Vercel environments
+ALLOWED_HOSTS = ['*']
 
 # CSRF & HTTPS trust for reverse proxies (Railway & Vercel)
 CSRF_TRUSTED_ORIGINS = [
@@ -124,7 +109,7 @@ WSGI_APPLICATION = 'Hostel_Management_System.wsgi.application'
 DATABASE_URL = os.getenv('DATABASE_URL', '')
 
 if DATABASE_URL and HAS_DJ_DATABASE_URL:
-    # Production: PostgreSQL via Railway DATABASE_URL
+    # Production: PostgreSQL via DATABASE_URL
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -133,11 +118,17 @@ if DATABASE_URL and HAS_DJ_DATABASE_URL:
         )
     }
 else:
-    # Fallback to SQLite (Development or if Railway PostgreSQL is not linked yet)
+    # Fallback SQLite: Use /tmp/db.sqlite3 in serverless environment (since /vercel/path0 is read-only)
+    IS_VERCEL = 'VERCEL' in os.environ or 'AWS_LAMBDA_FUNCTION_NAME' in os.environ
+    if IS_VERCEL:
+        DB_PATH = Path('/tmp/db.sqlite3')
+    else:
+        DB_PATH = BASE_DIR / 'db.sqlite3'
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': DB_PATH,
         }
     }
 

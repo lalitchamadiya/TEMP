@@ -10,6 +10,13 @@ sys.path.append(str(BASE_DIR))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Hostel_Management_System.settings')
 
 from django.core.wsgi import get_wsgi_application
+from django.core.management import call_command
 
-# Vercel serverless function entrypoint callable
+# Initialize Django WSGI application
 app = get_wsgi_application()
+
+# Auto-migrate database on cold start if using SQLite in serverless environment
+try:
+    call_command('migrate', interactive=False)
+except Exception as e:
+    print(f"Auto-migration info: {e}")
