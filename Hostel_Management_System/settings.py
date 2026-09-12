@@ -42,19 +42,27 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
 
+# Allow Vercel domain automatically if provided in environment
+VERCEL_URL = os.getenv('VERCEL_URL', '')
+if VERCEL_URL and VERCEL_URL not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(VERCEL_URL)
+
 # Allow all Railway subdomains automatically
 RAILWAY_STATIC_URL = os.getenv('RAILWAY_STATIC_URL', '')
 if RAILWAY_STATIC_URL and RAILWAY_STATIC_URL not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RAILWAY_STATIC_URL)
 
-# Allow *.railway.app and *.up.railway.app for Railway deployments
+# Default allowed hosts if none specified
 if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app', '.up.railway.app']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app', '.up.railway.app', '.vercel.app', '127.0.0.1']
+elif '.vercel.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.vercel.app')
 
-# CSRF & HTTPS trust for Railway's reverse proxy
+# CSRF & HTTPS trust for reverse proxies (Railway & Vercel)
 CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',
     'https://*.up.railway.app',
+    'https://*.vercel.app',
 ]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
