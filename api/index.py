@@ -15,8 +15,10 @@ from django.core.management import call_command
 # Initialize Django WSGI application
 app = get_wsgi_application()
 
-# Auto-migrate database on cold start if using SQLite in serverless environment
+# Auto-migrate database & seed modules + superadmin on deployment startup/cold-start
 try:
     call_command('migrate', interactive=False)
+    call_command('seed_modules')
+    call_command('seed_super_admin')
 except Exception as e:
-    print(f"Auto-migration info: {e}")
+    print(f"Auto-setup execution info: {e}")
