@@ -111,12 +111,14 @@ WSGI_APPLICATION = 'Hostel_Management_System.wsgi.application'
 DATABASE_URL = os.getenv('DATABASE_URL', '')
 
 if DATABASE_URL and HAS_DJ_DATABASE_URL:
-    # Production: PostgreSQL via DATABASE_URL
+    # Production: PostgreSQL via DATABASE_URL (Vercel Postgres, Neon, Supabase, Render, Railway)
+    ssl_req = 'sslmode=disable' not in DATABASE_URL
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
+            ssl_require=ssl_req
         )
     }
 else:
