@@ -52,12 +52,17 @@ def get_client_ip(request):
 # Auth — Validation, Registration, Login, Logout
 # ---------------------------------------------------------------------------
 
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+
+
 class EmailValidationView(View):
     def post(self, request):
-        from pyIsEmail import is_email
         data = json.loads(request.body)
-        email = data['email']
-        if not is_email(email):
+        email = data.get('email', '')
+        try:
+            validate_email(email)
+        except ValidationError:
             return JsonResponse({'email_error': 'Email is invalid'}, status=400)
         if User.objects.filter(email=email).exists():
             return JsonResponse({'email_error': 'Email already in use'}, status=409)
