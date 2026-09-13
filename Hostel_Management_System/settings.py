@@ -99,6 +99,7 @@ TEMPLATES = [
                 'authentication.context_processors.rbac_context',
                 'authentication.context_processors.hostel_context',
                 'authentication.context_processors.system_settings_context',
+                'authentication.context_processors.leave_context',
             ],
         },
     },

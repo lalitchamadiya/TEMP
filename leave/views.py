@@ -17,11 +17,7 @@ def generate_gate_pass_no():
 @login_required(login_url='/authentication/login')
 @permission_required('leave', 'view')
 def leave_base(request):
-    if hasattr(request.user, 'profile') and request.user.profile.role.name == 'Student':
-        pending_leave_count = HostelLeave.objects.filter(student__user=request.user, status='pending').count()
-    else:
-        pending_leave_count = HostelLeave.objects.filter(status='pending').count()
-    return render(request, 'leave/leave_base.html', {'leave': pending_leave_count})
+    return redirect('pending_leave')
 
 @login_required(login_url='/authentication/login')
 @permission_required('leave', 'edit')

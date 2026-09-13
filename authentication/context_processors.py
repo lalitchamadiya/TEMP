@@ -183,3 +183,20 @@ def system_settings_context(request):
     }
 
 
+def leave_context(request):
+    """
+    Injects pending_leave_count into the template context for side navigation badges.
+    """
+    if not request.user.is_authenticated:
+        return {'pending_leave_count': 0}
+    try:
+        from leave.models import HostelLeave
+        if hasattr(request.user, 'profile') and request.user.profile.role and request.user.profile.role.name == 'Student':
+            count = HostelLeave.objects.filter(student__user=request.user, status='pending').count()
+        else:
+            count = HostelLeave.objects.filter(status='pending').count()
+        return {'pending_leave_count': count}
+    except Exception:
+        return {'pending_leave_count': 0}
+
+

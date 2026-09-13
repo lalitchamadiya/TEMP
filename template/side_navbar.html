@@ -338,22 +338,21 @@
                         aria-controls="leaveManagementCollapse" title="Leave Management">
                         <i class="bi bi-calendar-event opacity-75 me-2"></i>
                         <span class="sidebar-label">Leave Management</span>
-                        <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
+                        {% if pending_leave_count > 0 %}
+                        <span class="badge rounded-pill bg-danger ms-auto me-1 sidebar-label" style="font-size: 0.65rem; padding: 0.25em 0.55em;">{{ pending_leave_count }}</span>
+                        {% endif %}
+                        <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron ms-1"></i>
                     </a>
                     <div class="collapse {% if '/leave' in request.path %}show{% endif %}" id="leaveManagementCollapse">
                         <ul class="collapse-submenu-list">
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'leave_base' %}active{% endif %}"
-                                    href="{% url 'leave_base' %}" title="Dashboard">
-                                    <i class="bi bi-house-door opacity-75 me-2"></i>
-                                    <span class="sidebar-label">Dashboard</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'pending_leave' %}active{% endif %}"
+                                <a class="nav-link {% if request.resolver_match.url_name == 'pending_leave' or request.resolver_match.url_name == 'leave_base' %}active{% endif %}"
                                     href="{% url 'pending_leave' %}" title="Pending Requests">
                                     <i class="bi bi-hourglass-split opacity-75 me-2"></i>
                                     <span class="sidebar-label">Pending Requests</span>
+                                    {% if pending_leave_count > 0 %}
+                                    <span class="badge rounded-pill bg-danger ms-auto sidebar-label" style="font-size: 0.65rem; padding: 0.25em 0.55em;">{{ pending_leave_count }}</span>
+                                    {% endif %}
                                 </a>
                             </li>
                             <li class="nav-item">
