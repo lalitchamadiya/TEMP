@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from student.models import Student
 from django.utils import timezone
+from hms.utils import normalize_phone_number
 
 class StaffProfile(models.Model):
     DESIGNATION_CHOICES = [
@@ -45,6 +46,14 @@ class StaffProfile(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.get_designation_display()}"
+
+    def save(self, *args, **kwargs):
+        if self.phone:
+            try:
+                self.phone = normalize_phone_number(self.phone)
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
 
 
 

@@ -125,3 +125,48 @@ class SystemSettingsVerificationTest(TestCase):
         self.assertTrue(settings.enable_audit_logs)
         self.assertEqual(settings.password_expiry_days, 30)
         self.assertEqual(settings.backup_frequency, 'weekly')
+
+    def test_user_delete_with_student(self):
+        from student.models import Student
+        target_user = User.objects.create_user(username='std_to_delete', password='password')
+        Student.objects.create(user=target_user, name='Delete Me', email='delme@example.com')
+        
+        self.client.force_login(self.user)
+        url = reverse('user_delete', kwargs={'pk': target_user.pk})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(User.objects.filter(pk=target_user.pk).exists())
+
+
+class NoRoleAndAutoStudentRoleTests(TestCase):
+    def test_user_without_role_redirected_to_no_role_page(self):
+        norole_user = User.objects.create_user(username='noroleuser', password='password')
+        UserProfile.objects.create(user=norole_user, role=None)
+        
+        self.client.force_login(norole_user)
+        response = self.client.get('/roles/', follow=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('no_role'))
+        
+        no_role_res = self.client.get(reverse('no_role'))
+        self.assertEqual(no_role_res.status_code, 200)
+        self.assertContains(no_role_res, "No Role Assigned")
+
+    def test_student_registration_auto_creates_and_assigns_student_role(self):
+        # Ensure 'Student' role does not exist prior to test
+        Role.objects.filter(name='Student').delete()
+        self.assertFalse(Role.objects.filter(name='Student').exists())
+
+        response = self.client.post(reverse('register'), {
+            'username': 'newstudentreg',
+            'email': 'newstudentreg@example.com',
+            'password': 'password123',
+            'role': ''
+        })
+        self.assertEqual(response.status_code, 302)
+        
+        # Verify Student role was auto-created and assigned
+        self.assertTrue(Role.objects.filter(name='Student').exists())
+        user = User.objects.get(username='newstudentreg')
+        self.assertIsNotNone(user.profile.role)
+        self.assertEqual(user.profile.role.name, 'Student')

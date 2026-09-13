@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} | Fee Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-3">
+    <!-- Header -->
+    <div class="mb-3">
+        <h4 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-wallet2 text-primary fs-5"></i>Fee Manager
+        </h4>
+        <p class="text-muted small mb-0" style="font-size: 0.8rem;">Building-wise student fee tracking, historical payments, and auto-calculated balances</p>
+    </div>
+
+    <!-- Compact High-Contrast KPI Cards (Guaranteed Light & Dark Mode Visibility) -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-white" style="background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%) !important; color: #ffffff !important;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="text-truncate">
+                        <div class="text-white-50 text-uppercase fw-semibold text-truncate" style="font-size: 0.68rem; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.75) !important;">Total Expected Fees</div>
+                        <div class="fw-bold fs-4 mb-0 mt-0.5" style="color: #ffffff !important;">₹{{ total_expected|floatformat:2 }}</div>
+                    </div>
+                    <div class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                        <i class="bi bi-calculator fs-5 text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-white" style="background: linear-gradient(135deg, #059669 0%, #047857 100%) !important; color: #ffffff !important;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="text-truncate">
+                        <div class="text-white-50 text-uppercase fw-semibold text-truncate" style="font-size: 0.68rem; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.75) !important;">Total Collected Fees</div>
+                        <div class="fw-bold fs-4 mb-0 mt-0.5" style="color: #ffffff !important;">₹{{ total_collected|floatformat:2 }}</div>
+                    </div>
+                    <div class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                        <i class="bi bi-check-circle fs-5 text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 text-white" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important; color: #ffffff !important;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="text-truncate">
+                        <div class="text-white-50 text-uppercase fw-semibold text-truncate" style="font-size: 0.68rem; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.75) !important;">Total Outstanding Balance</div>
+                        <div class="fw-bold fs-4 mb-0 mt-0.5" style="color: #ffffff !important;">₹{{ total_due|floatformat:2 }}</div>
+                    </div>
+                    <div class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                        <i class="bi bi-exclamation-triangle fs-5 text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Table Card -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <!-- Filter Toolbar -->
+        <div class="card-header bg-white border-bottom border-light py-2 px-3">
+            <form method="GET" action="{% url 'fee_manager' %}" class="row g-2 align-items-center">
+                <!-- Search -->
+                <div class="col-lg-4 col-md-5">
+                    <div class="input-group input-group-sm rounded-2 border overflow-hidden">
+                        <span class="input-group-text bg-white border-0 py-1"><i class="bi bi-search text-muted small"></i></span>
+                        <input type="search" name="q" class="form-control border-0 shadow-none py-1 px-2" placeholder="Search resident by name or roll..." value="{{ search_q }}" style="font-size: 0.825rem;">
+                    </div>
+                </div>
+
+                <!-- Building Filter -->
+                <div class="col-lg-3 col-md-3">
+                    <select name="building" class="form-select form-select-sm rounded-2 shadow-none py-1" style="font-size: 0.825rem;" onchange="this.form.submit()">
+                        <option value="">All Buildings</option>
+                        {% for b in buildings %}
+                        <option value="{{ b.id }}" {% if current_building == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="col-lg-3 col-md-3">
+                    <select name="status" class="form-select form-select-sm rounded-2 shadow-none py-1" style="font-size: 0.825rem;" onchange="this.form.submit()">
+                        <option value="">All Payment Statuses</option>
+                        <option value="DUE" {% if current_status == 'DUE' %}selected{% endif %}>Pending Due</option>
+                        <option value="PARTIAL" {% if current_status == 'PARTIAL' %}selected{% endif %}>Partially Paid</option>
+                        <option value="PAID" {% if current_status == 'PAID' %}selected{% endif %}>Fully Paid</option>
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <div class="col-lg-2 col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-dark btn-sm rounded-2 w-100 py-1" style="font-size: 0.8rem;">
+                        <i class="bi bi-funnel me-1"></i> Filter
+                    </button>
+                    {% if search_q or current_building or current_status %}
+                    <a href="{% url 'fee_manager' %}" class="btn btn-outline-danger btn-sm rounded-2 d-flex align-items-center justify-content-center px-2 py-1" title="Clear Filters">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <!-- High-Density Compact Table -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-sm" style="font-size: 0.825rem;">
+                <thead class="table-light">
+                    <tr class="text-uppercase text-secondary fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.04em;">
+                        <th scope="col" class="ps-3 py-2">Resident Student</th>
+                        <th scope="col" class="py-2">Hostel Building</th>
+                        <th scope="col" class="py-2">Academic Year</th>
+                        <th scope="col" class="py-2">Total Fee</th>
+                        <th scope="col" class="py-2">Paid Amount</th>
+                        <th scope="col" class="py-2">Remaining Due</th>
+                        <th scope="col" class="py-2">Status</th>
+                        <th scope="col" class="pe-3 py-2 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in records %}
+                    <tr style="height: 40px;">
+                        <td class="ps-3 py-2">
+                            <span class="fw-semibold text-dark">{{ rec.student.name }}</span>
+                            {% if rec.student.roll %}
+                            <span class="text-muted small ms-1">({{ rec.student.roll }})</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-2">
+                            <span class="badge bg-light text-dark border px-2 py-1 fw-medium" style="font-size: 0.75rem;">
+                                <i class="bi bi-building me-1 opacity-75"></i>{{ rec.building.name }}
+                            </span>
+                        </td>
+                        <td class="py-2">
+                            <span class="badge bg-info-subtle text-info border-0 rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.75rem;">
+                                {{ rec.summary.academic_year|default:"2026" }}
+                            </span>
+                        </td>
+                        <td class="py-2 fw-bold text-dark">₹{{ rec.summary.total_fee|floatformat:2 }}</td>
+                        <td class="py-2 fw-bold text-success">₹{{ rec.summary.paid_fee|floatformat:2 }}</td>
+                        <td class="py-2 fw-bold text-danger">₹{{ rec.summary.remaining_fee|floatformat:2 }}</td>
+                        <td class="py-2">
+                            {% if rec.summary.status == 'PAID' %}
+                            <span class="badge bg-success-subtle text-success border-0 rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                <i class="bi bi-check-circle-fill me-1"></i> Paid
+                            </span>
+                            {% elif rec.summary.status == 'PARTIAL' %}
+                            <span class="badge bg-warning-subtle text-warning border-0 rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                <i class="bi bi-clock-history me-1"></i> Partial
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger border-0 rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i> Due
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="pe-3 py-2 text-end">
+                            <button type="button" class="btn btn-success btn-sm text-nowrap d-inline-flex align-items-center gap-1 rounded-2 px-2.5 py-1 shadow-sm" style="font-size: 0.75rem; font-weight: 600;" data-bs-toggle="modal" data-bs-target="#payModal-{{ rec.student.pk }}">
+                                <i class="bi bi-currency-rupee"></i> Record Fee
+                            </button>
+
+                            <!-- Pay Fee Modal -->
+                            <div class="modal fade text-start" id="payModal-{{ rec.student.pk }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow-lg rounded-3">
+                                        <div class="modal-header bg-light border-0 py-2.5 px-3">
+                                            <h6 class="modal-title fw-bold text-dark">
+                                                <i class="bi bi-receipt me-1.5 text-success"></i>Record Payment - {{ rec.student.name }}
+                                            </h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form method="POST" action="{% url 'record_fee_payment' rec.student.pk %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body p-3" style="font-size: 0.85rem;">
+                                                <!-- Student Fee Card -->
+                                                <div class="bg-light p-2.5 rounded-3 mb-3 border">
+                                                    <div class="d-flex justify-content-between small text-muted mb-1">
+                                                        <span>Hostel Building:</span>
+                                                        <strong class="text-dark">{{ rec.building.name }}</strong>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between small text-muted mb-1">
+                                                        <span>Total Building Fee ({{ rec.summary.academic_year }}):</span>
+                                                        <strong class="text-dark">₹{{ rec.summary.total_fee|floatformat:2 }}</strong>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between small text-muted mb-1">
+                                                        <span>Previously Paid Amount:</span>
+                                                        <strong class="text-success">₹{{ rec.summary.paid_fee|floatformat:2 }}</strong>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between small text-muted">
+                                                        <span>Current Outstanding Balance:</span>
+                                                        <strong class="text-danger">₹{{ rec.summary.remaining_fee|floatformat:2 }}</strong>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-2.5">
+                                                    <label class="form-label fw-semibold small text-muted mb-1">Amount Paid (₹)</label>
+                                                    <input type="number" step="0.01" name="amount_paid" class="form-control form-control-sm rounded-2" placeholder="Enter amount" value="{{ rec.summary.remaining_fee }}" required>
+                                                </div>
+
+                                                <div class="mb-2.5">
+                                                    <label class="form-label fw-semibold small text-muted mb-1">Payment Mode</label>
+                                                    <select name="payment_method" class="form-select form-select-sm rounded-2">
+                                                        <option value="ONLINE" selected>Online / UPI / NetBanking</option>
+                                                        <option value="CASH">Cash</option>
+                                                        <option value="CHEQUE">Cheque / DD</option>
+                                                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="mb-2.5">
+                                                    <label class="form-label fw-semibold small text-muted mb-1">Transaction / Reference ID (Optional)</label>
+                                                    <input type="text" name="transaction_id" class="form-control form-control-sm rounded-2" placeholder="e.g. UPI/123456789">
+                                                </div>
+
+                                                <div class="mb-2.5">
+                                                    <label class="form-label fw-semibold small text-muted mb-1">Remarks / Notes (Optional)</label>
+                                                    <textarea name="remarks" class="form-control form-control-sm rounded-2" rows="2" placeholder="Add receipt note..."></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0 pb-3 px-3">
+                                                <button type="button" class="btn btn-light btn-sm rounded-2 px-3" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success btn-sm rounded-2 px-3 shadow-sm">Save & Generate Receipt</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="bi bi-folder-x fs-2 d-block opacity-25 mb-1"></i>
+                            No allocated resident students found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

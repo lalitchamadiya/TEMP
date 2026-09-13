@@ -193,3 +193,112 @@ def delete_student(request, pk):
         messages.success(request, 'Student deleted successfully.')
         return redirect('student_list')
     return render(request, 'student/confirm_delete.html', {'student': student})
+
+
+from decimal import Decimal
+from room.models import HostelBuilding, Bed
+from .models import StudentFeePayment
+
+@login_required
+def fee_manager(request):
+    """
+    Fee Manager View: Shows calculated fees (Total Fee, Paid Fee, Remaining Fee) for all allocated students.
+    Automatically resolves fees based on building fee structure matching student admission year.
+    Carries forward paid fees on bed transfers.
+    """
+    building_filter = request.GET.get('building', '')
+    status_filter = request.GET.get('status', '')
+    search_q = request.GET.get('q', '').strip()
+
+    beds_qs = Bed.objects.filter(student__isnull=False).select_related('student', 'room', 'room__building')
+
+    if building_filter:
+        beds_qs = beds_qs.filter(room__building_id=building_filter)
+
+    if search_q:
+        beds_qs = beds_qs.filter(
+            Q(student__name__icontains=search_q) |
+            Q(student__roll__icontains=search_q) |
+            Q(student__email__icontains=search_q)
+        )
+
+    from django.utils import timezone
+    current_year = str(timezone.now().year)
+
+    records = []
+    total_expected = Decimal('0.00')
+    total_collected = Decimal('0.00')
+    total_due = Decimal('0.00')
+
+    for bed in beds_qs:
+        student = bed.student
+        summary = student.get_calculated_fee_summary()
+
+        # Business Rule: Show all current year students, but for past years, show ONLY students with remaining fees due
+        student_year = str(summary.get('academic_year') or (student.admission_date.year if student.admission_date else current_year))
+        if student_year != current_year and summary['remaining_fee'] <= Decimal('0.00'):
+            continue
+
+        if status_filter and summary['status'] != status_filter:
+            continue
+
+        total_expected += summary['total_fee']
+        total_collected += summary['paid_fee']
+        total_due += summary['remaining_fee']
+
+        records.append({
+            'student': student,
+            'bed': bed,
+            'building': bed.room.building,
+            'room_number': bed.room.room_number,
+            'summary': summary,
+        })
+
+    buildings = HostelBuilding.objects.filter(is_active=True)
+
+    context = {
+        'page_title': 'Fee Manager',
+        'records': records,
+        'total_expected': total_expected,
+        'total_collected': total_collected,
+        'total_due': total_due,
+        'buildings': buildings,
+        'current_building': building_filter,
+        'current_status': status_filter,
+        'search_q': search_q,
+    }
+    return render(request, 'student/fee_manager.html', context)
+
+
+@login_required
+def record_fee_payment(request, student_id):
+    student = get_object_or_404(Student, pk=student_id)
+    if request.method == 'POST':
+        try:
+            amount = Decimal(request.POST.get('amount_paid', '0.00'))
+            payment_method = request.POST.get('payment_method', 'ONLINE')
+            transaction_id = request.POST.get('transaction_id', '').strip()
+            remarks = request.POST.get('remarks', '').strip()
+
+            if amount <= Decimal('0.00'):
+                messages.error(request, 'Please enter a valid payment amount.')
+                return redirect('fee_manager')
+
+            receipt_no = f"REC-{timezone.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}"
+
+            StudentFeePayment.objects.create(
+                student=student,
+                academic_year=student.academic_year or str(student.admission_date.year if student.admission_date else 2026),
+                amount_paid=amount,
+                payment_date=timezone.now().date(),
+                payment_method=payment_method,
+                transaction_id=transaction_id,
+                receipt_number=receipt_no,
+                remarks=remarks,
+                recorded_by=request.user
+            )
+            messages.success(request, f'Payment of ₹{amount} recorded successfully for {student.name}. Receipt #{receipt_no}.')
+        except Exception as e:
+            messages.error(request, f'Error recording payment: {e}')
+
+    return redirect('fee_manager')

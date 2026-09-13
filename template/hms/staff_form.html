@@ -18,8 +18,6 @@
         </div>
     </div>
 
-    {% include '_messages.html' %}
-
     <form method="post" enctype="multipart/form-data" action="{% if staff %}{% url 'staff_edit' staff.pk %}{% else %}{% url 'staff_create' %}{% endif %}">
         {% csrf_token %}
         <div class="row g-4">

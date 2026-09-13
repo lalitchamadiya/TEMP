@@ -5,6 +5,7 @@ import datetime
 import re
 
 from .models import Student, GENDER_CHOICES, STATE_CHOICES, COURSE_CHOICES, SEM_CHOICES, CITY_CHOICES
+from hms.utils import normalize_phone_number
 
 
 class StudentForm(forms.ModelForm):
@@ -87,11 +88,25 @@ class StudentForm(forms.ModelForm):
     def clean_phone_number(self):
         phone = self.cleaned_data.get('phone_number')
         if phone:
-            pattern = r'^\+\d{1,3}\d{7,12}$'
-            if not re.match(pattern, phone):
-                raise ValidationError(
-                    "Enter phone number in international format e.g. +1234567890"
-                )
+            return normalize_phone_number(phone)
+        return phone
+
+    def clean_guardian_phone(self):
+        phone = self.cleaned_data.get('guardian_phone')
+        if phone:
+            return normalize_phone_number(phone)
+        return phone
+
+    def clean_emergency_phone(self):
+        phone = self.cleaned_data.get('emergency_phone')
+        if phone:
+            return normalize_phone_number(phone)
+        return phone
+
+    def clean_emergency_alt_phone(self):
+        phone = self.cleaned_data.get('emergency_alt_phone')
+        if phone:
+            return normalize_phone_number(phone)
         return phone
 
 

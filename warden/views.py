@@ -10,6 +10,8 @@ def warden_dashboard(request):
     assignment = DutyAssignment.objects.select_related('duty').filter(staff__user=request.user, is_active=True).first()
     
     students = Student.objects.all()
+    if assignment and assignment.specific_location:
+        students = students.filter(allocated_beds__room__building__name__icontains=assignment.specific_location).distinct()
     
     context = {
         'total_students': students.count(),

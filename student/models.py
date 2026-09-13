@@ -1,6 +1,8 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from hms.utils import normalize_phone_number
 GENDER_CHOICES = [
     ('Male', 'Male'),
     ('Female', 'Female'),
@@ -249,6 +251,29 @@ class Student(models.Model):
     def __str__(self):
         return f'{self.name} ({self.email})'
 
+    def save(self, *args, **kwargs):
+        if self.phone_number:
+            try:
+                self.phone_number = normalize_phone_number(self.phone_number)
+            except Exception:
+                pass
+        if self.guardian_phone:
+            try:
+                self.guardian_phone = normalize_phone_number(self.guardian_phone)
+            except Exception:
+                pass
+        if self.emergency_phone:
+            try:
+                self.emergency_phone = normalize_phone_number(self.emergency_phone)
+            except Exception:
+                pass
+        if self.emergency_alt_phone:
+            try:
+                self.emergency_alt_phone = normalize_phone_number(self.emergency_alt_phone)
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
+
     @property
     def enrollmentNumber(self):
         return self.roll
@@ -269,6 +294,136 @@ class Student(models.Model):
     @property
     def bed_set(self):
         return self.allocated_beds
+
+    def get_fee_info(self, academic_year=None):
+        """
+        Determines the applicable fee structure for the student based on:
+        1. Explicit academic_year passed
+        2. Student's academic_year field (e.g. '2026', '2027')
+        3. Student's admission_date year (e.g. '2026', '2027')
+        Returns dict with fee details or default zeroes.
+        """
+        target_year = academic_year or self.academic_year
+        if not target_year and self.admission_date:
+            target_year = str(self.admission_date.year)
+
+        bed = self.allocated_beds.first()
+        if bed and bed.room and bed.room.building:
+            fee_obj = bed.room.building.get_current_fee(academic_year=target_year)
+            if fee_obj:
+                is_yearly = (fee_obj.fee_type == 'YEARLY_PER_STUDENT')
+                amount = fee_obj.yearly_fee_per_student if is_yearly else fee_obj.monthly_fee_per_student
+                if is_yearly:
+                    monthly_val = (fee_obj.yearly_fee_per_student / Decimal('12.00')).quantize(Decimal('0.01')) if fee_obj.yearly_fee_per_student else Decimal('0.00')
+                    yearly_val = fee_obj.yearly_fee_per_student
+                else:
+                    monthly_val = fee_obj.monthly_fee_per_student
+                    yearly_val = fee_obj.monthly_fee_per_student * Decimal('12.00')
+                return {
+                    'fee_type': fee_obj.fee_type,
+                    'fee_type_display': fee_obj.get_fee_type_display(),
+                    'academic_year': fee_obj.academic_year,
+                    'amount': amount,
+                    'monthly_fee': monthly_val,
+                    'yearly_fee': yearly_val,
+                    'building_name': bed.room.building.name
+                }
+
+        return {
+            'fee_type': 'MONTHLY_PER_STUDENT',
+            'fee_type_display': 'Monthly – Per Student',
+            'academic_year': target_year or '',
+            'amount': Decimal('0.00'),
+            'monthly_fee': Decimal('0.00'),
+            'yearly_fee': Decimal('0.00'),
+            'building_name': ''
+        }
+
+    def get_monthly_fee(self, academic_year=None):
+        return self.get_fee_info(academic_year=academic_year)['monthly_fee']
+
+    def get_yearly_fee(self, academic_year=None):
+        return self.get_fee_info(academic_year=academic_year)['yearly_fee']
+
+    def get_total_paid_fee(self):
+        from django.db.models import Sum
+        res = self.fee_payments.aggregate(total=Sum('amount_paid'))['total']
+        return res if res is not None else Decimal('0.00')
+
+    def get_calculated_fee_summary(self, target_building=None, academic_year=None):
+        """
+        Calculates Total Fee, Total Paid Fee, and Remaining Fee.
+        If target_building is provided (e.g. during bed transfer), calculates the new building fee
+        while carrying forward the student's previously paid fee balance.
+        """
+        target_year = academic_year or self.academic_year
+        if not target_year and self.admission_date:
+            target_year = str(self.admission_date.year)
+
+        bed = self.allocated_beds.first()
+        building_obj = target_building or (bed.room.building if (bed and bed.room and bed.room.building) else None)
+
+        total_fee = Decimal('0.00')
+        fee_type = 'MONTHLY_PER_STUDENT'
+        fee_type_display = 'Monthly – Per Student'
+        building_name = ''
+
+        if building_obj:
+            building_name = building_obj.name
+            fee_obj = building_obj.get_current_fee(academic_year=target_year)
+            if fee_obj:
+                fee_type = fee_obj.fee_type
+                fee_type_display = fee_obj.get_fee_type_display()
+                total_fee = fee_obj.yearly_fee_per_student if fee_obj.fee_type == 'YEARLY_PER_STUDENT' else fee_obj.monthly_fee_per_student
+
+        paid_fee = self.get_total_paid_fee()
+        remaining_fee = max(Decimal('0.00'), total_fee - paid_fee)
+
+        if remaining_fee <= Decimal('0.00') and total_fee > Decimal('0.00'):
+            status = 'PAID'
+        elif paid_fee > Decimal('0.00'):
+            status = 'PARTIAL'
+        else:
+            status = 'DUE'
+
+        return {
+            'building_name': building_name,
+            'academic_year': target_year or '',
+            'fee_type': fee_type,
+            'fee_type_display': fee_type_display,
+            'total_fee': total_fee,
+            'paid_fee': paid_fee,
+            'remaining_fee': remaining_fee,
+            'status': status,
+        }
+
+
+class StudentFeePayment(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('CASH', 'Cash'),
+        ('ONLINE', 'Online / UPI / NetBanking'),
+        ('CHEQUE', 'Cheque / DD'),
+        ('BANK_TRANSFER', 'Bank Transfer'),
+    ]
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fee_payments')
+    academic_year = models.CharField(max_length=20, blank=True)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    payment_date = models.DateField(default=timezone.now)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='ONLINE')
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    receipt_number = models.CharField(max_length=50, blank=True, null=True)
+    remarks = models.TextField(blank=True, null=True)
+    recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'student_fee_payment'
+        ordering = ['-payment_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.student.name} - ₹{self.amount_paid} ({self.payment_date})"
+
 
 class Attendance(models.Model):
     ATTENDANCE_CHOICES = [
@@ -301,12 +456,9 @@ def deallocate_student_before_delete(sender, instance, **kwargs):
     from django.apps import apps
     try:
         Bed = apps.get_model('room', 'Bed')
-        # Reset any beds assigned to this student, resetting payment fields
+        # Reset any beds assigned to this student
         Bed.objects.filter(student=instance).update(
-            student=None,
-            paid_amount=0,
-            remaining_amount=0,
-            total_amount=0
+            student=None
         )
     except LookupError:
         pass
@@ -337,8 +489,12 @@ def create_student_user_account(sender, instance, created, **kwargs):
                 
         # Ensure the UserProfile with Student role exists for this user
         if user:
-            student_role = Role.objects.filter(name='Student').first()
-            UserProfile.objects.get_or_create(
+            from authentication.models import get_or_create_student_role
+            student_role = get_or_create_student_role()
+            profile, _ = UserProfile.objects.get_or_create(
                 user=user,
                 defaults={'role': student_role}
             )
+            if not profile.role:
+                profile.role = student_role
+                profile.save()

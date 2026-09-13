@@ -196,15 +196,19 @@
                             <strong class="text-primary">{{ current_bed.bed_number }}</strong>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-2 border-0">
-                            <span>Rent Paid/Due:</span>
-                            <strong class="text-muted">₹{{ current_bed.paid_amount }}/₹{{ current_bed.remaining_amount }}</strong>
+                            <span>Hostel Fee Breakdown:</span>
+                            <div class="text-end">
+                                <span class="badge bg-light text-dark border me-1">Total: ₹{{ current_bed.total_amount }}</span>
+                                <span class="badge bg-success-subtle text-success me-1">Paid: ₹{{ current_bed.paid_amount }}</span>
+                                <span class="badge bg-danger-subtle text-danger">Due: ₹{{ current_bed.remaining_amount }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="alert alert-warning border-0 rounded-3 mb-0 small">
+                <div class="alert alert-info border-0 rounded-3 mb-0 small">
                     <i class="bi bi-info-circle-fill me-2"></i>
-                    Changing the student's room will deallocate the current bed position, reset the due amount, and calculate fresh dues based on the new room's rent rate.
+                    Transferring the student to a new building will automatically recalculate their <strong>Total Fee</strong> based on the new hostel's building fee structure, while carrying forward all previously paid fees!
                 </div>
             </div>
         </div>

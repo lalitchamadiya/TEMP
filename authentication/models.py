@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.utils import timezone
+from hms.utils import normalize_phone_number
 
 
 class Module(models.Model):
@@ -73,6 +74,14 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.role.name if self.role else 'No Role'}"
+
+    def save(self, *args, **kwargs):
+        if self.phone:
+            try:
+                self.phone = normalize_phone_number(self.phone)
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
 
     @property
     def display_name(self):
@@ -180,6 +189,14 @@ class Hostel(models.Model):
     def __str__(self):
         return f"{self.name} ({self.code})"
 
+    def save(self, *args, **kwargs):
+        if self.phone_number:
+            try:
+                self.phone_number = normalize_phone_number(self.phone_number)
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
+
 
 class SystemSettings(models.Model):
     system_name = models.CharField(max_length=100, default='Noble Hostel')
@@ -247,5 +264,37 @@ class RoleElementPermission(models.Model):
 
     def __str__(self):
         return f"{self.role.name} -> {self.element.code}: {self.is_enabled}"
+
+
+def get_or_create_student_role():
+    """
+    Checks if a Role with name 'Student' exists.
+    If not found, creates it automatically with active status and default module permissions.
+    Returns the Student Role instance.
+    """
+    role = Role.objects.filter(name='Student').first()
+    if not role:
+        role = Role.objects.create(
+            name='Student',
+            description='Default Student Role with access to personal dashboard and leave requests.',
+            is_active=True,
+            is_superadmin=False
+        )
+        student_module = Module.objects.filter(code='student').first()
+        leave_module = Module.objects.filter(code='leave').first()
+        
+        if student_module:
+            RolePermission.objects.get_or_create(
+                role=role,
+                module=student_module,
+                defaults={'can_view': True}
+            )
+        if leave_module:
+            RolePermission.objects.get_or_create(
+                role=role,
+                module=leave_module,
+                defaults={'can_view': True, 'can_add': True, 'can_edit': True}
+            )
+    return role
 
 

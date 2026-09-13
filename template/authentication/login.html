@@ -32,7 +32,6 @@
                 
                 <form action="{% url 'login' %}" method="post">
                     {% csrf_token %}
-                    {% include '_messages.html' %}
                     
                     <div class="mb-4 position-relative">
                         <label class="form-label small fw-bold text-muted px-1">Username</label>

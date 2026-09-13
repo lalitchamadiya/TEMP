@@ -93,6 +93,44 @@
                 </div>
             </div>
 
+            <div class="section-header">Student Fee Configuration</div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Fee Collection Type <span class="text-danger">*</span></label>
+                    {{ form.fee_type }}
+                    <small class="text-muted d-block mt-1" id="fee_type_hint">Fee is calculated per student based on selection.</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Academic Year <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        {{ form.academic_year }}
+                        <button class="btn btn-outline-secondary position-relative" type="button" title="Select date from calendar">
+                            <i class="bi bi-calendar-date text-primary fs-6"></i>
+                            <input type="date" id="calendar_picker_input" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" onchange="pickAcademicYearFromCalendar(this)" style="cursor: pointer;">
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-1">e.g. 2026 or 2026–2027 (Click calendar icon to pick from calendar)</small>
+                </div>
+                <div class="col-12" id="monthly_fee_wrapper">
+                    <label class="form-label">Monthly Fee Per Student (₹) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light fw-bold text-muted">₹</span>
+                        {{ form.monthly_fee_per_student }}
+                        <span class="input-group-text bg-light text-muted">/ student / month</span>
+                    </div>
+                    <small class="text-muted d-block mt-1">Applies monthly to all students admitted under this academic year for this building.</small>
+                </div>
+                <div class="col-12" id="yearly_fee_wrapper" style="display: none;">
+                    <label class="form-label">Yearly Fee Per Student (₹) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light fw-bold text-muted">₹</span>
+                        {{ form.yearly_fee_per_student }}
+                        <span class="input-group-text bg-light text-muted">/ student / year</span>
+                    </div>
+                    <small class="text-muted d-block mt-1">Applies as a total annual fee (e.g. ₹60,000 for 2026 admission, ₹65,000 for 2027 admission).</small>
+                </div>
+            </div>
+
             <div class="section-header">Settings</div>
             <div class="form-check form-switch mb-4">
                 {{ form.is_active }}
@@ -101,13 +139,170 @@
                 </label>
             </div>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 mb-4">
                 <button type="submit" class="btn-save btn">
                     <i class="bi bi-save2 me-1"></i>{{ action }} Building
                 </button>
                 <a href="{% url 'building_list' %}" class="btn btn-light rounded-3 px-4 fw-semibold">Cancel</a>
             </div>
         </form>
+
+        {% if building and fee_history %}
+        <div class="mt-4 pt-3 border-top">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history me-1 text-primary"></i> Academic Year Fee History</h6>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" type="button" data-bs-toggle="collapse" data-bs-target="#addFeeCollapse">
+                    <i class="bi bi-plus-lg me-1"></i> Add Year-Wise Fee Structure
+                </button>
+            </div>
+
+            <!-- Collapse form for adding a new academic year fee -->
+            <div class="collapse mb-3" id="addFeeCollapse">
+                <div class="card card-body bg-light border-0 rounded-3">
+                    <h6 class="fw-bold small text-uppercase text-muted mb-2">New Academic Year Fee Structure</h6>
+                    <form method="post" action="{% url 'add_building_fee_structure' building.id %}">
+                        {% csrf_token %}
+                        <div class="row g-2 align-items-center mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label mb-1 small text-muted">Fee Type</label>
+                                <select name="fee_type" id="collapse_fee_type" class="form-select form-select-sm" onchange="toggleCollapseFeeInput()">
+                                    <option value="MONTHLY_PER_STUDENT">Monthly – Per Student</option>
+                                    <option value="YEARLY_PER_STUDENT">Yearly – Per Student</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label mb-1 small text-muted">Academic Year</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" id="collapse_academic_year" name="academic_year" class="form-control form-control-sm" placeholder="e.g. 2027 or 2027–2028" required>
+                                    <button class="btn btn-outline-secondary position-relative px-2" type="button" title="Select date from calendar">
+                                        <i class="bi bi-calendar-date text-primary"></i>
+                                        <input type="date" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" onchange="pickCollapseAcademicYear(this)" style="cursor: pointer;">
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="collapse_monthly_fee_div">
+                                <label class="form-label mb-1 small text-muted">Monthly Fee (₹)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" step="100" min="0" name="monthly_fee_per_student" class="form-control" placeholder="6000">
+                                    <span class="input-group-text">/mo</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="collapse_yearly_fee_div" style="display: none;">
+                                <label class="form-label mb-1 small text-muted">Yearly Fee (₹)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" step="500" min="0" name="yearly_fee_per_student" class="form-control" placeholder="65000">
+                                    <span class="input-group-text">/yr</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Save Fee Structure</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm align-middle text-nowrap mb-0" style="font-size: 0.85rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Academic Year</th>
+                            <th>Fee Collection Type</th>
+                            <th>Configured Fee Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in fee_history %}
+                        <tr>
+                            <td class="fw-semibold">{{ f.academic_year }}</td>
+                            <td><span class="badge bg-secondary-subtle text-secondary fw-semibold">{{ f.get_fee_type_display }}</span></td>
+                            <td class="fw-bold text-success">
+                                {% if f.fee_type == 'YEARLY_PER_STUDENT' %}
+                                ₹{{ f.yearly_fee_per_student }} / year
+                                {% else %}
+                                ₹{{ f.monthly_fee_per_student }} / month
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if forloop.first %}
+                                <span class="badge bg-success-subtle text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Active</span>
+                                {% else %}
+                                <span class="badge bg-light text-muted border">Configured</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<script>
+    function pickAcademicYearFromCalendar(dateInput) {
+        if (!dateInput || !dateInput.value) return;
+        const selectedDate = new Date(dateInput.value);
+        if (isNaN(selectedDate.getTime())) return;
+        const yearStr = `${selectedDate.getFullYear()}`;
+        const acadYearInput = document.getElementById('id_academic_year');
+        if (acadYearInput) {
+            acadYearInput.value = yearStr;
+        }
+    }
+
+    function pickCollapseAcademicYear(dateInput) {
+        if (!dateInput || !dateInput.value) return;
+        const selectedDate = new Date(dateInput.value);
+        if (isNaN(selectedDate.getTime())) return;
+        const yearStr = `${selectedDate.getFullYear()}`;
+        const acadYearInput = document.getElementById('collapse_academic_year');
+        if (acadYearInput) {
+            acadYearInput.value = yearStr;
+        }
+    }
+
+    function toggleFeeLabels() {
+        const feeTypeSelect = document.getElementById('id_fee_type');
+        const monthlyWrapper = document.getElementById('monthly_fee_wrapper');
+        const yearlyWrapper = document.getElementById('yearly_fee_wrapper');
+        const feeTypeHint = document.getElementById('fee_type_hint');
+
+        if (!feeTypeSelect) return;
+
+        if (feeTypeSelect.value === 'YEARLY_PER_STUDENT') {
+            monthlyWrapper.style.display = 'none';
+            yearlyWrapper.style.display = 'block';
+            if (feeTypeHint) feeTypeHint.innerText = 'Fee is calculated as a total annual amount per student for the academic year.';
+        } else {
+            monthlyWrapper.style.display = 'block';
+            yearlyWrapper.style.display = 'none';
+            if (feeTypeHint) feeTypeHint.innerText = 'Fee is calculated monthly per student.';
+        }
+    }
+
+    function toggleCollapseFeeInput() {
+        const typeSelect = document.getElementById('collapse_fee_type');
+        const monthlyDiv = document.getElementById('collapse_monthly_fee_div');
+        const yearlyDiv = document.getElementById('collapse_yearly_fee_div');
+        if (!typeSelect) return;
+
+        if (typeSelect.value === 'YEARLY_PER_STUDENT') {
+            monthlyDiv.style.display = 'none';
+            yearlyDiv.style.display = 'block';
+        } else {
+            monthlyDiv.style.display = 'block';
+            yearlyDiv.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleFeeLabels();
+        toggleCollapseFeeInput();
+    });
+</script>
 {% endblock %}

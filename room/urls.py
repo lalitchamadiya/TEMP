@@ -31,4 +31,5 @@ urlpatterns = [
     path('buildings/<int:pk>/edit/', views.building_edit, name='building_edit'),
     path('buildings/<int:pk>/delete/', views.building_delete, name='building_delete'),
     path('buildings/<int:pk>/toggle/', views.building_toggle, name='building_toggle'),
+    path('buildings/<int:building_id>/fee-structure/add/', views.add_building_fee_structure, name='add_building_fee_structure'),
 ]

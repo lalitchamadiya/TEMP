@@ -439,6 +439,11 @@ def security_dashboard(request):
     # 3. Returned Students: status is completed and entry_verified is True
     returned_students = HostelLeave.objects.filter(status='completed', entry_verified=True).select_related('student').order_by('-entry_time')
 
+    if assignment and assignment.specific_location:
+        pending_exits = pending_exits.filter(student__allocated_beds__room__building__name__icontains=assignment.specific_location).distinct()
+        students_outside = students_outside.filter(student__allocated_beds__room__building__name__icontains=assignment.specific_location).distinct()
+        returned_students = returned_students.filter(student__allocated_beds__room__building__name__icontains=assignment.specific_location).distinct()
+
     curr_now = timezone.now()
     # Annotate dynamic states
     for leave in pending_exits:

@@ -115,11 +115,31 @@
                     {% if building.description %}
                     <p class="text-muted small mb-3">{{ building.description }}</p>
                     {% endif %}
-                    <div class="d-flex gap-2 flex-wrap mb-3">
+                    <div class="d-flex gap-2 flex-wrap mb-2">
                         <span class="stat-chip"><i class="bi bi-door-closed"></i> {{ building.room_count }} room{{ building.room_count|pluralize }}</span>
                         <a href="{% url 'room_manage' %}?building={{ building.pk }}" class="stat-chip text-primary" style="text-decoration:none; border-color: rgba(99,102,241,0.3);">
                             <i class="bi bi-eye"></i> View Rooms
                         </a>
+                    </div>
+                    <div class="p-2 mb-3 rounded-3" style="background: rgba(99,102,241,0.06); border: 1px dashed rgba(99,102,241,0.25);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.05em;">Student Fee</span>
+                            {% if building.current_fee %}
+                            <span class="badge bg-primary-subtle text-primary fw-semibold" style="font-size: 0.7rem;">{{ building.current_fee.academic_year }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="fw-bold text-dark mt-1" style="font-size: 0.9rem;">
+                            {% if building.current_fee %}
+                            <i class="bi bi-cash-stack text-success me-1"></i>
+                            {% if building.current_fee.fee_type == 'YEARLY_PER_STUDENT' %}
+                            ₹{{ building.current_fee.yearly_fee_per_student }} <span class="text-muted fw-normal" style="font-size: 0.75rem;">/ student / yr</span>
+                            {% else %}
+                            ₹{{ building.current_fee.monthly_fee_per_student }} <span class="text-muted fw-normal" style="font-size: 0.75rem;">/ student / mo</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted fw-normal" style="font-size: 0.8rem;">No fee set</span>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="d-flex gap-2">
                         <a href="{% url 'building_edit' building.pk %}" class="action-btn btn-edit" title="Edit">

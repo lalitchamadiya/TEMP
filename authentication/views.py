@@ -13,11 +13,20 @@ from django.utils import timezone
 from django.views import View
 
 from .decorators import role_required, permission_required
-from .models import AuditLog, Module, Role, RolePermission, UserProfile, Hostel, PermissionElement, RoleElementPermission
+from .models import AuditLog, Module, Role, RolePermission, UserProfile, Hostel, PermissionElement, RoleElementPermission, get_or_create_student_role
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+@login_required
+def no_role_view(request):
+    """
+    Renders a dedicated page informing users who have no role assigned
+    that they must contact an administrator.
+    """
+    return render(request, 'authentication/no_role.html')
+
 
 def log_action(actor, action, target_user=None, details='', request=None):
     """Utility to record an audit log entry."""
@@ -75,7 +84,7 @@ class RegistrationView(View):
         username = request.POST['username']
         email = request.POST['email']
         password = request.POST['password']
-        role_id = request.POST['role']
+        role_id = request.POST.get('role')
 
         context = {
             'fieldValues': request.POST,
@@ -96,15 +105,20 @@ class RegistrationView(View):
         user.set_password(password)
         user.save()
 
-        try:
-            role_obj = Role.objects.get(id=role_id)
-            UserProfile.objects.create(user=user, role=role_obj)
-            group, _ = Group.objects.get_or_create(name=role_obj.name)
-            group.user_set.add(user)
-        except (Role.DoesNotExist, ValueError):
-            student_role = Role.objects.filter(name='Student').first()
-            if student_role:
-                UserProfile.objects.create(user=user, role=student_role)
+        # Check role or fallback to Student role automatically
+        role_obj = None
+        if role_id:
+            try:
+                role_obj = Role.objects.get(id=role_id)
+            except (Role.DoesNotExist, ValueError):
+                pass
+
+        if not role_obj:
+            role_obj = get_or_create_student_role()
+
+        UserProfile.objects.create(user=user, role=role_obj)
+        group, _ = Group.objects.get_or_create(name=role_obj.name)
+        group.user_set.add(user)
 
         messages.success(request, 'Account Successfully Created')
         return redirect('login')
@@ -149,6 +163,11 @@ class LoginView(View):
                             return redirect('superadmin_dashboard')
                         elif role_name in ('Security Guard', 'Security'):
                             return redirect('security_dashboard')
+                    elif user.is_superuser:
+                        return redirect('superadmin_dashboard')
+                    else:
+                        return redirect('no_role')
+
                     return redirect('superadmin_dashboard')
 
                 messages.error(request, 'Account is not active')

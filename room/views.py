@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Q
 from student.models import Student
-from .models import HostelBuilding, Room, Bed
+from .models import HostelBuilding, BuildingFeeStructure, Room, Bed
 
 
 class RoomForm(forms.Form):
@@ -44,10 +44,6 @@ class RoomForm(forms.Form):
     status = forms.ChoiceField(
         choices=[('AVAILABLE', 'Available / Active'), ('MAINTENANCE', 'Under Maintenance')],
         widget=forms.Select(attrs={'class': 'form-select', 'name': 'status', 'id': 'id_status'})
-    )
-    monthly_rent = forms.CharField(
-        initial='2500.00',
-        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_monthly_rent'})
     )
     is_ac = forms.BooleanField(
         required=False,
@@ -97,6 +93,33 @@ class BuildingForm(forms.Form):
         required=False,
         initial=True,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    # Student Fee Configuration
+    fee_type = forms.ChoiceField(
+        choices=[
+            ('MONTHLY_PER_STUDENT', 'Monthly – Per Student'),
+            ('YEARLY_PER_STUDENT', 'Yearly – Per Student'),
+        ],
+        initial='MONTHLY_PER_STUDENT',
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_fee_type', 'onchange': 'toggleFeeLabels()'})
+    )
+    academic_year = forms.CharField(
+        initial='2026',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_academic_year', 'placeholder': 'e.g. 2026 or 2027'})
+    )
+    monthly_fee_per_student = forms.DecimalField(
+        initial=6000.00,
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'id_monthly_fee_per_student', 'step': '100', 'min': 0})
+    )
+    yearly_fee_per_student = forms.DecimalField(
+        initial=60000.00,
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'id_yearly_fee_per_student', 'step': '500', 'min': 0})
     )
 
 
@@ -308,7 +331,6 @@ def create_room(request):
                 gender=gender,
                 capacity=capacity,
                 status=cleaned.get('status', 'AVAILABLE'),
-                monthly_rent=cleaned.get('monthly_rent', 2500.00),
                 is_ac=bool(cleaned.get('is_ac')),
                 description=cleaned.get('description', '')
             )
@@ -325,8 +347,6 @@ def create_room(request):
         'page_title': 'Create New Room',
         'action': 'Create',
         'form': form,
-        'base_rents_json': '{"2_BED": 2500, "4_BED": 4000, "CUSTOM": 3000}',
-        'category_multipliers_json': '{"GENERAL": 1.0, "DELUXE": 1.5, "STAFF": 0.0}',
     }
     return render(request, 'room/create_room.html', context)
 
@@ -361,7 +381,6 @@ def edit_room(request, pk):
             room_obj.gender = b_info.gender
             room_obj.capacity = capacity
             room_obj.status = cleaned.get('status', 'AVAILABLE')
-            room_obj.monthly_rent = cleaned.get('monthly_rent', 2500.00)
             room_obj.is_ac = bool(cleaned.get('is_ac'))
             room_obj.description = cleaned.get('description', '')
             room_obj.save()
@@ -386,7 +405,6 @@ def edit_room(request, pk):
             'room_type': room_obj.room_type,
             'category': room_obj.category,
             'status': room_obj.status,
-            'monthly_rent': str(room_obj.monthly_rent),
             'is_ac': room_obj.is_ac,
             'capacity': room_obj.capacity,
             'description': room_obj.description,
@@ -405,8 +423,6 @@ def edit_room(request, pk):
         'action': 'Edit',
         'room': room_dict,
         'form': form,
-        'base_rents_json': '{"2_BED": 2500, "4_BED": 4000, "CUSTOM": 3000}',
-        'category_multipliers_json': '{"GENERAL": 1.0, "DELUXE": 1.5, "STAFF": 0.0}',
     }
     return render(request, 'room/create_room.html', context)
 
@@ -457,6 +473,10 @@ def change_room(request, current_bed_id):
     curr_room_obj = curr_bed_obj.room
     assigned_student = curr_bed_obj.student
 
+    fee_summary = assigned_student.get_calculated_fee_summary() if assigned_student else {
+        'total_fee': 0, 'paid_fee': 0, 'remaining_fee': 0, 'building_name': ''
+    }
+
     if request.method == 'POST':
         target_room_id = request.POST.get('room-select')
         target_bed_num = request.POST.get('bed-select')
@@ -472,7 +492,13 @@ def change_room(request, current_bed_id):
                 target_bed_obj.save()
 
             st_name = assigned_student.name if assigned_student else 'Resident'
-            messages.success(request, f'{st_name} moved to Room #{target_room_obj.room_number} Bed #{target_bed_num}.')
+            new_summary = assigned_student.get_calculated_fee_summary() if assigned_student else fee_summary
+
+            messages.success(
+                request,
+                f"{st_name} transferred to {target_room_obj.building.name} (Room #{target_room_obj.room_number}, Bed #{target_bed_num}). "
+                f"Fee recalculated: Total: ₹{new_summary['total_fee']}, Paid: ₹{new_summary['paid_fee']}, Remaining Due: ₹{new_summary['remaining_fee']}."
+            )
             return redirect('student_allocated_view', room_id=target_room_obj.id)
         else:
             messages.error(request, 'Target room not found.')
@@ -487,8 +513,9 @@ def change_room(request, current_bed_id):
     current_bed_context = {
         'id': curr_bed_obj.id,
         'bed_number': curr_bed_obj.bed_number,
-        'paid_amount': '0.00',
-        'remaining_amount': '0.00',
+        'paid_amount': str(fee_summary['paid_fee']),
+        'total_amount': str(fee_summary['total_fee']),
+        'remaining_amount': str(fee_summary['remaining_fee']),
         'room': {
             'id': curr_room_obj.id,
             'room_number': curr_room_obj.room_number,
@@ -501,6 +528,7 @@ def change_room(request, current_bed_id):
         'page_title': 'Change Room',
         'current_bed': current_bed_context,
         'student': assigned_student,
+        'fee_summary': fee_summary,
         'buildings': b_list,
         'blocks': blocks,
     }
@@ -515,6 +543,8 @@ def building_list(request):
     b_list = []
     for b in qs:
         room_count = b.rooms.count()
+        current_fee = b.get_current_fee()
+        fee_history = list(b.fee_structures.all().order_by('-academic_year'))
         b_list.append({
             'id': b.id,
             'pk': b.pk,
@@ -528,6 +558,8 @@ def building_list(request):
             'description': b.description or '',
             'is_active': b.is_active,
             'is_archived': b.is_archived,
+            'current_fee': current_fee,
+            'fee_history': fee_history,
         })
 
     context = {
@@ -553,7 +585,22 @@ def building_create(request):
                 is_active=bool(cleaned.get('is_active', True)),
                 is_archived=False,
             )
-            messages.success(request, f"New building '{b_obj.name}' added successfully.")
+            acad_year = cleaned.get('academic_year', '2026–2027').strip() or '2026–2027'
+            fee_type = cleaned.get('fee_type', 'MONTHLY_PER_STUDENT')
+            monthly_fee = cleaned.get('monthly_fee_per_student') or 0.00
+            yearly_fee = cleaned.get('yearly_fee_per_student') or 0.00
+
+            BuildingFeeStructure.objects.create(
+                building=b_obj,
+                academic_year=acad_year,
+                fee_type=fee_type,
+                monthly_fee_per_student=monthly_fee,
+                yearly_fee_per_student=yearly_fee,
+                is_active=True,
+                created_by=request.user if request.user.is_authenticated else None
+            )
+            fee_label = f"₹{yearly_fee}/year" if fee_type == 'YEARLY_PER_STUDENT' else f"₹{monthly_fee}/month"
+            messages.success(request, f"New building '{b_obj.name}' added with fee {fee_label} ({acad_year}).")
             return redirect('building_list')
     else:
         form = BuildingForm()
@@ -564,6 +611,7 @@ def building_create(request):
 @login_required(login_url='/authentication/login')
 def building_edit(request, pk):
     b_info = get_object_or_404(HostelBuilding, pk=pk)
+    current_fee = b_info.get_current_fee()
 
     if request.method == 'POST':
         form = BuildingForm(request.POST)
@@ -577,6 +625,28 @@ def building_edit(request, pk):
             b_info.is_active = bool(cleaned.get('is_active', True))
             b_info.save()
 
+            acad_year = cleaned.get('academic_year', '2026–2027').strip() or '2026–2027'
+            fee_type = cleaned.get('fee_type', 'MONTHLY_PER_STUDENT')
+            monthly_fee = cleaned.get('monthly_fee_per_student') or 0.00
+            yearly_fee = cleaned.get('yearly_fee_per_student') or 0.00
+
+            fee_obj, created = BuildingFeeStructure.objects.get_or_create(
+                building=b_info,
+                academic_year=acad_year,
+                defaults={
+                    'fee_type': fee_type,
+                    'monthly_fee_per_student': monthly_fee,
+                    'yearly_fee_per_student': yearly_fee,
+                    'is_active': True,
+                    'created_by': request.user if request.user.is_authenticated else None
+                }
+            )
+            if not created:
+                fee_obj.fee_type = fee_type
+                fee_obj.monthly_fee_per_student = monthly_fee
+                fee_obj.yearly_fee_per_student = yearly_fee
+                fee_obj.save()
+
             messages.success(request, f"Building '{b_info.name}' updated successfully.")
             return redirect('building_list')
     else:
@@ -587,10 +657,51 @@ def building_edit(request, pk):
             'blocks': b_info.blocks or 'Block A, Block B',
             'description': b_info.description,
             'is_active': b_info.is_active,
+            'academic_year': current_fee.academic_year if current_fee else '2026–2027',
+            'monthly_fee_per_student': current_fee.monthly_fee_per_student if current_fee else 6000.00,
+            'yearly_fee_per_student': current_fee.yearly_fee_per_student if current_fee else 60000.00,
+            'fee_type': current_fee.fee_type if current_fee else 'MONTHLY_PER_STUDENT',
         }
         form = BuildingForm(initial=initial_data)
 
-    return render(request, 'room/building_form.html', {'page_title': f"Edit Building: {b_info.name}", 'action': 'Edit', 'form': form})
+    fee_history = b_info.fee_structures.all().order_by('-academic_year')
+    return render(request, 'room/building_form.html', {
+        'page_title': f"Edit Building: {b_info.name}",
+        'action': 'Edit',
+        'form': form,
+        'building': b_info,
+        'fee_history': fee_history
+    })
+
+
+@login_required(login_url='/authentication/login')
+def add_building_fee_structure(request, building_id):
+    building = get_object_or_404(HostelBuilding, pk=building_id)
+    if request.method == 'POST':
+        academic_year = request.POST.get('academic_year', '').strip()
+        fee_type = request.POST.get('fee_type', 'MONTHLY_PER_STUDENT')
+        monthly_fee = request.POST.get('monthly_fee_per_student') or 0.00
+        yearly_fee = request.POST.get('yearly_fee_per_student') or 0.00
+        if academic_year:
+            fee_obj, created = BuildingFeeStructure.objects.update_or_create(
+                building=building,
+                academic_year=academic_year,
+                defaults={
+                    'monthly_fee_per_student': monthly_fee,
+                    'yearly_fee_per_student': yearly_fee,
+                    'fee_type': fee_type,
+                    'is_active': True,
+                    'created_by': request.user if request.user.is_authenticated else None
+                }
+            )
+            fee_label = f"₹{yearly_fee}/year" if fee_type == 'YEARLY_PER_STUDENT' else f"₹{monthly_fee}/month"
+            if created:
+                messages.success(request, f"Added fee structure for {academic_year}: {fee_label}.")
+            else:
+                messages.success(request, f"Updated fee structure for {academic_year}: {fee_label}.")
+        else:
+            messages.error(request, "Please enter a valid academic year.")
+    return redirect('building_edit', pk=building.pk)
 
 
 @login_required(login_url='/authentication/login')

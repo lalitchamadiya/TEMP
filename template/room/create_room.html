@@ -271,11 +271,7 @@
                                 <label class="form-label">Status</label>
                                 {{ form.status }}
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Monthly Rent (₹)</label>
-                                {{ form.monthly_rent }}
-                            </div>
-                            <div class="col-md-4 d-flex align-items-center pt-3">
+                            <div class="col-md-6 d-flex align-items-center pt-3">
                                 <div class="form-check form-switch">
                                     {{ form.is_ac }}
                                     <label class="form-check-label ms-2" for="{{ form.is_ac.id_for_label }}">
@@ -391,79 +387,10 @@ function handleRoomTypeChange() {
         }
         updateBedPreview(capInput.value);
     }
-    calculateSuggestedRent();
     updateSummary();
 }
 
 document.getElementById('id_room_type').addEventListener('change', handleRoomTypeChange);
-
-// ── Pricing calculation logic ─────────────────────────────────────────────────
-const BASE_RENTS = {{ base_rents_json|safe }};
-BASE_RENTS['CUSTOM'] = null;
-
-const CATEGORY_MULTIPLIERS = {{ category_multipliers_json|safe }};
-
-function calculateSuggestedRent() {
-    const roomType = document.getElementById('id_room_type').value;
-    const categorySelect = document.getElementById('id_category') || document.querySelector('[name="category"]');
-    const category = categorySelect ? categorySelect.value : 'GENERAL';
-    const isAc = document.getElementById('id_is_ac').checked;
-    const rentInput = document.getElementById('id_monthly_rent');
-
-    if (!rentInput) return;
-
-    if (roomType === 'CUSTOM') {
-        rentInput.readOnly = false;
-        rentInput.disabled = false;
-        showPricingHint('Custom Room Type: Enter rent manually.', false);
-        return;
-    }
-
-    if (category === 'STAFF') {
-        rentInput.readOnly = false;
-        rentInput.disabled = false;
-        showPricingHint('Staff Room Type: Price customizable (defaults to ₹0.00).', false);
-        return;
-    }
-
-    const base = BASE_RENTS[roomType] || 0;
-    const mult = CATEGORY_MULTIPLIERS[category] === undefined ? 1.0 : CATEGORY_MULTIPLIERS[category];
-    
-    let amenityCharge = 0;
-    if (isAc && category !== 'STAFF' && category !== 'RESERVED') {
-        amenityCharge = 1500;
-    }
-
-    const suggested = (base * mult) + amenityCharge;
-    rentInput.value = suggested.toFixed(2);
-    
-    if (category === 'RESERVED') {
-        rentInput.readOnly = true;
-        showPricingHint(`Reserved Room: Rent is locked to ₹0.00`, true);
-    } else {
-        rentInput.readOnly = true;
-        let hint = `Calculated Rent: ₹${base} (Base)`;
-        if (mult !== 1.0) hint += ` * ${mult} (${category})`;
-        if (amenityCharge > 0) hint += ` + ₹${amenityCharge} (AC)`;
-        hint += ` = ₹${suggested}`;
-        showPricingHint(hint, true);
-    }
-}
-
-function showPricingHint(text, highlighted) {
-    const rentInput = document.getElementById('id_monthly_rent');
-    if (!rentInput) return;
-    let hintEl = document.getElementById('pricing-hint');
-    if (!hintEl) {
-        hintEl = document.createElement('small');
-        hintEl.id = 'pricing-hint';
-        hintEl.className = 'd-block mt-1';
-        rentInput.parentNode.appendChild(hintEl);
-    }
-    hintEl.textContent = text;
-    hintEl.style.color = highlighted ? 'var(--accent)' : 'var(--text-muted)';
-    hintEl.style.fontWeight = highlighted ? '600' : 'normal';
-}
 
 // ── Bed Preview Widget ────────────────────────────────────────────────────────
 function updateBedPreview(capacity) {
@@ -500,22 +427,6 @@ if (capEl) {
             updateBedPreview(this.value);
             updateSummary();
         });
-    });
-}
-
-const categoryEl = document.getElementById('id_category') || document.querySelector('[name="category"]');
-if (categoryEl) {
-    categoryEl.addEventListener('change', function () {
-        calculateSuggestedRent();
-        updateSummary();
-    });
-}
-
-const isAcEl = document.getElementById('id_is_ac');
-if (isAcEl) {
-    isAcEl.addEventListener('change', function () {
-        calculateSuggestedRent();
-        updateSummary();
     });
 }
 
@@ -645,7 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
     handleRoomTypeChange();
     const cap = document.getElementById('id_capacity').value;
     if (cap) updateBedPreview(cap);
-    calculateSuggestedRent();
 
     const bEl = document.getElementById('id_building');
     if (bEl && bEl.value) {
