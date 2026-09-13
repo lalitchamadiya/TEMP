@@ -330,6 +330,70 @@
                         </ul>
                     </div>
                 </li>
+                {% elif module.url_name == 'leave_base' or module.url_name == 'pending_leave' or module.code == 'leave' %}
+                <li class="nav-item">
+                    <a class="nav-link nav-link-collapse {% if not '/leave' in request.path %}collapsed{% endif %} {% if '/leave' in request.path %}active{% endif %}"
+                        data-bs-toggle="collapse" href="#leaveManagementCollapse" role="button"
+                        aria-expanded="{% if '/leave' in request.path %}true{% else %}false{% endif %}"
+                        aria-controls="leaveManagementCollapse" title="Leave Management">
+                        <i class="bi bi-calendar-event opacity-75 me-2"></i>
+                        <span class="sidebar-label">Leave Management</span>
+                        <i class="bi bi-chevron-down fs-7 opacity-50 collapse-chevron"></i>
+                    </a>
+                    <div class="collapse {% if '/leave' in request.path %}show{% endif %}" id="leaveManagementCollapse">
+                        <ul class="collapse-submenu-list">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'leave_base' %}active{% endif %}"
+                                    href="{% url 'leave_base' %}" title="Dashboard">
+                                    <i class="bi bi-house-door opacity-75 me-2"></i>
+                                    <span class="sidebar-label">Dashboard</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'pending_leave' %}active{% endif %}"
+                                    href="{% url 'pending_leave' %}" title="Pending Requests">
+                                    <i class="bi bi-hourglass-split opacity-75 me-2"></i>
+                                    <span class="sidebar-label">Pending Requests</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'leave_record' %}active{% endif %}"
+                                    href="{% url 'leave_record' %}" title="Leave Records">
+                                    <i class="bi bi-journal-text opacity-75 me-2"></i>
+                                    <span class="sidebar-label">Leave Records</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'add_leave' %}active{% endif %}"
+                                    href="{% url 'add_leave' %}" title="Add Leave">
+                                    <i class="bi bi-plus-circle opacity-75 me-2"></i>
+                                    <span class="sidebar-label">Add Leave</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'gate_pass_management' %}active{% endif %}"
+                                    href="{% url 'gate_pass_management' %}" title="Gate Passes">
+                                    <i class="bi bi-qr-code-scan opacity-75 me-2"></i>
+                                    <span class="sidebar-label">Gate Passes</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'leave_reports' %}active{% endif %}"
+                                    href="{% url 'leave_reports' %}" title="Leave Reports">
+                                    <i class="bi bi-file-earmark-bar-graph opacity-75 me-2"></i>
+                                    <span class="sidebar-label">Leave Reports</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'security_dashboard' %}active{% endif %}"
+                                    href="{% url 'security_dashboard' %}" title="Security Gate">
+                                    <i class="bi bi-shield-check opacity-75 me-2"></i>
+                                    <span class="sidebar-label">Security Gate</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
                 {% else %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == module.url_name or request.resolver_match.view_name == module.url_name or module.code in request.path %}active{% endif %}"
