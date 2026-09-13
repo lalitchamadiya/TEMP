@@ -124,6 +124,7 @@ def superadmin_dashboard(request):
     # ── Chart Data ──
     # Monthly revenue last 6 months
     from datetime import timedelta
+    import json
     monthly_labels = []
     monthly_data = []
     for i in range(5, -1, -1):
@@ -131,6 +132,9 @@ def superadmin_dashboard(request):
         label = d.strftime('%b %Y')
         monthly_labels.append(label)
         monthly_data.append(0.0)
+
+    monthly_labels_json = json.dumps(monthly_labels)
+    monthly_data_json = json.dumps(monthly_data)
 
     # Recent payments
     recent_payments = []
@@ -230,8 +234,8 @@ def superadmin_dashboard(request):
         'disk_used_gb': disk_used_gb,
         'disk_pct': disk_pct,
         # Charts
-        'monthly_labels': monthly_labels,
-        'monthly_data': monthly_data,
+        'monthly_labels': monthly_labels_json,
+        'monthly_data': monthly_data_json,
         # Recent data
         'recent_payments': recent_payments,
         'recent_complaints': recent_complaints,
