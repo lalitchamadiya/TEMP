@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hms-pwa-v2';
+const CACHE_NAME = 'hms-pwa-v3';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -19,17 +19,24 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Network-first cache fallback strategy
+// Network-first cache strategy strictly for GET static and media assets
 self.addEventListener('fetch', event => {
-  // Only handle GET requests (bypass POST/PUT/DELETE form submissions)
+  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  if (event.request.url.startsWith(self.location.origin)) {
+  const url = event.request.url;
+
+  // STRICT RULE: Only intercept requests for static assets or media files!
+  // All HTML page navigations, form POSTs, API endpoints, etc. bypass service worker completely!
+  if (!url.includes('/static/') && !url.includes('/media/')) {
+    return;
+  }
+
+  if (url.startsWith(self.location.origin)) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          if (response && response.status === 200 &&
-              (event.request.url.includes('/static/') || event.request.url.includes('/media/'))) {
+          if (response && response.status === 200) {
             const responseClone = response.clone();
             caches.open(CACHE_NAME).then(cache => {
               cache.put(event.request, responseClone);
@@ -42,10 +49,9 @@ self.addEventListener('fetch', event => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Fallback response when network fails and asset is not cached
-          return new Response('Service worker network error', {
-            status: 503,
-            statusText: 'Service Unavailable',
+          return new Response('Asset unavailable', {
+            status: 404,
+            statusText: 'Not Found',
             headers: new Headers({ 'Content-Type': 'text/plain' })
           });
         })
