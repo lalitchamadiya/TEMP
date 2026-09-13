@@ -608,11 +608,25 @@ html[data-theme="light"] .sidebar-wrapper:hover .sidebar-menu-body::-webkit-scro
     transition: opacity 200ms ease, width 200ms ease;
 }
 
+html[data-theme="light"] .sidebar-pro .nav-link {
+    color: #334155 !important;
+}
+html[data-theme="light"] .sidebar-pro .nav-link .sidebar-label,
+html[data-theme="light"] .sidebar-pro .nav-link .bi,
+html[data-theme="light"] .sidebar-pro .nav-link .material-symbols-outlined {
+    color: #475569 !important;
+}
+
 /* Hover Effect (200ms Background Transition, Slight Left/Right Movement 2px) */
 .sidebar-pro .nav-link:hover {
     color: var(--primary, #3B82F6) !important;
     background: var(--nav-link-hover-bg, #F5F8FF) !important;
     transform: translateX(2px);
+}
+html[data-theme="light"] .sidebar-pro .nav-link:hover .sidebar-label,
+html[data-theme="light"] .sidebar-pro .nav-link:hover .bi,
+html[data-theme="light"] .sidebar-pro .nav-link:hover .material-symbols-outlined {
+    color: var(--primary, #3B82F6) !important;
 }
 html[data-theme="dark"] .sidebar-pro .nav-link:hover {
     background: rgba(255, 255, 255, 0.06) !important;
