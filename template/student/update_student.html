@@ -231,7 +231,13 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Academic Year</label>
-                            {{ form.academic_year }}
+                            <div class="input-group">
+                                {{ form.academic_year }}
+                                <button type="button" class="btn btn-outline-secondary px-3" id="pickYearBtn" title="Select Year from Calendar">
+                                    <i class="bi bi-calendar3"></i>
+                                </button>
+                            </div>
+                            <input type="date" id="yearCalendarPicker" class="d-none">
                         </div>
                     </div>
 
@@ -375,6 +381,64 @@
                         feedback.textContent = 'Uniqueness check failed to run';
                     }
                 }, 400);
+            });
+        }
+
+        // Automatic Academic Year calculation from Semester & Admission Date
+        const semSelect = document.getElementById('id_semester');
+        const admissionDateInput = document.getElementById('id_admission_date');
+        const academicYearInput = document.getElementById('id_academic_year');
+        const pickYearBtn = document.getElementById('pickYearBtn');
+        const yearCalendarPicker = document.getElementById('yearCalendarPicker');
+
+        function autoCalculateAcademicYear() {
+            if (!academicYearInput) return;
+            
+            let baseYear = new Date().getFullYear();
+            if (admissionDateInput && admissionDateInput.value) {
+                const parsedDate = new Date(admissionDateInput.value);
+                if (!isNaN(parsedDate.getFullYear())) {
+                    baseYear = parsedDate.getFullYear();
+                }
+            }
+
+            if (semSelect && semSelect.value) {
+                const semVal = semSelect.value.toString().toLowerCase();
+                let semNum = parseInt(semVal.replace(/\D/g, '')) || 1;
+                
+                // Sem 1-2 => baseYear, Sem 3-4 => baseYear+1, Sem 5-6 => baseYear+2, Sem 7-8 => baseYear+3
+                let yearOffset = Math.floor((semNum - 1) / 2);
+                let calculatedYear = baseYear + yearOffset;
+                
+                // Automatically set academic year
+                academicYearInput.value = calculatedYear;
+            }
+        }
+
+        if (semSelect) {
+            semSelect.addEventListener('change', autoCalculateAcademicYear);
+        }
+        if (admissionDateInput) {
+            admissionDateInput.addEventListener('change', autoCalculateAcademicYear);
+        }
+
+        // Year-only calendar picker handler
+        if (pickYearBtn && yearCalendarPicker) {
+            pickYearBtn.addEventListener('click', function() {
+                if (typeof yearCalendarPicker.showPicker === 'function') {
+                    yearCalendarPicker.showPicker();
+                } else {
+                    yearCalendarPicker.click();
+                }
+            });
+
+            yearCalendarPicker.addEventListener('change', function() {
+                if (this.value) {
+                    const selectedYear = new Date(this.value).getFullYear();
+                    if (academicYearInput) {
+                        academicYearInput.value = selectedYear;
+                    }
+                }
             });
         }
     });
