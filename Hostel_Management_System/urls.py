@@ -16,7 +16,7 @@ urlpatterns = [
     path('manifest.json', TemplateView.as_view(template_name='manifest.json', content_type='application/json'), name='manifest_json'),
     path('service-worker.js', TemplateView.as_view(template_name='service-worker.js', content_type='application/javascript'), name='service_worker_js'),
 ]
-# Trigger URL conf autoreload
+# Trigger URL conf reload for fee_transactions route
 
 from django.conf import settings
 from django.conf.urls.static import static

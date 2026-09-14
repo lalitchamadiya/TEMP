@@ -415,10 +415,10 @@ def fee_transactions(request):
 
     if search_q:
         payments = payments.filter(
-            models.Q(student__name__icontains=search_q) |
-            models.Q(student__roll__icontains=search_q) |
-            models.Q(receipt_number__icontains=search_q) |
-            models.Q(transaction_id__icontains=search_q)
+            Q(student__name__icontains=search_q) |
+            Q(student__roll__icontains=search_q) |
+            Q(receipt_number__icontains=search_q) |
+            Q(transaction_id__icontains=search_q)
         )
 
     if payment_method:
@@ -431,8 +431,8 @@ def fee_transactions(request):
     cash_total = sum(p.amount_paid for p in payments if p.payment_method == 'CASH')
     online_total = sum(p.amount_paid for p in payments if p.payment_method in ['ONLINE', 'BANK_TRANSFER', 'CHEQUE'])
 
-    from room.models import Building
-    buildings = Building.objects.all()
+    from room.models import HostelBuilding
+    buildings = HostelBuilding.objects.filter(is_active=True)
 
     context = {
         'page_title': 'Fee Transactions History',

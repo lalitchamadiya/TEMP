@@ -338,28 +338,28 @@
                         <ul class="collapse-submenu-list">
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'fee_manager' %}active{% endif %}"
-                                    href="{% url 'fee_manager' %}" title="Fee Overview">
+                                    href="{% safe_url 'fee_manager' %}" title="Fee Overview">
                                     <i class="bi bi-cash-stack opacity-75 me-2"></i>
                                     <span class="sidebar-label">Fee Overview</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'fee_transactions' %}active{% endif %}"
-                                    href="{% url 'fee_transactions' %}" title="Transaction History">
+                                    href="{% safe_url 'fee_transactions' %}" title="Transaction History">
                                     <i class="bi bi-journal-check opacity-75 me-2"></i>
                                     <span class="sidebar-label">Transaction History</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'fee_installments' %}active{% endif %}"
-                                    href="{% url 'fee_installments' %}" title="Set Installment Date">
+                                    href="{% safe_url 'fee_installments' %}" title="Set Installment Date">
                                     <i class="bi bi-calendar-event opacity-75 me-2"></i>
                                     <span class="sidebar-label">Set Installment Date</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'fee_penalties' %}active{% endif %}"
-                                    href="{% url 'fee_penalties' %}" title="Manage Penalty">
+                                    href="{% safe_url 'fee_penalties' %}" title="Manage Penalty">
                                     <i class="bi bi-exclamation-octagon opacity-75 me-2"></i>
                                     <span class="sidebar-label">Manage Penalty</span>
                                 </a>
