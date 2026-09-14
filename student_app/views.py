@@ -41,8 +41,38 @@ def student_dashboard(request):
 @login_required(login_url='/authentication/login/')
 def my_gate_passes(request):
     student = get_object_or_404(Student, user=request.user)
-    gate_passes = GatePass.objects.filter(leave_request__student=student).order_by('-created_at')
+    gate_passes = GatePass.objects.filter(
+        leave_request__student=student
+    ).exclude(
+        leave_request__status__in=['completed', 'entered', 'rejected']
+    ).order_by('-created_at')
     return render(request, 'student_app/my_gate_passes.html', {'gate_passes': gate_passes})
+
+
+@login_required(login_url='/authentication/login/')
+def student_gate_passes_status_json(request):
+    student = get_object_or_404(Student, user=request.user)
+    gate_passes = GatePass.objects.filter(leave_request__student=student).order_by('-created_at')
+    passes_data = []
+    for gp in gate_passes:
+        leave = gp.leave_request
+        active_qr = leave.qr_passes.order_by('-generated_at').first()
+        passes_data.append({
+            'gp_id': gp.id,
+            'gate_pass_no': gp.gate_pass_no,
+            'leave_id': leave.id,
+            'leave_status': leave.status,
+            'exit_verified': leave.exit_verified,
+            'entry_verified': leave.entry_verified,
+            'has_pass': bool(active_qr),
+            'pass_type': active_qr.pass_type if active_qr else None,
+            'is_used': active_qr.is_used if active_qr else False,
+            'qr_token': str(active_qr.qr_token) if active_qr else None,
+            'qr_url': request.build_absolute_uri(reverse('qr_code_image', kwargs={'qr_token': active_qr.qr_token})) if active_qr else None,
+            'expires_at': active_qr.expires_at.strftime('%Y-%m-%d %H:%M:%S') if active_qr else None,
+            'is_completed': leave.status in ['completed', 'entered'],
+        })
+    return JsonResponse({'passes': passes_data})
 
 
 @login_required(login_url='/authentication/login/')

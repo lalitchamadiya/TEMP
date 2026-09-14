@@ -17,19 +17,35 @@
     /* Glassmorphic ticket card container */
     .ticket-container {
         max-width: 480px;
-        margin: 2rem auto;
+        margin: 1.5rem auto;
         perspective: 1000px;
     }
 
     .ticket-card {
-        background: var(--card-bg, rgba(255, 255, 255, 0.75));
+        background: var(--card-bg, rgba(255, 255, 255, 0.85));
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.4));
+        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.5));
         border-radius: 2rem;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
         overflow: hidden;
         position: relative;
+        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .ticket-card.approved-flash {
+        animation: cardFlash 1.2s ease-in-out;
+    }
+    @keyframes cardFlash {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+        50% { transform: scale(1.03); box-shadow: 0 0 40px 15px rgba(16, 185, 129, 0.4); }
+        100% { transform: scale(1); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06); }
+    }
+
+    .ticket-card-exit {
+        opacity: 0 !important;
+        transform: scale(0.85) translateY(30px) !important;
+        pointer-events: none;
     }
 
     .ticket-header {
@@ -37,8 +53,13 @@
         color: white;
         padding: 2.25rem 2rem;
         text-align: center;
-        border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+        border-bottom: 2px dashed rgba(255, 255, 255, 0.25);
         position: relative;
+        transition: background 0.5s ease;
+    }
+
+    .ticket-header.header-entry {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
     }
 
     /* Ticket cutouts on the side */
@@ -49,7 +70,7 @@
         height: 30px;
         background-color: var(--body-bg, #f8fafc);
         border-radius: 50%;
-        top: 145px; /* Alignment with the dashed line */
+        top: 145px;
         z-index: 10;
         box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
     }
@@ -60,25 +81,45 @@
         background: white;
         border-radius: 1.5rem;
         padding: 1.5rem;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
         display: inline-block;
-        transition: transform 0.3s ease;
+        transition: all 0.4s ease;
     }
     .qr-container:hover {
-        transform: scale(1.02);
+        transform: scale(1.03);
     }
 
     .student-img-pass {
-        width: 70px;
-        height: 70px;
+        width: 74px;
+        height: 74px;
         object-fit: cover;
         border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        border: 4px solid white;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.15);
         position: absolute;
-        bottom: -35px;
-        left: calc(50% - 35px);
+        bottom: -37px;
+        left: calc(50% - 37px);
         z-index: 11;
+        background: #e2e8f0;
+    }
+
+    .student-avatar-fallback {
+        width: 74px;
+        height: 74px;
+        border-radius: 50%;
+        border: 4px solid white;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+        position: absolute;
+        bottom: -37px;
+        left: calc(50% - 37px);
+        z-index: 11;
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.5rem;
     }
 
     .ticket-body {
@@ -117,19 +158,20 @@
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        padding: 0.45rem 1.5rem;
+        padding: 0.5rem 1.75rem;
         border-radius: 50rem;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: all 0.4s ease;
     }
     .pass-exit {
-        background-color: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-        border: 1px solid rgba(239, 68, 68, 0.2);
+        background-color: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.4);
     }
     .pass-entry {
-        background-color: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-        border: 1px solid rgba(16, 185, 129, 0.2);
+        background-color: rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.4);
     }
 
     .pulse {
@@ -137,42 +179,54 @@
     }
     @keyframes pulse-animation {
         0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+        70% { box-shadow: 0 0 0 12px rgba(79, 70, 229, 0); }
         100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
     }
 
-    /* Success Checkmark & Overlay styles */
+    /* Live Checkpoint Radar Badge */
+    .live-sync-badge {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        padding: 0.35rem 1rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    /* Full-Screen Success Overlay */
     #success-overlay {
         display: none;
         position: fixed;
         top: 0; left: 0;
         width: 100vw; height: 100vh;
-        background: rgba(15, 23, 42, 0.9);
+        background: rgba(15, 23, 42, 0.92);
         z-index: 99999;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         align-items: center;
         justify-content: center;
         flex-direction: column;
         color: white;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.4s ease;
+        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     #success-overlay.show {
         opacity: 1;
         pointer-events: auto;
     }
     .checkmark-wrapper {
-        width: 100px;
-        height: 100px;
+        width: 110px;
+        height: 110px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
     .checkmark-svg {
-        width: 80px;
-        height: 80px;
+        width: 90px;
+        height: 90px;
         border-radius: 50%;
         display: block;
         stroke-width: 4;
@@ -212,7 +266,13 @@
 
 <div class="container-fluid py-4 min-vh-100">
     <div class="d-flex align-items-center justify-content-between mb-4 px-2 max-width-container" style="max-width: 480px; margin: 0 auto;">
-        <h4 class="fw-bold mb-0 text-slate-800"><i class="bi bi-ticket-perforated me-2"></i>Gate Pass Ticket</h4>
+        <div>
+            <h4 class="fw-bold mb-0 text-slate-800"><i class="bi bi-ticket-perforated me-2 text-primary"></i>Digital Ticket</h4>
+            <span class="live-sync-badge mt-1 d-inline-flex align-items-center gap-1">
+                <span class="spinner-grow spinner-grow-sm text-success" role="status" style="width:0.55rem; height:0.55rem;"></span>
+                Real-Time Checkpoint Sync
+            </span>
+        </div>
         <a href="{% url 'student_app:student_leave_details' %}" class="btn btn-sm btn-light border-0 shadow-sm rounded-pill px-3 fw-bold small">
             <i class="bi bi-arrow-left me-1"></i> Back
         </a>
@@ -220,21 +280,26 @@
 
     <div class="ticket-container">
         {% if active_pass %}
-        <div class="ticket-card">
-            <!-- Header section containing the pass type and QR code -->
-            <div class="ticket-header">
-                <span class="pass-type-badge {% if active_pass.pass_type == 'EXIT' %}pass-exit{% else %}pass-entry{% endif %} mb-3 d-inline-block">
+        <div class="ticket-card" id="main-ticket-card">
+            <!-- Header section containing pass type and QR code -->
+            <div class="ticket-header {% if active_pass.pass_type == 'ENTRY' %}header-entry{% endif %}" id="ticket-header-box">
+                <span class="pass-type-badge {% if active_pass.pass_type == 'EXIT' %}pass-exit{% else %}pass-entry{% endif %} mb-3 d-inline-block" id="ticket-badge">
                     {{ active_pass.pass_type }} TICKET
                 </span>
                 
                 <div class="d-block mt-2">
-                    <div class="qr-container pulse">
-                        <img src="{% url 'qr_code_image' active_pass.qr_token %}" alt="QR Pass" style="width: 170px; height: 170px; object-fit: contain;">
+                    <div class="qr-container pulse" id="qr-wrapper">
+                        <img src="{% url 'qr_code_image' active_pass.qr_token %}" alt="QR Pass" id="qr-code-img" style="width: 170px; height: 170px; object-fit: contain;">
                     </div>
                 </div>
 
-                <!-- Floating Student Image -->
-                <img src="{% if student.photo %}{{ student.photo.url }}{% else %}{% static 'image/User.jpg' %}{% endif %}" class="student-img-pass" alt="Avatar">
+                <!-- Floating Student Image with Fallback -->
+                {% if student.photo %}
+                    <img src="{{ student.photo.url }}" class="student-img-pass" alt="{{ student.name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="student-avatar-fallback" style="display:none;">{{ student.name|slice:":1" }}</div>
+                {% else %}
+                    <div class="student-avatar-fallback">{{ student.name|slice:":1" }}</div>
+                {% endif %}
             </div>
 
             <!-- Body section containing details -->
@@ -243,7 +308,7 @@
                 <div class="badge bg-light text-dark border px-3 rounded-pill fw-semibold mb-2" style="font-size:0.75rem;">
                     {{ student.roll }}
                 </div>
-                <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Scan this at the main gate checkpoint to verify movement.</p>
+                <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Scan this at main gate checkpoint to verify exit or entry movement.</p>
 
                 <!-- Information Grid -->
                 <div class="info-grid">
@@ -261,9 +326,11 @@
                     </div>
                     <div>
                         <div class="info-label">Expiry Date</div>
-                        <div class="info-val">{{ active_pass.expires_at|date:"d M Y (H:i)" }}</div>
+                        <div class="info-val" id="expiry-date-val">{{ active_pass.expires_at|date:"d M Y (H:i)" }}</div>
                     </div>
                 </div>
+
+                <div id="countdown-banner-container"></div>
 
                 <div class="d-flex align-items-center justify-content-center gap-2 text-muted small">
                     <i class="bi bi-shield-check text-primary fs-5"></i>
@@ -272,12 +339,12 @@
             </div>
         </div>
         {% else %}
-        <div class="glass-card p-5 text-center shadow-sm border-0">
+        <div class="glass-card p-5 text-center shadow-sm border-0" style="background: var(--card-bg, rgba(255, 255, 255, 0.85)); border-radius: 2rem; border: 1px solid var(--border-color, rgba(255, 255, 255, 0.5));">
             <div class="text-danger mb-3">
                 <i class="bi bi-exclamation-triangle fs-1"></i>
             </div>
             <h4 class="fw-bold text-dark">No Active Pass Available</h4>
-            <p class="text-muted small mb-4">Either your leave request is not yet approved, or your pass has already been used or expired.</p>
+            <p class="text-muted small mb-4">Either your leave request is not yet approved, or your pass has already been used or completed.</p>
             <a href="{% url 'student_app:student_leave_details' %}" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold">
                 My Leave History
             </a>
@@ -293,8 +360,8 @@
              <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
          </svg>
     </div>
-    <h2 id="success-overlay-title" class="fw-bold mt-4" style="letter-spacing:-0.02em;">Gating Verified!</h2>
-    <p id="success-overlay-msg" class="text-white-50 mt-1 px-4 text-center" style="max-width:320px;">Your transit has been approved by checkpoint security.</p>
+    <h2 id="success-overlay-title" class="fw-bold mt-4" style="letter-spacing:-0.02em;">Verified!</h2>
+    <p id="success-overlay-msg" class="text-white-50 mt-1 px-4 text-center" style="max-width:320px;">Your pass scan has been approved by checkpoint security.</p>
 </div>
 
 <script>
@@ -307,19 +374,25 @@
         const overlay = document.getElementById("success-overlay");
         const overlayTitle = document.getElementById("success-overlay-title");
         const overlayMsg = document.getElementById("success-overlay-msg");
+        const ticketCard = document.getElementById("main-ticket-card");
 
         function showOverlay(title, message, duration, callback) {
             overlayTitle.textContent = title;
             overlayMsg.textContent = message;
             overlay.style.display = "flex";
             setTimeout(() => overlay.classList.add("show"), 10);
+
+            if (ticketCard) {
+                ticketCard.classList.add("approved-flash");
+                setTimeout(() => ticketCard.classList.remove("approved-flash"), 1300);
+            }
             
             setTimeout(() => {
                 overlay.classList.remove("show");
                 setTimeout(() => {
                     overlay.style.display = "none";
                     if (callback) callback();
-                }, 400); // Overlay transition duration
+                }, 400);
             }, duration);
         }
 
@@ -334,31 +407,45 @@
                             const isExitScanned = (currentPassType === 'EXIT' && data.pass_type === 'ENTRY');
                             
                             const title = isExitScanned ? "Exit Approved!" : "Entry Approved!";
-                            const msg = isExitScanned ? "Generating Entry Ticket..." : "Welcome back to your hostel.";
+                            const msg = isExitScanned ? "Security approved your exit. Entry QR pass is now active!" : "Welcome back to your hostel.";
                             
                             showOverlay(title, msg, 2200, () => {
                                 currentPassType = data.pass_type;
                                 currentPassUsed = data.is_used;
 
+                                // Update Header Theme
+                                const headerBox = document.getElementById("ticket-header-box");
+                                if (headerBox) {
+                                    if (data.pass_type === 'ENTRY') {
+                                        headerBox.classList.add("header-entry");
+                                    } else {
+                                        headerBox.classList.remove("header-entry");
+                                    }
+                                }
+
                                 // Update Badge
-                                const badge = document.querySelector(".pass-type-badge");
+                                const badge = document.getElementById("ticket-badge");
                                 if (badge) {
                                     badge.className = `pass-type-badge ${data.pass_type === 'EXIT' ? 'pass-exit' : 'pass-entry'} mb-3 d-inline-block`;
                                     badge.textContent = `${data.pass_type} TICKET`;
                                 }
 
                                 // Update QR Image
-                                const qrImg = document.querySelector(".qr-container img");
-                                if (qrImg) {
-                                    qrImg.src = data.qr_url;
+                                const qrImg = document.getElementById("qr-code-img");
+                                if (qrImg && data.qr_url) {
+                                    qrImg.style.opacity = "0";
+                                    setTimeout(() => {
+                                        qrImg.src = data.qr_url;
+                                        qrImg.style.opacity = "1";
+                                    }, 200);
                                 }
                                 
                                 // Update Expiry Date label dynamically
-                                const infoVals = document.querySelectorAll(".info-val");
-                                if (infoVals.length >= 4) {
+                                const expiryVal = document.getElementById("expiry-date-val");
+                                if (expiryVal && data.expires_at) {
                                     const dateObj = new Date(data.expires_at.replace(/-/g, "/"));
                                     const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
-                                    infoVals[3].textContent = dateObj.toLocaleDateString('en-GB', options).replace(',', '');
+                                    expiryVal.textContent = dateObj.toLocaleDateString('en-GB', options).replace(',', '');
                                 }
 
                                 isTransitioning = false;
@@ -367,24 +454,36 @@
                     } else {
                         if (currentPassType !== 'NONE') {
                             isTransitioning = true;
-                            showOverlay("Entry Approved!", 'Welcome back! Your leave is completed.', 2200, () => {
-                                const container = document.querySelector(".ticket-container");
-                                if (container) {
-                                    container.innerHTML = `
-                                        <div class="glass-card p-5 text-center shadow-sm border-0" style="background: var(--card-bg, rgba(255, 255, 255, 0.75)); border-radius: 2rem; border: 1px solid var(--border-color, rgba(255, 255, 255, 0.4)); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);">
-                                            <div class="text-success mb-3">
-                                                <i class="bi bi-patch-check-fill fs-1"></i>
-                                            </div>
-                                            <h4 class="fw-bold text-dark">Leave Completed!</h4>
-                                            <p class="text-muted small mb-4">Your entry transit was approved. Welcome back to the hostel.</p>
-                                            <a href="{% url 'student_app:student_leave_details' %}" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold">
-                                                My Leave History
-                                            </a>
+                            showOverlay("Entry Approved!", "Welcome back! Your hostel entry is verified.", 2200, () => {
+                                currentPassType = 'NONE';
+
+                                // Render countdown banner on ticket
+                                const bannerContainer = document.getElementById("countdown-banner-container");
+                                if (bannerContainer) {
+                                    bannerContainer.innerHTML = `
+                                        <div class="alert alert-success py-2 px-3 mb-3 rounded-3 text-center small fw-bold">
+                                            <i class="bi bi-patch-check-fill me-1 text-success"></i> Entry Approved! Ticket deleting in <span id="view-timer">10</span>s...
                                         </div>
                                     `;
                                 }
-                                currentPassType = 'NONE';
-                                isTransitioning = false;
+
+                                let countdown = 10;
+                                const timerInterval = setInterval(() => {
+                                    countdown--;
+                                    const timerElem = document.getElementById("view-timer");
+                                    if (timerElem) timerElem.textContent = countdown;
+                                    if (countdown <= 0) {
+                                        clearInterval(timerInterval);
+                                        if (ticketCard) {
+                                            ticketCard.classList.add("ticket-card-exit");
+                                            setTimeout(() => {
+                                                window.location.href = "{% url 'student_app:student_leave_details' %}";
+                                            }, 500);
+                                        } else {
+                                            window.location.href = "{% url 'student_app:student_leave_details' %}";
+                                        }
+                                    }
+                                }, 1000);
                             });
                         }
                     }
@@ -392,7 +491,9 @@
                 .catch(err => console.error("Error polling pass status: ", err));
         }
 
-        setInterval(checkStatus, 2500);
+        // Fast 1 second real-time polling
+        setInterval(checkStatus, 1000);
     });
 </script>
 {% endblock %}
+

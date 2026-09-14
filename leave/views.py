@@ -426,14 +426,29 @@ def security_dashboard(request):
     from hms.models import DutyAssignment
     assignment = DutyAssignment.objects.select_related('duty').filter(staff__user=request.user, is_active=True).first()
 
-    # 1. Pending Exit: Leaves approved but exit_verified is False
-    pending_exits = HostelLeave.objects.filter(status='approved', exit_verified=False).select_related('student')
+    today = date.today()
+
+    # 1. Pending Exit Today: Leaves approved but exit_verified is False, scheduled for exit today or earlier
+    pending_exits = HostelLeave.objects.filter(
+        status='approved', 
+        exit_verified=False,
+        leave_from__lte=today
+    ).select_related('student')
     
-    # 2. Student Outside Hostel: Exited, but entry_verified is False
-    students_outside = HostelLeave.objects.filter(status='approved', exit_verified=True, entry_verified=False).select_related('student')
+    # 2. Student Outside Hostel (Can Entry Today): Exited, entry_verified is False, return date is today or earlier
+    students_outside = HostelLeave.objects.filter(
+        status='approved', 
+        exit_verified=True, 
+        entry_verified=False,
+        leave_to__lte=today
+    ).select_related('student')
     
-    # 3. Returned Students: status is completed and entry_verified is True
-    returned_students = HostelLeave.objects.filter(status='completed', entry_verified=True).select_related('student').order_by('-entry_time')
+    # 3. Returned Students Today: status is completed and entry_verified is True today
+    returned_students = HostelLeave.objects.filter(
+        status='completed', 
+        entry_verified=True,
+        entry_time__date=today
+    ).select_related('student').order_by('-entry_time')
 
     if assignment and assignment.specific_location:
         pending_exits = pending_exits.filter(student__allocated_beds__room__building__name__icontains=assignment.specific_location).distinct()
@@ -531,6 +546,11 @@ def scan_gate_pass(request, qr_token):
                 # Restore Student Status
                 student.status = 'Active'
                 student.save()
+
+                # Remove/Delete GatePass record so pass is deleted upon entry approval
+                if hasattr(leave, 'gate_pass'):
+                    leave.gate_pass.delete()
+
                 success_msg = f"ENTRY APPROVED for {student.name}. Gating workflow complete."
     
     context = {
@@ -542,5 +562,6 @@ def scan_gate_pass(request, qr_token):
         'success_msg': success_msg,
     }
     return render(request, 'leave/scan_confirmation.html', context)
+
 
 

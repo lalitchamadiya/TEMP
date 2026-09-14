@@ -5,12 +5,13 @@
 
 {% block content %}
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
 <style>
     body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
     
     .glass-card {
-        background: rgba(255, 255, 255, 0.7);
+        background: rgba(255, 255, 255, 0.75);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.4);
@@ -19,13 +20,87 @@
     }
 
     .gp-card {
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid transparent;
     }
     .gp-card:hover {
         transform: translateY(-5px);
         border-color: rgba(99, 102, 241, 0.3);
         box-shadow: 0 10px 25px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Success Overlay & Animated Checkmark */
+    #success-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.9);
+        z-index: 99999;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+    }
+    #success-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .checkmark-wrapper {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .checkmark-svg {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 4;
+        stroke: #10b981;
+        stroke-miterlimit: 10;
+        box-shadow: inset 0px 0px 0px #10b981;
+        animation: fill-anim .4s ease-in-out .4s forwards, scale-anim .3s ease-in-out .9s both;
+    }
+    .checkmark-circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-width: 4;
+        stroke-miterlimit: 10;
+        stroke: #10b981;
+        fill: none;
+        animation: stroke-anim .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .checkmark-check {
+        transform-origin: 50% 50%;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        stroke: white;
+        stroke-linecap: round;
+        animation: stroke-anim .3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke-anim {
+        100% { stroke-dashoffset: 0; }
+    }
+    @keyframes fill-anim {
+        100% { box-shadow: inset 0px 0px 0px 50px #10b981; }
+    }
+    @keyframes scale-anim {
+        0%, 100% { transform: none; }
+        50% { transform: scale3d(1.1, 1.1, 1); }
+    }
+
+    .fade-out-card {
+        opacity: 0 !important;
+        transform: scale(0.9) translateY(20px) !important;
+        pointer-events: none;
     }
 </style>
 
@@ -35,10 +110,10 @@
         <p class="text-muted small mb-0">View and download your approved hostel gate passes</p>
     </div>
 
-    <div class="row g-4">
+    <div class="row g-4" id="gate-passes-container">
         {% if gate_passes %}
             {% for gp in gate_passes %}
-            <div class="col-xl-4 col-md-6">
+            <div class="col-xl-4 col-md-6 pass-card-col" id="gp-col-{{ gp.id }}" data-gp-id="{{ gp.id }}" data-leave-id="{{ gp.leave_request.id }}">
                 <div class="glass-card p-4 gp-card h-100 position-relative border-0 shadow-sm">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="bg-primary bg-opacity-10 p-2 rounded-3">
@@ -53,13 +128,17 @@
                     <p class="text-muted small mb-3">Generated on {{ gp.created_at|date:"d M Y" }}</p>
 
                     {% with gp.leave_request.qr_passes.all.first as active_pass %}
-                        {% if active_pass and not active_pass.is_used %}
-                            <div class="text-center my-3 p-2 bg-white rounded-3 border">
-                                <img src="{% url 'qr_code_image' active_pass.qr_token %}" alt="QR Pass" style="width: 130px; height: 130px; object-fit: contain;">
-                                <div class="text-muted small mt-1 fw-bold">{{ active_pass.pass_type }} Pass</div>
-                            </div>
-                        {% endif %}
+                        <div class="text-center my-3 p-2 bg-white rounded-3 border" id="qr-box-{{ gp.id }}">
+                            {% if active_pass and not active_pass.is_used %}
+                                <img src="{% url 'qr_code_image' active_pass.qr_token %}" alt="QR Pass" id="qr-img-{{ gp.id }}" style="width: 130px; height: 130px; object-fit: contain;">
+                                <div class="text-muted small mt-1 fw-bold" id="pass-type-badge-{{ gp.id }}">{{ active_pass.pass_type }} Pass</div>
+                            {% else %}
+                                <div class="py-3 text-muted small fw-bold" id="pass-type-badge-{{ gp.id }}">No Active Pass</div>
+                            {% endif %}
+                        </div>
                     {% endwith %}
+
+                    <div id="deletion-notice-{{ gp.id }}"></div>
 
                     <div class="p-3 bg-light rounded-3 mb-4">
                         <div class="d-flex justify-content-between mb-2">
@@ -84,7 +163,7 @@
             </div>
             {% endfor %}
         {% else %}
-            <div class="col-12 text-center py-5">
+            <div class="col-12 text-center py-5" id="no-passes-msg">
                 <div class="opacity-25 mb-3">
                     <i class="bi bi-journal-x display-1"></i>
                 </div>
@@ -97,4 +176,171 @@
         {% endif %}
     </div>
 </div>
+
+<div id="success-overlay">
+    <div class="checkmark-wrapper">
+         <svg class="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+             <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+             <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+         </svg>
+    </div>
+    <h2 id="success-overlay-title" class="fw-bold mt-4" style="letter-spacing:-0.02em;">Approved!</h2>
+    <p id="success-overlay-msg" class="text-white-50 mt-1 px-4 text-center" style="max-width:320px;">Your pass scan has been verified by checkpoint security.</p>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const passStates = {};
+    const overlay = document.getElementById("success-overlay");
+    const overlayTitle = document.getElementById("success-overlay-title");
+    const overlayMsg = document.getElementById("success-overlay-msg");
+    const deletingPasses = new Set();
+
+    function showOverlay(title, message, duration, callback) {
+        overlayTitle.textContent = title;
+        overlayMsg.textContent = message;
+        overlay.style.display = "flex";
+        setTimeout(() => overlay.classList.add("show"), 10);
+        
+        setTimeout(() => {
+            overlay.classList.remove("show");
+            setTimeout(() => {
+                overlay.style.display = "none";
+                if (callback) callback();
+            }, 400);
+        }, duration);
+    }
+
+    // Initialize state cache from initial DOM elements
+    document.querySelectorAll(".pass-card-col").forEach(col => {
+        const gpId = col.getAttribute("data-gp-id");
+        const leaveId = col.getAttribute("data-leave-id");
+        const badge = document.getElementById(`pass-type-badge-${gpId}`);
+        const passType = badge ? badge.textContent.trim().split(" ")[0] : "EXIT";
+        passStates[gpId] = {
+            leaveId: leaveId,
+            passType: passType,
+            exitVerified: false,
+            entryVerified: false,
+            completed: false
+        };
+    });
+
+    function pollGatePassesStatus() {
+        fetch("{% url 'student_app:student_gate_passes_status' %}")
+            .then(res => res.json())
+            .then(data => {
+                if (!data.passes) return;
+
+                // Process returned passes
+                const activeGpIdsInResponse = new Set();
+                data.passes.forEach(passInfo => {
+                    const gpId = passInfo.gp_id;
+                    activeGpIdsInResponse.add(gpId);
+
+                    const col = document.getElementById(`gp-col-${gpId}`);
+                    if (!col || deletingPasses.has(gpId)) return;
+
+                    const prevState = passStates[gpId] || { passType: 'EXIT', exitVerified: false, entryVerified: false, completed: false };
+
+                    // 1. Detect EXIT scan (transition from EXIT to ENTRY)
+                    if (!prevState.exitVerified && passInfo.exit_verified) {
+                        passStates[gpId].exitVerified = true;
+                        passStates[gpId].passType = passInfo.pass_type || 'ENTRY';
+
+                        showOverlay("Exit Approved!", "Security verified your exit. Entry QR Pass is now active.", 2200, () => {
+                            // Update QR image & badge
+                            const qrImg = document.getElementById(`qr-img-${gpId}`);
+                            if (qrImg && passInfo.qr_url) {
+                                qrImg.src = passInfo.qr_url;
+                            }
+                            const badge = document.getElementById(`pass-type-badge-${gpId}`);
+                            if (badge) {
+                                badge.textContent = `${passInfo.pass_type || 'ENTRY'} Pass`;
+                            }
+                        });
+                    }
+
+                    // 2. Detect ENTRY scan / completion
+                    if ((!prevState.entryVerified && passInfo.entry_verified) || passInfo.is_completed) {
+                        passStates[gpId].entryVerified = true;
+                        passStates[gpId].completed = true;
+                        triggerPassAutoDeletion(gpId);
+                    }
+                });
+
+                // Check for passes that disappeared from response because entry pass was approved & completed/deleted
+                Object.keys(passStates).forEach(gpIdStr => {
+                    const gpId = parseInt(gpIdStr);
+                    if (!activeGpIdsInResponse.has(gpId) && !deletingPasses.has(gpId)) {
+                        const col = document.getElementById(`gp-col-${gpId}`);
+                        if (col) {
+                            triggerPassAutoDeletion(gpId);
+                        }
+                    }
+                });
+            })
+            .catch(err => console.error("Error checking gate pass status: ", err));
+    }
+
+    function triggerPassAutoDeletion(gpId) {
+        if (deletingPasses.has(gpId)) return;
+        deletingPasses.add(gpId);
+
+        showOverlay("Entry Approved!", "Welcome back! Your hostel entry is verified.", 2200, () => {
+            const col = document.getElementById(`gp-col-${gpId}`);
+            const noticeBox = document.getElementById(`deletion-notice-${gpId}`);
+            
+            if (noticeBox) {
+                noticeBox.innerHTML = `
+                    <div class="alert alert-success py-2 px-3 mb-3 rounded-3 text-center small fw-bold">
+                        <i class="bi bi-check-circle-fill me-1 text-success"></i> Entry Approved! Auto-deleting in <span id="timer-${gpId}">10</span>s
+                    </div>
+                `;
+            }
+
+            let countdown = 10;
+            const interval = setInterval(() => {
+                countdown--;
+                const timerElem = document.getElementById(`timer-${gpId}`);
+                if (timerElem) {
+                    timerElem.textContent = countdown;
+                }
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    if (col) {
+                        col.classList.add("fade-out-card");
+                        setTimeout(() => {
+                            col.remove();
+                            // If no passes left, show empty message
+                            const remainingCols = document.querySelectorAll(".pass-card-col");
+                            if (remainingCols.length === 0) {
+                                const container = document.getElementById("gate-passes-container");
+                                if (container) {
+                                    container.innerHTML = `
+                                        <div class="col-12 text-center py-5" id="no-passes-msg">
+                                            <div class="opacity-25 mb-3">
+                                                <i class="bi bi-journal-x display-1"></i>
+                                            </div>
+                                            <h4 class="fw-bold text-dark">No Gate Passes Yet</h4>
+                                            <p class="text-muted">Your approved leave gate passes will appear here.</p>
+                                            <a href="{% url 'student_app:student_leave_request' %}" class="btn btn-primary rounded-pill px-4 mt-3">
+                                                Request Leave
+                                            </a>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        }, 400);
+                    }
+                }
+            }, 1000);
+        });
+    }
+
+    // Poll status every 2 seconds
+    setInterval(pollGatePassesStatus, 2000);
+});
+</script>
 {% endblock %}
+
