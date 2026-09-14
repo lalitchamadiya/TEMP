@@ -39,6 +39,7 @@ class NoRoleAccessMiddleware:
                 '/authentication/no-role/',
                 '/authentication/logout/',
                 '/authentication/login/',
+                '/authentication/keep-alive/',
                 '/static/',
                 '/media/',
             ]

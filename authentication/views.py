@@ -1,7 +1,9 @@
 import csv
 import json
+import time
 from functools import wraps
 
+from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group, User
@@ -11,6 +13,7 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
+from django.views.decorators.http import require_POST
 
 from .decorators import role_required, permission_required
 from .models import AuditLog, Module, Role, RolePermission, UserProfile, Hostel, PermissionElement, RoleElementPermission, get_or_create_student_role
@@ -883,6 +886,18 @@ def system_settings_view(request):
         'form': form,
         'settings': settings,
     })
+
+
+@require_POST
+def keep_alive_view(request):
+    """Refreshes the user's session timestamp without reloading the page."""
+    if request.user.is_authenticated:
+        now_ts = int(time.time())
+        request.session['_last_activity'] = now_ts
+        timeout = getattr(settings, 'SESSION_COOKIE_AGE', 900)
+        return JsonResponse({'status': 'success', 'last_activity': now_ts, 'timeout': timeout})
+    return JsonResponse({'status': 'unauthorized'}, status=401)
+
 
 
 

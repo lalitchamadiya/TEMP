@@ -1,0 +1,250 @@
+{% if user.is_authenticated %}
+<!-- Session Timeout Warning Modal -->
+<div class="modal fade" id="sessionTimeoutModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="sessionTimeoutModalLabel" aria-hidden="true" style="z-index: 1090;">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+      
+      <!-- Top Warning Header Banner -->
+      <div class="p-3 text-center bg-warning bg-opacity-10 border-bottom border-warning border-opacity-20 position-relative">
+        <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-20 text-warning rounded-circle mb-2" style="width: 52px; height: 52px;">
+          <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+        </div>
+        <h5 class="modal-title fw-bold text-dark fs-6" id="sessionTimeoutModalLabel">Session Expiring Soon</h5>
+      </div>
+
+      <!-- Modal Body with Live Timer -->
+      <div class="modal-body text-center p-4">
+        <p class="text-muted small mb-3">Your session will expire due to inactivity in:</p>
+        
+        <!-- Live Digital Countdown Badge -->
+        <div class="d-inline-block px-4 py-2 bg-light border rounded-3 mb-3 shadow-sm">
+          <span class="font-monospace fw-bold text-danger fs-2" id="sessionTimeoutCountdown">30</span>
+          <span class="text-muted small ms-1">sec</span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress mb-2" style="height: 6px; background-color: #e9ecef; border-radius: 3px;">
+          <div id="sessionTimeoutProgress" class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%; transition: width 1s linear;"></div>
+        </div>
+
+        <p class="text-secondary small mb-0" style="font-size: 0.78rem;">Click <strong>Continue</strong> to stay logged in, or you will be automatically logged out.</p>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div class="modal-footer flex-column border-0 pt-0 pb-3 px-3 gap-2">
+        <button type="button" id="btnExtendSession" class="btn btn-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2" style="border-radius: 10px;">
+          <i class="bi bi-arrow-repeat fs-6" id="btnExtendIcon"></i>
+          <span id="btnExtendText">Continue Session</span>
+        </button>
+        <button type="button" id="btnLogoutSession" class="btn btn-outline-secondary w-100 py-1-5 btn-sm border-0 text-muted" style="border-radius: 8px;">
+          Logout Now
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Session Configuration (15 mins = 900s by default)
+  const SESSION_TIMEOUT = {{ SESSION_COOKIE_AGE|default:900 }};
+  const WARNING_WINDOW = 30; // Show warning modal 30 seconds before timeout
+  const KEEP_ALIVE_URL = "{% url 'keep_alive' %}";
+  const LOGOUT_URL = "{% url 'logout' %}";
+
+  let lastActivity = Date.now();
+  let countdownTimer = null;
+  let modalInstance = null;
+  let isModalOpen = false;
+
+  // Helper to get CSRF token
+  function getCsrfToken() {
+    let token = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, 10) === 'csrftoken=') {
+          token = decodeURIComponent(cookie.substring(10));
+          break;
+        }
+      }
+    }
+    return token;
+  }
+
+  // Update local activity timestamp on mouse/keyboard interaction (debounced)
+  function recordUserActivity() {
+    if (!isModalOpen) {
+      lastActivity = Date.now();
+      try {
+        localStorage.setItem('hms_last_user_activity', lastActivity.toString());
+      } catch (e) {}
+    }
+  }
+
+  // Listen for user events when modal is closed
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, recordUserActivity, { passive: true });
+  });
+
+  // Check activity across browser tabs
+  function getEffectiveLastActivity() {
+    try {
+      const stored = localStorage.getItem('hms_last_user_activity');
+      if (stored) {
+        const ts = parseInt(stored, 10);
+        if (!isNaN(ts) && ts > lastActivity) {
+          lastActivity = ts;
+        }
+      }
+    } catch (e) {}
+    return lastActivity;
+  }
+
+  // Timer Tick function running every 1s
+  function checkSessionTimeout() {
+    const now = Date.now();
+    const effActivity = getEffectiveLastActivity();
+    const elapsedSeconds = Math.floor((now - effActivity) / 1000);
+    const remainingSeconds = SESSION_TIMEOUT - elapsedSeconds;
+
+    if (remainingSeconds <= WARNING_WINDOW && remainingSeconds > 0) {
+      if (!isModalOpen) {
+        showWarningModal(remainingSeconds);
+      } else {
+        updateModalCountdown(remainingSeconds);
+      }
+    } else if (remainingSeconds <= 0) {
+      // Session Expired -> Auto Logout
+      window.location.href = LOGOUT_URL;
+    } else if (remainingSeconds > WARNING_WINDOW && isModalOpen) {
+      // Activity occurred elsewhere (e.g. another tab extended session)
+      hideWarningModal();
+    }
+  }
+
+  function showWarningModal(remainingSeconds) {
+    const modalEl = document.getElementById('sessionTimeoutModal');
+    if (!modalEl) return;
+
+    if (!modalInstance && typeof bootstrap !== 'undefined') {
+      modalInstance = new bootstrap.Modal(modalEl, {
+        backdrop: 'static',
+        keyboard: false
+      });
+    }
+
+    isModalOpen = true;
+    updateModalCountdown(remainingSeconds);
+
+    if (modalInstance) {
+      modalInstance.show();
+    } else if (typeof $ !== 'undefined') {
+      $(modalEl).modal('show');
+    }
+  }
+
+  function updateModalCountdown(seconds) {
+    const countdownEl = document.getElementById('sessionTimeoutCountdown');
+    const progressEl = document.getElementById('sessionTimeoutProgress');
+    const safeSeconds = Math.max(0, Math.min(WARNING_WINDOW, Math.floor(seconds)));
+
+    if (countdownEl) {
+      countdownEl.textContent = safeSeconds < 10 ? '0' + safeSeconds : safeSeconds;
+    }
+
+    if (progressEl) {
+      const percentage = (safeSeconds / WARNING_WINDOW) * 100;
+      progressEl.style.width = percentage + '%';
+      if (safeSeconds <= 10) {
+        progressEl.classList.remove('bg-warning');
+        progressEl.classList.add('bg-danger');
+      } else {
+        progressEl.classList.remove('bg-danger');
+        progressEl.classList.add('bg-warning');
+      }
+    }
+  }
+
+  function hideWarningModal() {
+    const modalEl = document.getElementById('sessionTimeoutModal');
+    isModalOpen = false;
+    if (modalInstance) {
+      modalInstance.hide();
+    } else if (typeof $ !== 'undefined' && modalEl) {
+      $(modalEl).modal('hide');
+    }
+  }
+
+  // Handle "Continue Session" button click
+  document.addEventListener('DOMContentLoaded', function() {
+    const btnExtend = document.getElementById('btnExtendSession');
+    const btnLogout = document.getElementById('btnLogoutSession');
+
+    if (btnExtend) {
+      btnExtend.addEventListener('click', function() {
+        const icon = document.getElementById('btnExtendIcon');
+        const text = document.getElementById('btnExtendText');
+
+        if (icon) icon.classList.add('spin-animation');
+        if (text) text.textContent = 'Extending...';
+        btnExtend.disabled = true;
+
+        fetch(KEEP_ALIVE_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+          }
+        })
+        .then(response => {
+          if (response.ok) return response.json();
+          throw new Error('Keepalive request failed');
+        })
+        .then(data => {
+          // Reset session timer
+          lastActivity = Date.now();
+          try {
+            localStorage.setItem('hms_last_user_activity', lastActivity.toString());
+          } catch (e) {}
+
+          hideWarningModal();
+        })
+        .catch(err => {
+          console.error('Session keep-alive error:', err);
+          // Fallback reload to ensure fresh session
+          window.location.reload();
+        })
+        .finally(() => {
+          if (icon) icon.classList.remove('spin-animation');
+          if (text) text.textContent = 'Continue Session';
+          btnExtend.disabled = false;
+        });
+      });
+    }
+
+    if (btnLogout) {
+      btnLogout.addEventListener('click', function() {
+        window.location.href = LOGOUT_URL;
+      });
+    }
+
+    // Start interval timer
+    setInterval(checkSessionTimeout, 1000);
+  });
+})();
+</script>
+
+<style>
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin-animation {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+</style>
+{% endif %}
