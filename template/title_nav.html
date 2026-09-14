@@ -184,9 +184,9 @@
     <div class="dropdown">
         <button class="btn profile-trigger" type="button" id="profileDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
             {% if request.user.student %}
-              <img src="{{ request.user.student.photo_url }}" onerror="this.onerror=null; this.src='{% static 'image/User.jpg' %}';" style="width: 100%; height: 100%; object-fit: cover;" alt="User">
+              <img src="{{ request.user.student.photo_url }}" onerror='this.onerror=null; this.src="{% static \"image/User.jpg\" %}";' style="width: 100%; height: 100%; object-fit: cover;" alt="User">
             {% elif request.user.profile %}
-              <img src="{{ request.user.profile.photo_url }}" onerror="this.onerror=null; this.src='{% static 'image/User.jpg' %}';" style="width: 100%; height: 100%; object-fit: cover;" alt="User">
+              <img src="{{ request.user.profile.photo_url }}" onerror='this.onerror=null; this.src="{% static \"image/User.jpg\" %}";' style="width: 100%; height: 100%; object-fit: cover;" alt="User">
             {% else %}
               <img src="{% static 'image/User.jpg' %}" style="width: 100%; height: 100%; object-fit: cover;" alt="User">
             {% endif %}
