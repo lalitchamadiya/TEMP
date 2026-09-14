@@ -56,3 +56,61 @@ class StudentActivePassStatusTest(TestCase):
         self.assertEqual(data['pass_type'], 'EXIT')
         self.assertFalse(data['is_used'])
         self.assertEqual(data['qr_token'], str(qr.qr_token))
+
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+class StudentProfileViewAndSessionTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='student_prof', password='password123', email='prof@example.com')
+        from authentication.models import Role, UserProfile
+        self.role, _ = Role.objects.get_or_create(name='Student')
+        self.profile = UserProfile.objects.create(user=self.user, role=self.role)
+        self.student = Student.objects.create(
+            user=self.user,
+            name='Profile Student',
+            roll='2002',
+            email='prof@example.com'
+        )
+
+    def test_student_profile_view_accessible(self):
+        self.client.login(username='student_prof', password='password123')
+        url = reverse('student_app:student_profile')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Profile Student')
+        self.assertContains(response, '2002')
+
+    def test_student_profile_update_photo_and_session_persistence(self):
+        self.client.login(username='student_prof', password='password123')
+        update_url = reverse('student_app:student_profile_update')
+
+        # Dummy image for upload
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff'
+            b'\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00'
+            b'\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b'
+        )
+        uploaded_photo = SimpleUploadedFile('test_photo.gif', small_gif, content_type='image/gif')
+
+        post_data = {
+            'phone_number': '9876543210',
+            'blood_group': 'O+',
+            'photo': uploaded_photo,
+        }
+
+        response = self.client.post(update_url, post_data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Refresh student model from DB
+        self.student.refresh_from_db()
+        self.assertTrue(bool(self.student.photo))
+        self.assertIn('test_photo', self.student.photo.name)
+
+        # Verify profile view shows photo URL
+        profile_url = reverse('student_app:student_profile')
+        profile_response = self.client.get(profile_url)
+        self.assertEqual(profile_response.status_code, 200)
+        self.assertContains(profile_response, self.student.photo.url)
+

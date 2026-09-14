@@ -200,11 +200,15 @@ MESSAGE_TAGS={
 
 
 SESSION_COOKIE_AGE = 900  # 15 minutes in seconds
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
 
-# Only enforce secure cookies over HTTPS in production
-if not DEBUG:
+# Only enforce secure cookies over HTTPS when configured or explicitly enabled
+if not DEBUG and os.getenv('ENFORCE_SECURE_COOKIES', 'False').lower() == 'true':
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
+
 
 LOGIN_URL = '/authentication/login/'  # Update this to the correct path for your login page
 

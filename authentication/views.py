@@ -190,7 +190,6 @@ class LogoutView(View):
         if request.user.is_authenticated:
             log_action(request.user, 'logout', request.user, request=request)
         auth.logout(request)
-        messages.success(request, 'You have been logged out')
         return redirect('login')
 
 

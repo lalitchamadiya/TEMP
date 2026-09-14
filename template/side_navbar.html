@@ -418,6 +418,9 @@
                 {% if request.user.student and request.user.student.photo %}
                 <img src="{{ request.user.student.photo.url }}"
                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">
+                {% elif request.user.profile.photo %}
+                <img src="{{ request.user.profile.photo.url }}"
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">
                 {% else %}
                 <img src="{% static 'image/User.jpg' %}"
                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">

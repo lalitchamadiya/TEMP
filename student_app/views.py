@@ -20,7 +20,7 @@ except ImportError:  # pragma: no cover
 
 
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def student_dashboard(request):
     student = get_object_or_404(Student, user=request.user)
     
@@ -38,20 +38,20 @@ def student_dashboard(request):
     return render(request, 'student_app/student_dashboard.html', context)
 
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def my_gate_passes(request):
     student = get_object_or_404(Student, user=request.user)
     gate_passes = GatePass.objects.filter(leave_request__student=student).order_by('-created_at')
     return render(request, 'student_app/my_gate_passes.html', {'gate_passes': gate_passes})
 
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def student_profile(request):
     student = get_object_or_404(Student, user=request.user)
     return render(request, 'student_app/student_profile.html', {'student': student})
 
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def student_profile_update(request):
     student = get_object_or_404(Student, user=request.user)
     
@@ -72,7 +72,7 @@ def student_profile_update(request):
     return render(request, 'student_app/student_profile_update.html', {'form': form,'student': student})
 
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def food_schedule(request):
     food_schedule = {
         'Monday': {
@@ -135,7 +135,7 @@ def food_schedule(request):
     return render(request, 'student_app/food_schedule.html', {'food_schedule': food_schedule})
 
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def student_leave_request(request):
     student_details = get_object_or_404(Student, email=request.user.email)
     latest_leave = HostelLeave.objects.filter(student=student_details).order_by('-created_at').first()
@@ -183,7 +183,7 @@ def student_leave_request(request):
     )
 
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def student_leave_details(request):
     if request.user.is_authenticated:
         try:
@@ -196,7 +196,7 @@ def student_leave_details(request):
 
     return render(request, 'student_app/student_leave_details.html', {'leave_requests': leave_requests})
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def change_password(request):
     if request.method == 'POST':
         old_password = request.POST.get('old_password')
@@ -228,7 +228,7 @@ def change_password(request):
     return render(request, 'student_app/student_profile_password_change.html')
 
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def view_active_pass(request, leave_id):
     student = get_object_or_404(Student, user=request.user)
     leave = get_object_or_404(HostelLeave, id=leave_id, student=student)
@@ -258,7 +258,7 @@ def view_active_pass(request, leave_id):
 
 from django.urls import reverse
 
-@login_required(login_url='/authentication/login')
+@login_required(login_url='/authentication/login/')
 def active_pass_status_json(request, leave_id):
     student = get_object_or_404(Student, user=request.user)
     leave = get_object_or_404(HostelLeave, id=leave_id, student=student)
