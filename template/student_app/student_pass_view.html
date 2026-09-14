@@ -399,7 +399,7 @@
         }
 
         function checkStatus() {
-            if (isTransitioning) return;
+            if (isTransitioning || !leaveId || leaveId === "None" || leaveId === "") return;
             // Timestamp cache-busting + no-cache headers for instant real-time AJAX
             const cacheBustUrl = `/student/active-pass-status/${leaveId}/?_t=${new Date().getTime()}`;
             fetch(cacheBustUrl, {

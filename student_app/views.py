@@ -39,14 +39,30 @@ def student_dashboard(request):
 
 
 @login_required(login_url='/authentication/login/')
-def my_gate_passes(request):
+def student_gate_pass(request):
     student = get_object_or_404(Student, user=request.user)
-    gate_passes = GatePass.objects.filter(
-        leave_request__student=student
+    active_leave = HostelLeave.objects.filter(
+        student=student
     ).exclude(
-        leave_request__status__in=['completed', 'entered', 'rejected']
-    ).order_by('-created_at')
-    return render(request, 'student_app/my_gate_passes.html', {'gate_passes': gate_passes})
+        status__in=['completed', 'entered', 'rejected']
+    ).order_by('-created_at').first()
+
+    if not active_leave:
+        active_leave = HostelLeave.objects.filter(
+            student=student,
+            status='approved'
+        ).order_by('-created_at').first()
+
+    if active_leave:
+        return view_active_pass(request, leave_id=active_leave.id)
+
+    context = {
+        'student': student,
+        'leave': None,
+        'active_pass': None,
+        'bed': student.allocated_beds.first(),
+    }
+    return render(request, 'student_app/student_pass_view.html', context)
 
 
 @login_required(login_url='/authentication/login/')

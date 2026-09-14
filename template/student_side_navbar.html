@@ -23,9 +23,9 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'my_gate_passes' %}active{% endif %}" href="{% url 'student_app:my_gate_passes' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'student_gate_pass' or request.resolver_match.url_name == 'view_active_pass' %}active{% endif %}" href="{% url 'student_app:student_gate_pass' %}">
                     <span class="material-symbols-outlined">qr_code</span>
-                    My Gate Passes
+                    Gate Pass
                 </a>
             </li>
             <li class="nav-section mt-1">
