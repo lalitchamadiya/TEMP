@@ -429,52 +429,46 @@ html[data-theme="dark"] .dropdown-menu .dropdown-item.text-danger:hover {
 .sidebar-menu-body {
     flex: 1 1 auto !important;
     overflow-y: auto !important;
-    overflow-y: overlay !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     padding: 0 12px 24px 12px !important;
-    scrollbar-gutter: auto;
-}
-
-/* Animated Sleek Custom Scrollbar on Navbar Hover */
-.sidebar-menu-body {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
     transition: scrollbar-color 0.3s ease;
 }
 
 .sidebar-wrapper:hover .sidebar-menu-body {
-    scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.2)) transparent;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+html[data-theme="dark"] .sidebar-wrapper:hover .sidebar-menu-body {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 /* WebKit Custom Scrollbar (Chrome, Edge, Safari) */
 .sidebar-menu-body::-webkit-scrollbar {
-    width: 3px !important;
-    height: 3px !important;
+    width: 4px !important;
+    height: 4px !important;
     display: block !important;
 }
 
 .sidebar-menu-body::-webkit-scrollbar-track {
     background: transparent !important;
+    border-radius: 4px !important;
 }
 
 .sidebar-menu-body::-webkit-scrollbar-thumb {
     background: transparent !important;
-    border-radius: 10px !important;
-    transition: background 0.3s ease, box-shadow 0.3s ease !important;
+    border-radius: 4px !important;
+    transition: background 0.3s ease !important;
 }
 
 .sidebar-wrapper:hover .sidebar-menu-body::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.22) !important;
-}
-
-html[data-theme="light"] .sidebar-wrapper:hover .sidebar-menu-body::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.18) !important;
 }
 
-.sidebar-wrapper:hover .sidebar-menu-body::-webkit-scrollbar-thumb:hover {
-    background: var(--primary, #2563eb) !important;
-    box-shadow: 0 0 8px var(--primary-glow, rgba(37, 99, 235, 0.4)) !important;
+html[data-theme="dark"] .sidebar-wrapper:hover .sidebar-menu-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22) !important;
 }
 
 /* Logo Section (64px Height, 16px Padding) */
