@@ -367,6 +367,11 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const leaveId = "{{ leave.id }}";
+        {% if leave %}
+        const statusUrlBase = "{% url 'student_app:active_pass_status' leave.id %}";
+        {% else %}
+        const statusUrlBase = "";
+        {% endif %}
         let currentPassType = "{% if active_pass %}{{ active_pass.pass_type }}{% else %}NONE{% endif %}";
         let currentPassUsed = {% if active_pass %}{{ active_pass.is_used|yesno:"true,false" }}{% else %}false{% endif %};
         let currentExitVerified = {% if leave.exit_verified %}true{% else %}false{% endif %};
@@ -399,9 +404,9 @@
         }
 
         function checkStatus() {
-            if (isTransitioning || !leaveId || leaveId === "None" || leaveId === "") return;
+            if (isTransitioning || !statusUrlBase) return;
             // Timestamp cache-busting + no-cache headers for instant real-time AJAX
-            const cacheBustUrl = `/student/active-pass-status/${leaveId}/?_t=${new Date().getTime()}`;
+            const cacheBustUrl = `${statusUrlBase}?_t=${new Date().getTime()}`;
             fetch(cacheBustUrl, {
                 cache: 'no-store',
                 headers: {
