@@ -613,7 +613,11 @@ def user_edit(request, pk):
         target.first_name = request.POST.get('first_name', '').strip()
         target.last_name = request.POST.get('last_name', '').strip()
         target.email = request.POST.get('email', '').strip()
-        target.is_active = request.POST.get('is_active') == 'on'
+        # Prevent a user from deactivating their own account
+        if target.id == request.user.id:
+            target.is_active = True
+        else:
+            target.is_active = request.POST.get('is_active') == 'on'
         target.save()
 
         profile.phone = request.POST.get('phone', '').strip()

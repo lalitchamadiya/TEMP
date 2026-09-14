@@ -20,10 +20,10 @@
     .sidebar-pro .collapse-submenu-list {
         background: rgba(255, 255, 255, 0.02);
         border-radius: 8px;
-        margin: 2px 12px 4px 12px !important;
-        padding: 4px 0 !important;
+        margin: 4px 0 6px 12px !important;
+        padding: 2px 0 !important;
         list-style: none;
-        border-left: 1px dashed var(--border-light);
+        border-left: 2px solid var(--border-light, rgba(0, 0, 0, 0.06));
     }
 
     html[data-theme="light"] .sidebar-pro .collapse-submenu-list {
@@ -31,10 +31,12 @@
     }
 
     .sidebar-pro .collapse-submenu-list .nav-link {
-        margin: 1px 8px !important;
-        height: 32px;
-        font-size: 0.8rem;
-        padding-left: 20px !important;
+        margin: 2px 0 !important;
+        height: 36px;
+        font-size: 0.825rem;
+        padding-left: 24px !important;
+        width: 100% !important;
+        border-radius: 8px !important;
     }
 
     .sidebar-pro .collapse-submenu-list .nav-link.active::before {
@@ -426,7 +428,7 @@
                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">
                 {% endif %}
             </div>
-            <div class="d-flex flex-column ms-2 sidebar-label" style="overflow: hidden; max-width: 110px;">
+            <div class="d-flex flex-column ms-2 sidebar-label" style="overflow: hidden; min-width: 0; flex: 1 1 0;">
                 <span class="user-name-text text-truncate" style="display: block;">{{ request.user.username }}</span>
                 {% if is_superadmin %}
                 <span class="user-role-text text-truncate" style="display: block;">Super Admin</span>

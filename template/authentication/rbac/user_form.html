@@ -123,10 +123,17 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        {% if edit_mode and target.id == request.user.id %}
+                        <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded-3 bg-light">
+                            <i class="bi bi-lock-fill text-secondary"></i>
+                            <span class="small text-muted">Account Active — <em>you cannot deactivate your own account</em></span>
+                        </div>
+                        {% else %}
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" name="is_active" id="isActive" {% if edit_mode %}{% if target.is_active %}checked{% endif %}{% else %}checked{% endif %}>
                             <label class="form-check-label fw-semibold text-secondary small" for="isActive">Account Active</label>
                         </div>
+                        {% endif %}
                         {% if edit_mode %}
                         <div class="bg-light p-3 rounded-3 small text-muted">
                             <div class="d-flex justify-content-between mb-1"><span>Joined:</span> <span class="fw-bold">{{ target.date_joined|date:"d M Y" }}</span></div>

@@ -357,9 +357,9 @@ html[data-theme="dark"] .dropdown-menu .dropdown-item.text-danger:hover {
     position: sticky;
     top: 56px;
     z-index: 1020;
-    width: 245px !important;
-    min-width: 245px !important;
-    max-width: 245px !important;
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
     flex-shrink: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -432,7 +432,7 @@ html[data-theme="dark"] .dropdown-menu .dropdown-item.text-danger:hover {
     overflow-y: overlay !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
-    padding-bottom: 12px;
+    padding: 0 12px 24px 12px !important;
     scrollbar-gutter: auto;
 }
 
@@ -485,7 +485,7 @@ html[data-theme="light"] .sidebar-wrapper:hover .sidebar-menu-body::-webkit-scro
     height: 64px;
     padding: 0 16px !important;
     border-bottom: 1px solid var(--border-light, #ECECEC);
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     flex-shrink: 0;
     transition: padding 250ms cubic-bezier(0.4, 0, 0.2, 1), 
                 justify-content 250ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -526,12 +526,12 @@ html[data-theme="light"] .sidebar-wrapper:hover .sidebar-menu-body::-webkit-scro
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-/* Section Headers (11px Font, Uppercase, 1.5px Letter Spacing, 20px Top Margin, 8px Bottom Margin, 16px Left Padding) */
+/* Section Headers */
 .nav-section {
-    padding-left: 16px;
-    padding-right: 16px;
-    margin-top: 20px;
-    margin-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    margin-top: 18px;
+    margin-bottom: 6px;
     transition: opacity 200ms ease, max-height 200ms ease;
     opacity: 1;
     max-height: 30px;
@@ -553,14 +553,15 @@ html[data-theme="light"] .sidebar-wrapper:hover .sidebar-menu-body::-webkit-scro
     overflow: hidden;
 }
 
-/* Navigation List (20px Between Groups, 4px Between Items) */
+/* Navigation List */
 .sidebar-pro ul.nav {
     display: flex !important;
     flex-direction: column !important;
-    gap: 4px !important;
-    width: 100%;
+    gap: 2px !important;
+    width: 100% !important;
     align-items: stretch;
     padding-left: 0 !important;
+    margin-bottom: 0 !important;
     transition: align-items 250ms ease;
 }
 
@@ -568,27 +569,29 @@ html[data-theme="light"] .sidebar-wrapper:hover .sidebar-menu-body::-webkit-scro
     align-items: center;
 }
 
-/* Menu Items (Height: 42px, Horizontal Padding: 16px, Vertical Margin: 4px, Border Radius: 10px, Font: 15px/500/20px) */
+/* Menu Items */
 .sidebar-pro .nav-link {
-    height: 42px !important;
+    height: 40px !important;
     display: flex;
     align-items: center;
     border-radius: 10px !important;
     color: var(--text-main, #2B2F38) !important;
     transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-    margin: 2px 12px !important;
-    padding: 0 16px !important;
-    width: calc(100% - 24px);
+    margin: 2px 0 !important;
+    padding: 0 12px 0 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
     overflow: hidden;
     white-space: nowrap;
     position: relative;
-    font-size: 15px !important;
+    font-size: 14px !important;
     font-weight: 500 !important;
     line-height: 20px !important;
     cursor: pointer;
+    border: 1px solid transparent;
 }
 
-/* Icons (20px Size, Stroke Width: 2, Gap: 12px) */
+/* Icons */
 .sidebar-pro .nav-link .material-symbols-outlined,
 .sidebar-pro .nav-link .bi,
 .sidebar-pro .nav-link .lucide-icon {
@@ -617,11 +620,11 @@ html[data-theme="light"] .sidebar-pro .nav-link .material-symbols-outlined {
     color: #475569 !important;
 }
 
-/* Hover Effect (200ms Background Transition, Slight Left/Right Movement 2px) */
+/* Hover Effect */
 .sidebar-pro .nav-link:hover {
     color: var(--primary, #3B82F6) !important;
     background: var(--nav-link-hover-bg, #F5F8FF) !important;
-    transform: translateX(2px);
+    transform: none !important;
 }
 html[data-theme="light"] .sidebar-pro .nav-link:hover .sidebar-label,
 html[data-theme="light"] .sidebar-pro .nav-link:hover .bi,
@@ -636,19 +639,23 @@ html[data-theme="dark"] .sidebar-pro .nav-link:hover {
 /* Active State (SaaS Glowing Pill Gradient Style) */
 .sidebar-pro .nav-link.active {
     font-weight: 600 !important;
+    margin: 2px 0 !important;
+    width: 100% !important;
+    border-radius: 10px !important;
+    transform: none !important;
 }
 
 html[data-theme="light"] .sidebar-pro .nav-link.active {
     color: #1d4ed8 !important;
-    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%) !important;
-    border: 1px solid rgba(59, 130, 246, 0.25) !important;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12) !important;
+    background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%) !important;
+    border: 1px solid rgba(37, 99, 235, 0.2) !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08) !important;
 }
 html[data-theme="dark"] .sidebar-pro .nav-link.active {
     color: #ffffff !important;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.4) 100%) !important;
-    border: 1px solid rgba(59, 130, 246, 0.35) !important;
-    box-shadow: 0 0 16px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.35) 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
 .sidebar-pro .nav-link.active .material-symbols-outlined,
@@ -656,20 +663,23 @@ html[data-theme="dark"] .sidebar-pro .nav-link.active {
     color: inherit !important;
 }
 
-/* Left Blue Indicator Bar (3px) */
+/* Left Blue Indicator Bar (Rounded Pill Integrated) */
 .sidebar-pro .nav-link.active::before {
     content: '';
     position: absolute;
-    left: 0;
-    top: 6px;
-    bottom: 6px;
-    width: 3px;
-    border-radius: 0 2px 2px 0;
-    background: #3B82F6;
+    left: 4px;
+    top: 8px;
+    bottom: 8px;
+    width: 3.5px;
+    border-radius: 4px;
+    background: #2563eb;
     transition: all 200ms ease;
 }
+html[data-theme="dark"] .sidebar-pro .nav-link.active::before {
+    background: #60a5fa;
+}
 
-/* Expandable Chevron (Far Right Alignment, 200ms Rotation) */
+/* Expandable Chevron */
 .sidebar-pro .collapse-chevron {
     margin-left: auto !important;
     margin-right: 0 !important;
@@ -677,21 +687,25 @@ html[data-theme="dark"] .sidebar-pro .nav-link.active {
     transition: transform 200ms ease;
 }
 
-/* Expandable Children Submenu Links (Left Indent: 32px, Height: 38px, Font: 13px) */
+/* Expandable Children Submenu Links */
 .sidebar-pro .collapse-submenu-list {
     background: transparent;
     border-radius: 8px;
-    margin: 2px 0 4px 0 !important;
-    padding: 0 !important;
+    margin: 4px 0 6px 12px !important;
+    padding: 2px 0 !important;
     list-style: none;
-    border-left: 1px dashed var(--border-light, #E5E7EB);
+    border-left: 2px solid rgba(0, 0, 0, 0.06);
+}
+html[data-theme="dark"] .sidebar-pro .collapse-submenu-list {
+    border-left-color: rgba(255, 255, 255, 0.08);
 }
 .sidebar-pro .collapse-submenu-list .nav-link {
-    margin: 2px 12px 2px 12px !important;
-    height: 38px !important;
+    margin: 2px 0 !important;
+    height: 36px !important;
     font-size: 13px !important;
-    padding-left: 32px !important;
-    width: calc(100% - 24px);
+    padding-left: 24px !important;
+    width: 100% !important;
+    border-radius: 8px !important;
 }
 .sidebar-pro .collapse-submenu-list .nav-link.active::before {
     display: none !important;
@@ -730,14 +744,14 @@ html[data-theme="light"] .sidebar-wrapper .btn .text-white {
     bottom: 8px !important;
 }
 
-/* Bottom User Profile Card (Pinned Bottom, Height: 52px, Padding: 8px 10px) */
+/* Bottom User Profile Card */
 .user-role-card {
     height: 52px !important;
     background: rgba(0, 0, 0, 0.02) !important;
     border: 1px solid var(--border-light, #E5E7EB) !important;
     border-radius: 10px !important;
     padding: 8px 10px !important;
-    margin: auto 8px 8px 8px !important;
+    margin: 4px 12px 12px 12px !important;
     display: flex;
     align-items: center;
     transition: all 200ms ease;

@@ -31,52 +31,24 @@
     {% endif %}
 </div>
 
-<!-- Inline Alert Banners for direct visibility on web page -->
-<div id="hms-alert-banner-container" class="w-100 mb-3">
-    {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{% if message.tags == 'error' or message.tags == 'danger' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show shadow-sm rounded-3 my-2" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="bi {% if message.tags == 'error' or message.tags == 'danger' %}bi-exclamation-octagon-fill text-danger{% elif message.tags == 'success' %}bi-check-circle-fill text-success{% elif message.tags == 'warning' %}bi-exclamation-triangle-fill text-warning{% else %}bi-info-circle-fill text-info{% endif %} fs-4 me-3"></i>
-            <div>
-                <strong>{% if message.tags == 'error' or message.tags == 'danger' %}Error: {% elif message.tags == 'warning' %}Warning: {% elif message.tags == 'success' %}Success: {% endif %}</strong> {{ message|safe }}
-            </div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-    {% endif %}
-</div>
-
 <script>
 function dismissCustomToast(toastEl) {
     if (!toastEl || toastEl.classList.contains('toast-hiding')) return;
     toastEl.classList.add('toast-hiding');
-    setTimeout(function() {
-        toastEl.remove();
-    }, 350);
+    setTimeout(function() { toastEl.remove(); }, 350);
 }
 
 function initToastAutoDismiss(toastEl) {
     if (!toastEl) return;
-    var timer = setTimeout(function() {
-        dismissCustomToast(toastEl);
-    }, 4500);
-
-    toastEl.addEventListener('mouseenter', function() {
-        clearTimeout(timer);
-    });
-
+    var timer = setTimeout(function() { dismissCustomToast(toastEl); }, 4500);
+    toastEl.addEventListener('mouseenter', function() { clearTimeout(timer); });
     toastEl.addEventListener('mouseleave', function() {
-        timer = setTimeout(function() {
-            dismissCustomToast(toastEl);
-        }, 2000);
+        timer = setTimeout(function() { dismissCustomToast(toastEl); }, 2000);
     });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    var existingToasts = document.querySelectorAll('#hms-toast-container .custom-toast');
-    existingToasts.forEach(function(toast) {
+    document.querySelectorAll('#hms-toast-container .custom-toast').forEach(function(toast) {
         initToastAutoDismiss(toast);
     });
 });
@@ -91,52 +63,14 @@ window.showToastNotification = function(message, type, title) {
         container.style.zIndex = '1090';
         document.body.appendChild(container);
     }
-
-    var iconClass = 'bi-info-circle-fill';
-    var defaultTitle = 'Notification';
-    if (type === 'success') {
-        iconClass = 'bi-check-circle-fill';
-        defaultTitle = 'Success';
-    } else if (type === 'error' || type === 'danger') {
-        iconClass = 'bi-exclamation-octagon-fill';
-        defaultTitle = 'Error';
-    } else if (type === 'warning') {
-        iconClass = 'bi-exclamation-triangle-fill';
-        defaultTitle = 'Warning';
-    }
-
-    var toastHtml = `
-        <div class="custom-toast toast-${type}" role="alert">
-            <div class="toast-icon"><i class="bi ${iconClass}"></i></div>
-            <div class="toast-content">
-                <div class="toast-title">${title || defaultTitle}</div>
-                <div class="toast-message">${message}</div>
-            </div>
-            <button type="button" class="toast-close-btn" onclick="dismissCustomToast(this.closest('.custom-toast'))" aria-label="Close">
-                <i class="bi bi-x-lg"></i>
-            </button>
-            <div class="toast-progress"></div>
-        </div>
-    `;
-
+    var iconMap = { success: 'bi-check-circle-fill', error: 'bi-exclamation-octagon-fill', danger: 'bi-exclamation-octagon-fill', warning: 'bi-exclamation-triangle-fill' };
+    var titleMap = { success: 'Success', error: 'Error', danger: 'Error', warning: 'Warning' };
+    var iconClass = iconMap[type] || 'bi-info-circle-fill';
+    var defaultTitle = titleMap[type] || 'Notification';
     var tempDiv = document.createElement('div');
-    tempDiv.innerHTML = toastHtml.trim();
+    tempDiv.innerHTML = `<div class="custom-toast toast-${type}" role="alert"><div class="toast-icon"><i class="bi ${iconClass}"></i></div><div class="toast-content"><div class="toast-title">${title || defaultTitle}</div><div class="toast-message">${message}</div></div><button type="button" class="toast-close-btn" onclick="dismissCustomToast(this.closest('.custom-toast'))" aria-label="Close"><i class="bi bi-x-lg"></i></button><div class="toast-progress"></div></div>`.trim();
     var newToast = tempDiv.firstChild;
     container.appendChild(newToast);
     initToastAutoDismiss(newToast);
 };
-
-// Global Listeners: Display JS runtime errors and unhandled promise rejections directly on web page
-window.addEventListener('error', function(event) {
-    if (event && event.message && window.showToastNotification) {
-        window.showToastNotification(event.message, 'error', 'Client Error');
-    }
-});
-
-window.addEventListener('unhandledrejection', function(event) {
-    var msg = event.reason && (event.reason.message || event.reason);
-    if (msg && window.showToastNotification) {
-        window.showToastNotification(String(msg), 'error', 'Async Error');
-    }
-});
 </script>
