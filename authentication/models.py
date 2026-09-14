@@ -75,13 +75,17 @@ class UserProfile(models.Model):
 
     @property
     def photo_url(self):
-        if self.photo_data:
-            return self.photo_data
-        if self.photo:
-            try:
+        try:
+            val = getattr(self, 'photo_data', None)
+            if val:
+                return val
+        except Exception:
+            pass
+        try:
+            if self.photo and hasattr(self.photo, 'url'):
                 return self.photo.url
-            except Exception:
-                pass
+        except Exception:
+            pass
         return '/static/image/User.jpg'
 
     def __str__(self):

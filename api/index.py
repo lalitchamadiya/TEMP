@@ -17,8 +17,12 @@ app = get_wsgi_application()
 
 # Auto-migrate database & seed modules + superadmin on deployment startup/cold-start
 try:
-    call_command('migrate', interactive=False)
+    call_command('migrate', interactive=False, verbosity=0)
+except Exception as e:
+    print(f"Auto-migrate info: {e}")
+
+try:
     call_command('seed_modules')
     call_command('seed_super_admin')
 except Exception as e:
-    print(f"Auto-setup execution info: {e}")
+    print(f"Auto-seed info: {e}")
