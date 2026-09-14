@@ -1,3 +1,4 @@
+import datetime
 from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
@@ -395,8 +396,39 @@ class Student(models.Model):
         paid_fee = self.get_total_paid_fee()
         remaining_fee = max(Decimal('0.00'), total_fee - paid_fee)
 
+        # Check for overdue installments & late fee penalties
+        late_fee = Decimal('0.00')
+        is_overdue = False
+        today = timezone.now().date()
+
+        if remaining_fee > Decimal('0.00'):
+            # Fetch active installments
+            active_installments = FeeInstallment.objects.filter(is_active=True).order_by('due_date')
+            overdue_installments = [inst for inst in active_installments if today > inst.due_date]
+
+            if overdue_installments:
+                is_overdue = True
+                # Query active penalty rules
+                active_penalties = FeePenalty.objects.filter(is_active=True)
+                for inst in overdue_installments:
+                    for pen in active_penalties:
+                        grace_date = inst.due_date + datetime.timedelta(days=pen.grace_period_days)
+                        if today > grace_date:
+                            days_late = (today - grace_date).days
+                            if pen.penalty_type == 'PER_DAY':
+                                late_fee += Decimal(str(pen.amount)) * Decimal(days_late)
+                            elif pen.penalty_type == 'FIXED':
+                                late_fee += Decimal(str(pen.amount))
+                            elif pen.penalty_type == 'PERCENTAGE':
+                                late_fee += (remaining_fee * Decimal(str(pen.amount))) / Decimal('100.00')
+
+        total_fee += late_fee
+        remaining_fee += late_fee
+
         if remaining_fee <= Decimal('0.00') and total_fee > Decimal('0.00'):
             status = 'PAID'
+        elif is_overdue:
+            status = 'OVERDUE'
         elif paid_fee > Decimal('0.00'):
             status = 'PARTIAL'
         else:
@@ -410,6 +442,7 @@ class Student(models.Model):
             'total_fee': total_fee,
             'paid_fee': paid_fee,
             'remaining_fee': remaining_fee,
+            'late_fee': late_fee,
             'status': status,
         }
 

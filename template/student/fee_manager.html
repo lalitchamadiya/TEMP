@@ -86,6 +86,7 @@
                     <select name="status" class="form-select form-select-sm rounded-2 shadow-none py-1" style="font-size: 0.825rem;" onchange="this.form.submit()">
                         <option value="">All Payment Statuses</option>
                         <option value="DUE" {% if current_status == 'DUE' %}selected{% endif %}>Pending Due</option>
+                        <option value="OVERDUE" {% if current_status == 'OVERDUE' %}selected{% endif %}>Overdue (Late Fee)</option>
                         <option value="PARTIAL" {% if current_status == 'PARTIAL' %}selected{% endif %}>Partially Paid</option>
                         <option value="PAID" {% if current_status == 'PAID' %}selected{% endif %}>Fully Paid</option>
                     </select>
@@ -139,13 +140,22 @@
                                 {{ rec.summary.academic_year|default:"2026" }}
                             </span>
                         </td>
-                        <td class="py-2 fw-bold text-dark">₹{{ rec.summary.total_fee|floatformat:2 }}</td>
+                        <td class="py-2 fw-bold text-dark">
+                            ₹{{ rec.summary.total_fee|floatformat:2 }}
+                            {% if rec.summary.late_fee > 0 %}
+                            <span class="text-danger small ms-1" style="font-size: 0.7rem;" title="Includes ₹{{ rec.summary.late_fee }} Late Fee">(+Fine)</span>
+                            {% endif %}
+                        </td>
                         <td class="py-2 fw-bold text-success">₹{{ rec.summary.paid_fee|floatformat:2 }}</td>
                         <td class="py-2 fw-bold text-danger">₹{{ rec.summary.remaining_fee|floatformat:2 }}</td>
                         <td class="py-2">
                             {% if rec.summary.status == 'PAID' %}
                             <span class="badge bg-success-subtle text-success border-0 rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
                                 <i class="bi bi-check-circle-fill me-1"></i> Paid
+                            </span>
+                            {% elif rec.summary.status == 'OVERDUE' %}
+                            <span class="badge bg-danger text-white border-0 rounded-pill px-2.5 py-1 fw-bold shadow-sm" style="font-size: 0.72rem;">
+                                <i class="bi bi-exclamation-octagon-fill me-1"></i> OVERDUE
                             </span>
                             {% elif rec.summary.status == 'PARTIAL' %}
                             <span class="badge bg-warning-subtle text-warning border-0 rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
