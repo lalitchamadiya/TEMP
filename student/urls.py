@@ -6,6 +6,7 @@ urlpatterns = [
     path('fee-manager/', views.fee_manager, name='fee_manager'),
     path('fee-installments/', views.fee_installments, name='fee_installments'),
     path('fee-penalties/', views.fee_penalties, name='fee_penalties'),
+    path('fee-transactions/', views.fee_transactions, name='fee_transactions'),
     path('<int:student_id>/record-payment/', views.record_fee_payment, name='record_fee_payment'),
 
     path('create/', views.create_student, name='create_student'),

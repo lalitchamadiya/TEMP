@@ -344,6 +344,13 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'fee_transactions' %}active{% endif %}"
+                                    href="{% url 'fee_transactions' %}" title="Transaction History">
+                                    <i class="bi bi-journal-check opacity-75 me-2"></i>
+                                    <span class="sidebar-label">Transaction History</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'fee_installments' %}active{% endif %}"
                                     href="{% url 'fee_installments' %}" title="Set Installment Date">
                                     <i class="bi bi-calendar-event opacity-75 me-2"></i>

@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fee Transaction History - HMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-3 px-md-4">
+    <!-- Header Banner -->
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between pb-3 mb-3 border-bottom gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small text-muted">
+                    <li class="breadcrumb-item"><a href="{% url 'superadmin_dashboard' %}" class="text-decoration-none">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'fee_manager' %}" class="text-decoration-none">Fee Manager</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Transaction History</li>
+                </ol>
+            </nav>
+            <h1 class="h4 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-journal-check text-primary"></i>Fee Payment Transaction Audit Log
+            </h1>
+            <p class="text-muted small mb-0" style="font-size: 0.8rem;">Complete historical ledger of all student fee receipts, payment methods, and transaction references.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'fee_manager' %}" class="btn btn-outline-secondary btn-sm shadow-sm d-flex align-items-center gap-1">
+                <i class="bi bi-arrow-left"></i> Back to Fee Overview
+            </a>
+            <button onclick="window.print();" class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1">
+                <i class="bi bi-printer"></i> Print Audit Log
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary KPI Badges -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-primary-subtle border-start border-primary border-4">
+                <div class="small text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Total Recorded Transactions</div>
+                <div class="fw-bold fs-4 text-primary mt-1">₹{{ total_amount|floatformat:2 }}</div>
+                <div class="small text-muted">{{ payments|length }} Payment Receipt(s)</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-success-subtle border-start border-success border-4">
+                <div class="small text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Digital / Online Collections</div>
+                <div class="fw-bold fs-4 text-success mt-1">₹{{ online_total|floatformat:2 }}</div>
+                <div class="small text-muted">UPI / NetBanking / Transfer / Cheque</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-warning-subtle border-start border-warning border-4">
+                <div class="small text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">Cash Collections</div>
+                <div class="fw-bold fs-4 text-warning-emphasis mt-1">₹{{ cash_total|floatformat:2 }}</div>
+                <div class="small text-muted">Handover Cash Receipts</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Table Card -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <!-- Filter Toolbar -->
+        <div class="card-header bg-white border-bottom border-light py-2 px-3">
+            <form method="GET" action="{% url 'fee_transactions' %}" class="row g-2 align-items-center">
+                <!-- Search -->
+                <div class="col-lg-4 col-md-5">
+                    <div class="input-group input-group-sm rounded-2 border overflow-hidden">
+                        <span class="input-group-text bg-white border-0 py-1"><i class="bi bi-search text-muted small"></i></span>
+                        <input type="search" name="q" class="form-control border-0 shadow-none py-1 px-2" placeholder="Search student, roll, receipt #, or transaction ID..." value="{{ search_q }}" style="font-size: 0.825rem;">
+                    </div>
+                </div>
+
+                <!-- Payment Method Filter -->
+                <div class="col-lg-3 col-md-3">
+                    <select name="method" class="form-select form-select-sm rounded-2 shadow-none py-1" style="font-size: 0.825rem;" onchange="this.form.submit()">
+                        <option value="">All Payment Methods</option>
+                        <option value="ONLINE" {% if current_method == 'ONLINE' %}selected{% endif %}>Online / UPI</option>
+                        <option value="CASH" {% if current_method == 'CASH' %}selected{% endif %}>Cash</option>
+                        <option value="BANK_TRANSFER" {% if current_method == 'BANK_TRANSFER' %}selected{% endif %}>Bank Transfer</option>
+                        <option value="CHEQUE" {% if current_method == 'CHEQUE' %}selected{% endif %}>Cheque / DD</option>
+                    </select>
+                </div>
+
+                <!-- Building Filter -->
+                <div class="col-lg-3 col-md-3">
+                    <select name="building" class="form-select form-select-sm rounded-2 shadow-none py-1" style="font-size: 0.825rem;" onchange="this.form.submit()">
+                        <option value="">All Buildings</option>
+                        {% for b in buildings %}
+                        <option value="{{ b.id }}" {% if current_building == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="col-lg-2 col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-dark btn-sm rounded-2 w-100 py-1" style="font-size: 0.8rem;">
+                        <i class="bi bi-funnel me-1"></i> Filter
+                    </button>
+                    {% if search_q or current_method or current_building %}
+                    <a href="{% url 'fee_transactions' %}" class="btn btn-outline-danger btn-sm rounded-2 d-flex align-items-center justify-content-center px-2 py-1" title="Clear Filters">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <!-- High-Density Transactions Table -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-sm" style="font-size: 0.825rem;">
+                <thead class="table-light">
+                    <tr class="text-uppercase text-secondary fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.04em;">
+                        <th scope="col" class="ps-3 py-2">Receipt #</th>
+                        <th scope="col" class="py-2">Payment Date</th>
+                        <th scope="col" class="py-2">Student Name</th>
+                        <th scope="col" class="py-2">Academic Year</th>
+                        <th scope="col" class="py-2">Amount Paid</th>
+                        <th scope="col" class="py-2">Payment Mode</th>
+                        <th scope="col" class="py-2">Txn / Ref ID</th>
+                        <th scope="col" class="py-2">Recorded By</th>
+                        <th scope="col" class="pe-3 py-2 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                    <tr>
+                        <td class="ps-3 py-2">
+                            <span class="badge bg-dark-subtle text-dark border px-2 py-1 font-monospace" style="font-size: 0.72rem;">
+                                {{ p.receipt_number|default:"N/A" }}
+                            </span>
+                        </td>
+                        <td class="py-2">
+                            <div class="fw-semibold text-dark">{{ p.payment_date|date:"M d, Y" }}</div>
+                            <div class="small text-muted" style="font-size: 0.7rem;">{{ p.created_at|date:"h:i A" }}</div>
+                        </td>
+                        <td class="py-2">
+                            <div class="fw-semibold text-dark">{{ p.student.name }}</div>
+                            {% if p.student.roll %}
+                            <div class="text-muted small" style="font-size: 0.7rem;">Roll: {{ p.student.roll }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="py-2">
+                            <span class="badge bg-secondary-subtle text-secondary border px-2 py-0.5">
+                                {{ p.academic_year|default:"2026" }}
+                            </span>
+                        </td>
+                        <td class="py-2 fw-bold text-success fs-6">
+                            ₹{{ p.amount_paid|floatformat:2 }}
+                        </td>
+                        <td class="py-2">
+                            <span class="badge bg-info-subtle text-info-emphasis border px-2 py-1">
+                                <i class="bi bi-credit-card me-1"></i>{{ p.get_payment_method_display }}
+                            </span>
+                        </td>
+                        <td class="py-2 font-monospace text-muted small">
+                            {{ p.transaction_id|default:"-" }}
+                        </td>
+                        <td class="py-2 text-muted small">
+                            {{ p.recorded_by.username|default:"System" }}
+                        </td>
+                        <td class="pe-3 py-2 text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.72rem;" data-bs-toggle="modal" data-bs-target="#receiptModal-{{ p.id }}">
+                                <i class="bi bi-eye me-1"></i> Receipt
+                            </button>
+
+                            <!-- Receipt Modal -->
+                            <div class="modal fade text-start" id="receiptModal-{{ p.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow">
+                                        <div class="modal-header bg-primary text-white py-2 px-3">
+                                            <h6 class="modal-title fw-bold mb-0">
+                                                <i class="bi bi-receipt me-1"></i> Fee Receipt #{{ p.receipt_number }}
+                                            </h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="text-center pb-3 border-bottom mb-3">
+                                                <h5 class="fw-bold mb-0 text-dark">Apex Hostel Management</h5>
+                                                <div class="text-muted small">Official Student Fee Payment Receipt</div>
+                                            </div>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6 text-muted">Receipt Number:</div>
+                                                <div class="col-6 text-end fw-bold font-monospace">{{ p.receipt_number }}</div>
+                                                <div class="col-6 text-muted">Student Name:</div>
+                                                <div class="col-6 text-end fw-semibold">{{ p.student.name }}</div>
+                                                <div class="col-6 text-muted">Roll Number:</div>
+                                                <div class="col-6 text-end fw-semibold">{{ p.student.roll|default:"N/A" }}</div>
+                                                <div class="col-6 text-muted">Payment Date:</div>
+                                                <div class="col-6 text-end">{{ p.payment_date|date:"F d, Y" }}</div>
+                                                <div class="col-6 text-muted">Payment Method:</div>
+                                                <div class="col-6 text-end fw-semibold">{{ p.get_payment_method_display }}</div>
+                                                {% if p.transaction_id %}
+                                                <div class="col-6 text-muted">Transaction ID:</div>
+                                                <div class="col-6 text-end font-monospace">{{ p.transaction_id }}</div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="bg-success-subtle p-3 rounded-3 text-center border border-success mb-3">
+                                                <div class="small text-uppercase text-success fw-bold">Amount Received</div>
+                                                <div class="fs-2 fw-bold text-success">₹{{ p.amount_paid|floatformat:2 }}</div>
+                                            </div>
+                                            {% if p.remarks %}
+                                            <div class="small text-muted bg-light p-2 rounded border">
+                                                <strong>Remarks:</strong> {{ p.remarks }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer bg-light py-2 px-3">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                            <button type="button" onclick="window.print();" class="btn btn-primary btn-sm"><i class="bi bi-printer me-1"></i> Print Receipt</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-receipt-cutoff fs-1 d-block mb-2 opacity-25"></i>
+                            No fee payment transactions recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

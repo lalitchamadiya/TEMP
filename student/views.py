@@ -400,3 +400,49 @@ def fee_penalties(request):
         'penalties': penalties,
     }
     return render(request, 'student/fee_penalties.html', context)
+
+
+@login_required
+def fee_transactions(request):
+    """
+    View complete record of all student fee payments & transaction receipts
+    """
+    search_q = request.GET.get('q', '').strip()
+    payment_method = request.GET.get('method', '').strip()
+    building_id = request.GET.get('building', '').strip()
+
+    payments = StudentFeePayment.objects.select_related('student', 'recorded_by').all().order_by('-payment_date', '-created_at')
+
+    if search_q:
+        payments = payments.filter(
+            models.Q(student__name__icontains=search_q) |
+            models.Q(student__roll__icontains=search_q) |
+            models.Q(receipt_number__icontains=search_q) |
+            models.Q(transaction_id__icontains=search_q)
+        )
+
+    if payment_method:
+        payments = payments.filter(payment_method=payment_method)
+
+    if building_id:
+        payments = payments.filter(student__allocated_beds__room__building_id=building_id).distinct()
+
+    total_amount = sum(p.amount_paid for p in payments)
+    cash_total = sum(p.amount_paid for p in payments if p.payment_method == 'CASH')
+    online_total = sum(p.amount_paid for p in payments if p.payment_method in ['ONLINE', 'BANK_TRANSFER', 'CHEQUE'])
+
+    from room.models import Building
+    buildings = Building.objects.all()
+
+    context = {
+        'page_title': 'Fee Transactions History',
+        'payments': payments,
+        'search_q': search_q,
+        'current_method': payment_method,
+        'current_building': building_id,
+        'buildings': buildings,
+        'total_amount': total_amount,
+        'cash_total': cash_total,
+        'online_total': online_total,
+    }
+    return render(request, 'student/fee_transactions.html', context)
