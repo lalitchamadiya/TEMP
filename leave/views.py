@@ -493,10 +493,54 @@ def security_dashboard(request):
 @login_required(login_url='/authentication/login')
 @permission_required('leave', 'view')
 def scan_gate_pass(request, qr_token):
-    qr = get_object_or_404(QRPass, qr_token=qr_token)
-    leave = qr.leave
+    clean_token = qr_token.strip()
+    qr = None
+    leave = None
+
+    # 1. Search by GatePass gate_pass_no (e.g. "GP-ABC5616A")
+    gate_pass = GatePass.objects.filter(gate_pass_no__iexact=clean_token).first()
+    if gate_pass:
+        leave = gate_pass.leave_request
+        qr = leave.qr_passes.order_by('-generated_at').first()
+
+    # 2. Search by QRPass qr_token (UUID)
+    if not qr:
+        try:
+            val_uuid = uuid.UUID(clean_token)
+            qr = QRPass.objects.filter(qr_token=val_uuid).first()
+            if qr:
+                leave = qr.leave
+        except (ValueError, TypeError, AttributeError):
+            pass
+
+    # 3. Search by HostelLeave ID (numeric)
+    if not qr and clean_token.isdigit():
+        leave = HostelLeave.objects.filter(id=int(clean_token)).first()
+        if leave:
+            qr = leave.qr_passes.order_by('-generated_at').first()
+
+    # 4. If leave found but no active QRPass exists yet, auto-create initial pass
+    if leave and not qr:
+        expires_at = timezone.make_aware(datetime.combine(leave.leave_from, time(23, 59, 59)))
+        pass_type = 'ENTRY' if leave.exit_verified else 'EXIT'
+        qr = QRPass.objects.create(
+            leave=leave,
+            pass_type=pass_type,
+            expires_at=expires_at
+        )
+
+    if not qr or not leave:
+        context = {
+            'qr': None,
+            'leave': None,
+            'student': None,
+            'bed': None,
+            'error_msg': f"No valid gate pass found for token '{clean_token}'. Please verify the pass number.",
+            'success_msg': None,
+        }
+        return render(request, 'leave/scan_confirmation.html', context)
+
     student = leave.student
-    
     error_msg = None
     success_msg = None
     
