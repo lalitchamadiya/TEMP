@@ -362,20 +362,24 @@
     </div>
     <h2 id="success-overlay-title" class="fw-bold mt-4" style="letter-spacing:-0.02em;">Verified!</h2>
     <p id="success-overlay-msg" class="text-white-50 mt-1 px-4 text-center" style="max-width:320px;">Your pass scan has been approved by checkpoint security.</p>
+<div id="ticket-sync-config" 
+     data-status-url="{% if leave %}{% url 'student_app:active_pass_status' leave.id %}{% endif %}" 
+     data-leave-id="{{ leave.id|default:'' }}"
+     data-pass-type="{% if active_pass %}{{ active_pass.pass_type }}{% else %}NONE{% endif %}"
+     data-pass-used="{% if active_pass and active_pass.is_used %}true{% else %}false{% endif %}"
+     data-exit-verified="{% if leave and leave.exit_verified %}true{% else %}false{% endif %}"
+     data-entry-verified="{% if leave and leave.entry_verified %}true{% else %}false{% endif %}">
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const leaveId = "{{ leave.id }}";
-        {% if leave %}
-        const statusUrlBase = "{% url 'student_app:active_pass_status' leave.id %}";
-        {% else %}
-        const statusUrlBase = "";
-        {% endif %}
-        let currentPassType = "{% if active_pass %}{{ active_pass.pass_type }}{% else %}NONE{% endif %}";
-        let currentPassUsed = {% if active_pass %}{{ active_pass.is_used|yesno:"true,false" }}{% else %}false{% endif %};
-        let currentExitVerified = {% if leave.exit_verified %}true{% else %}false{% endif %};
-        let currentEntryVerified = {% if leave.entry_verified %}true{% else %}false{% endif %};
+        const syncConfig = document.getElementById("ticket-sync-config");
+        const statusUrlBase = syncConfig ? syncConfig.dataset.statusUrl : "";
+        const leaveId = syncConfig ? syncConfig.dataset.leaveId : "";
+        let currentPassType = syncConfig ? syncConfig.dataset.passType : "NONE";
+        let currentPassUsed = syncConfig ? (syncConfig.dataset.passUsed === "true") : false;
+        let currentExitVerified = syncConfig ? (syncConfig.dataset.exitVerified === "true") : false;
+        let currentEntryVerified = syncConfig ? (syncConfig.dataset.entryVerified === "true") : false;
         let isTransitioning = false;
 
         const overlay = document.getElementById("success-overlay");
