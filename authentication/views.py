@@ -573,8 +573,13 @@ def user_create(request):
             except Role.DoesNotExist:
                 pass
         if request.FILES.get('photo'):
-            profile.photo = request.FILES['photo']
-        profile.save()
+            try:
+                profile.photo = request.FILES['photo']
+                profile.save()
+            except Exception as e:
+                messages.warning(request, f"User created, but photo upload failed: {str(e)}")
+        else:
+            profile.save()
 
         log_action(request.user, 'create', user, f'Created user {username}', request)
         messages.success(request, f"User '{username}' created successfully.")
@@ -614,7 +619,11 @@ def user_edit(request, pk):
 
         profile.phone = request.POST.get('phone', '').strip()
         if request.FILES.get('photo'):
-            profile.photo = request.FILES['photo']
+            try:
+                profile.photo = request.FILES['photo']
+                profile.save()
+            except Exception as e:
+                messages.warning(request, f"Profile updated, but photo save failed: {str(e)}")
 
         role_id = request.POST.get('role')
         if role_id:

@@ -209,8 +209,14 @@ if not DEBUG:
 LOGIN_URL = '/authentication/login/'  # Update this to the correct path for your login page
 
 # Media files (User uploaded content)
+import os
+import tempfile
+
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+if os.environ.get('VERCEL') or not os.access(str(BASE_DIR), os.W_OK):
+    MEDIA_ROOT = os.path.join(tempfile.gettempdir(), 'media')
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Standard Django console logging configurations for production environments
 LOGGING = {

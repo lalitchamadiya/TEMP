@@ -31,6 +31,23 @@
     {% endif %}
 </div>
 
+<!-- Inline Alert Banners for direct visibility on web page -->
+<div id="hms-alert-banner-container" class="w-100 mb-3">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' or message.tags == 'danger' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show shadow-sm rounded-3 my-2" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi {% if message.tags == 'error' or message.tags == 'danger' %}bi-exclamation-octagon-fill text-danger{% elif message.tags == 'success' %}bi-check-circle-fill text-success{% elif message.tags == 'warning' %}bi-exclamation-triangle-fill text-warning{% else %}bi-info-circle-fill text-info{% endif %} fs-4 me-3"></i>
+            <div>
+                <strong>{% if message.tags == 'error' or message.tags == 'danger' %}Error: {% elif message.tags == 'warning' %}Warning: {% elif message.tags == 'success' %}Success: {% endif %}</strong> {{ message|safe }}
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+
 <script>
 function dismissCustomToast(toastEl) {
     if (!toastEl || toastEl.classList.contains('toast-hiding')) return;
@@ -108,4 +125,18 @@ window.showToastNotification = function(message, type, title) {
     container.appendChild(newToast);
     initToastAutoDismiss(newToast);
 };
+
+// Global Listeners: Display JS runtime errors and unhandled promise rejections directly on web page
+window.addEventListener('error', function(event) {
+    if (event && event.message && window.showToastNotification) {
+        window.showToastNotification(event.message, 'error', 'Client Error');
+    }
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+    var msg = event.reason && (event.reason.message || event.reason);
+    if (msg && window.showToastNotification) {
+        window.showToastNotification(String(msg), 'error', 'Async Error');
+    }
+});
 </script>
