@@ -48,3 +48,30 @@ def normalize_phone_number(phone_str, default_prefix='+91'):
         )
 
     return normalized
+
+
+import base64
+import mimetypes
+
+def file_to_base64(uploaded_file):
+    """
+    Converts a Django UploadedFile to a Base64 Data URI string.
+    Returns string in format: 'data:image/png;base64,iVBORw0KGgo...'
+    """
+    if not uploaded_file:
+        return None
+    try:
+        uploaded_file.seek(0)
+        content = uploaded_file.read()
+        uploaded_file.seek(0)
+        
+        mime_type, _ = mimetypes.guess_type(uploaded_file.name)
+        if not mime_type or not mime_type.startswith('image/'):
+            mime_type = 'image/jpeg'
+            
+        b64_str = base64.b64encode(content).decode('utf-8')
+        return f"data:{mime_type};base64,{b64_str}"
+    except Exception as e:
+        print(f"Error encoding file to Base64: {e}")
+        return None
+

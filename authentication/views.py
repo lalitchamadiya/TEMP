@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 
 from .decorators import role_required, permission_required
 from .models import AuditLog, Module, Role, RolePermission, UserProfile, Hostel, PermissionElement, RoleElementPermission, get_or_create_student_role
+from hms.utils import file_to_base64
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -576,7 +577,11 @@ def user_create(request):
                 pass
         if request.FILES.get('photo'):
             try:
-                profile.photo = request.FILES['photo']
+                uploaded = request.FILES['photo']
+                profile.photo = uploaded
+                b64_str = file_to_base64(uploaded)
+                if b64_str:
+                    profile.photo_data = b64_str
                 profile.save()
             except Exception as e:
                 messages.warning(request, f"User created, but photo upload failed: {str(e)}")
@@ -626,7 +631,11 @@ def user_edit(request, pk):
         profile.phone = request.POST.get('phone', '').strip()
         if request.FILES.get('photo'):
             try:
-                profile.photo = request.FILES['photo']
+                uploaded = request.FILES['photo']
+                profile.photo = uploaded
+                b64_str = file_to_base64(uploaded)
+                if b64_str:
+                    profile.photo_data = b64_str
                 profile.save()
             except Exception as e:
                 messages.warning(request, f"Profile updated, but photo save failed: {str(e)}")

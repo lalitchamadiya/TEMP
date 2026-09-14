@@ -17,6 +17,7 @@ from room.models import HostelBuilding, Room, Bed
 from leave.models import HostelLeave
 from django.contrib.auth.models import Group
 from authentication.models import Role, UserProfile, AuditLog
+from .utils import file_to_base64
 
 
 # ──────────────────────────────────────────────────────
@@ -514,7 +515,11 @@ def staff_create(request):
                     except Role.DoesNotExist:
                         pass
                 if request.FILES.get('photo'):
-                    profile.photo = request.FILES['photo']
+                    uploaded = request.FILES['photo']
+                    profile.photo = uploaded
+                    b64_str = file_to_base64(uploaded)
+                    if b64_str:
+                        profile.photo_data = b64_str
                 profile.save()
                 
             StaffProfile.objects.create(
@@ -641,7 +646,11 @@ def staff_edit(request, pk):
                     except Role.DoesNotExist:
                         pass
                 if request.FILES.get('photo'):
-                    profile.photo = request.FILES['photo']
+                    uploaded = request.FILES['photo']
+                    profile.photo = uploaded
+                    b64_str = file_to_base64(uploaded)
+                    if b64_str:
+                        profile.photo_data = b64_str
                 profile.save()
             elif username:
                 parts = name.split(' ', 1)
@@ -666,7 +675,11 @@ def staff_edit(request, pk):
                     except Role.DoesNotExist:
                         pass
                 if request.FILES.get('photo'):
-                    profile.photo = request.FILES['photo']
+                    uploaded = request.FILES['photo']
+                    profile.photo = uploaded
+                    b64_str = file_to_base64(uploaded)
+                    if b64_str:
+                        profile.photo_data = b64_str
                 profile.save()
                 staff.user = user
 

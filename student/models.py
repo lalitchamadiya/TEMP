@@ -209,6 +209,18 @@ class Student(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, blank=True)
     nationality = models.CharField(max_length=50, choices=NATIONALITY_CHOICES, default='Indian')
     photo = models.ImageField(upload_to='student_photos/', blank=True, null=True)
+    photo_data = models.TextField(blank=True, null=True, help_text="Base64 Data URI for persistent serverless photo storage")
+
+    @property
+    def photo_url(self):
+        if self.photo_data:
+            return self.photo_data
+        if self.photo:
+            try:
+                return self.photo.url
+            except Exception:
+                pass
+        return '/static/image/User.jpg'
 
     # Parents Information
     father_name = models.CharField(max_length=100, blank=True, null=True)

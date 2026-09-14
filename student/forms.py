@@ -109,6 +109,18 @@ class StudentForm(forms.ModelForm):
             return normalize_phone_number(phone)
         return phone
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        photo_file = self.cleaned_data.get('photo')
+        if photo_file and hasattr(photo_file, 'read'):
+            from hms.utils import file_to_base64
+            b64_str = file_to_base64(photo_file)
+            if b64_str:
+                instance.photo_data = b64_str
+        if commit:
+            instance.save()
+        return instance
+
 
 class StudentSelfUpdateForm(StudentForm):
     class Meta(StudentForm.Meta):

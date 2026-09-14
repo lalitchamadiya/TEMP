@@ -70,7 +70,19 @@ class UserProfile(models.Model):
     # Extended fields for User Management
     phone = models.CharField(max_length=20, blank=True)
     photo = models.ImageField(upload_to='user_photos/', blank=True, null=True)
+    photo_data = models.TextField(blank=True, null=True, help_text="Base64 Data URI for persistent serverless photo storage")
     is_locked = models.BooleanField(default=False)  # Locked accounts cannot log in
+
+    @property
+    def photo_url(self):
+        if self.photo_data:
+            return self.photo_data
+        if self.photo:
+            try:
+                return self.photo.url
+            except Exception:
+                pass
+        return '/static/image/User.jpg'
 
     def __str__(self):
         return f"{self.user.username} - {self.role.name if self.role else 'No Role'}"

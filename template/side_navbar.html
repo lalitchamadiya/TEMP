@@ -416,11 +416,11 @@
         <!-- Pinned Bottom Role/User Profile Card (54px Height) -->
         <div class="user-role-card">
             <div class="user-role-icon shadow-sm" style="width:34px; height:34px; border-radius: 50%;">
-                {% if request.user.student and request.user.student.photo %}
-                <img src="{{ request.user.student.photo.url }}"
+                {% if request.user.student %}
+                <img src="{{ request.user.student.photo_url }}" onerror="this.onerror=null; this.src='{% static \'image/User.jpg\' %}';"
                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">
-                {% elif request.user.profile.photo %}
-                <img src="{{ request.user.profile.photo.url }}"
+                {% elif request.user.profile %}
+                <img src="{{ request.user.profile.photo_url }}" onerror="this.onerror=null; this.src='{% static \'image/User.jpg\' %}';"
                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User">
                 {% else %}
                 <img src="{% static 'image/User.jpg' %}"
