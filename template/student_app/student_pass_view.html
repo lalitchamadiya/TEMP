@@ -208,10 +208,16 @@
         align-items: center;
         justify-content: center;
         flex-direction: column;
-        color: white;
+        color: white !important;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #success-overlay h2, #success-overlay #success-overlay-title {
+        color: #ffffff !important;
+    }
+    #success-overlay p, #success-overlay #success-overlay-msg {
+        color: rgba(255, 255, 255, 0.85) !important;
     }
     #success-overlay.show {
         opacity: 1;
@@ -268,10 +274,6 @@
     <div class="d-flex align-items-center justify-content-between mb-4 px-2 max-width-container" style="max-width: 480px; margin: 0 auto;">
         <div>
             <h4 class="fw-bold mb-0 text-slate-800"><i class="bi bi-ticket-perforated me-2 text-primary"></i>Digital Ticket</h4>
-            <span class="live-sync-badge mt-1 d-inline-flex align-items-center gap-1">
-                <span class="spinner-grow spinner-grow-sm text-success" role="status" style="width:0.55rem; height:0.55rem;"></span>
-                Real-Time Checkpoint Sync
-            </span>
         </div>
         <a href="{% url 'student_app:student_leave_details' %}" class="btn btn-sm btn-light border-0 shadow-sm rounded-pill px-3 fw-bold small">
             <i class="bi bi-arrow-left me-1"></i> Back
@@ -360,8 +362,8 @@
              <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
          </svg>
     </div>
-    <h2 id="success-overlay-title" class="fw-bold mt-4" style="letter-spacing:-0.02em;">Verified!</h2>
-    <p id="success-overlay-msg" class="text-white-50 mt-1 px-4 text-center" style="max-width:320px;">Your pass scan has been approved by checkpoint security.</p>
+    <h2 id="success-overlay-title" class="fw-bold mt-4 text-white" style="letter-spacing:-0.02em; color: #ffffff !important;">Verified!</h2>
+    <p id="success-overlay-msg" class="text-white mt-1 px-4 text-center" style="max-width:320px; color: rgba(255, 255, 255, 0.85) !important;">Your pass scan has been approved by checkpoint security.</p>
 <div id="ticket-sync-config" 
      data-status-url="{% if leave %}{% url 'student_app:active_pass_status' leave.id %}{% endif %}" 
      data-leave-id="{{ leave.id|default:'' }}"
