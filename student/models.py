@@ -467,6 +467,45 @@ from django.db.models.signals import pre_delete, post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import Group
 
+class FeeInstallment(models.Model):
+    academic_year = models.CharField(max_length=20, default='2026')
+    installment_name = models.CharField(max_length=100, help_text="e.g. Installment 1 / Semester 1 Fee")
+    due_date = models.DateField()
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, default=50.00, help_text="Percentage of total fee due")
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'fee_installment'
+        ordering = ['due_date']
+
+    def __str__(self):
+        return f"{self.installment_name} ({self.academic_year}) - Due: {self.due_date}"
+
+
+class FeePenalty(models.Model):
+    PENALTY_TYPE_CHOICES = [
+        ('FIXED', 'Fixed One-Time Fee (₹)'),
+        ('PER_DAY', 'Daily Recurring Late Fee (₹/day)'),
+        ('PERCENTAGE', 'Percentage of Due Amount (%)'),
+    ]
+
+    title = models.CharField(max_length=100, help_text="e.g. Standard Late Payment Fine")
+    penalty_type = models.CharField(max_length=20, choices=PENALTY_TYPE_CHOICES, default='PER_DAY')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=50.00)
+    grace_period_days = models.IntegerField(default=5, help_text="Days after due date before penalty starts applying")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'fee_penalty'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.get_penalty_type_display()} - ₹{self.amount})"
+
+
 @receiver(pre_delete, sender=Student)
 def deallocate_student_before_delete(sender, instance, **kwargs):
     from django.apps import apps

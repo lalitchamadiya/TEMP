@@ -315,11 +315,38 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'fee_manager' or 'fee-manager' in request.path %}active{% endif %}"
-                                    href="{% url 'fee_manager' %}" title="Fee Manager">
+                                <a class="nav-link nav-link-collapse {% if not 'fee' in request.path %}collapsed{% endif %} {% if 'fee' in request.path %}active{% endif %}"
+                                    data-bs-toggle="collapse" href="#feeManagerCollapse" role="button"
+                                    aria-expanded="{% if 'fee' in request.path %}true{% else %}false{% endif %}"
+                                    aria-controls="feeManagerCollapse" title="Fee Manager">
                                     <i class="bi bi-wallet2 opacity-75 me-2"></i>
                                     <span class="sidebar-label">Fee Manager</span>
                                 </a>
+                                <div class="collapse {% if 'fee' in request.path %}show{% endif %}" id="feeManagerCollapse">
+                                    <ul class="nav flex-column ps-3 sub-nav-list mt-1 mb-1" style="font-size: 0.82rem;">
+                                        <li class="nav-item">
+                                            <a class="nav-link py-1-5 {% if request.resolver_match.url_name == 'fee_manager' %}active{% endif %}"
+                                                href="{% url 'fee_manager' %}" title="Fee Overview">
+                                                <i class="bi bi-cash-stack opacity-75 me-2"></i>
+                                                <span class="sidebar-label">Fee Overview</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link py-1-5 {% if request.resolver_match.url_name == 'fee_installments' %}active{% endif %}"
+                                                href="{% url 'fee_installments' %}" title="Set Installment Date">
+                                                <i class="bi bi-calendar-event opacity-75 me-2"></i>
+                                                <span class="sidebar-label">Set Installment Date</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link py-1-5 {% if request.resolver_match.url_name == 'fee_penalties' %}active{% endif %}"
+                                                href="{% url 'fee_penalties' %}" title="Manage Penalty">
+                                                <i class="bi bi-exclamation-octagon opacity-75 me-2"></i>
+                                                <span class="sidebar-label">Manage Penalty</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'student_details_list' %}active{% endif %}"

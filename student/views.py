@@ -302,3 +302,101 @@ def record_fee_payment(request, student_id):
             messages.error(request, f'Error recording payment: {e}')
 
     return redirect('fee_manager')
+
+
+from .models import FeeInstallment, FeePenalty
+
+@login_required
+def fee_installments(request):
+    """
+    Manage Fee Installment Due Dates
+    """
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'create':
+            name = request.POST.get('installment_name', '').strip()
+            due_date = request.POST.get('due_date')
+            percentage = request.POST.get('percentage', '50.00')
+            academic_year = request.POST.get('academic_year', '2026').strip()
+            desc = request.POST.get('description', '').strip()
+
+            if name and due_date:
+                FeeInstallment.objects.create(
+                    installment_name=name,
+                    due_date=due_date,
+                    percentage=percentage,
+                    academic_year=academic_year,
+                    description=desc
+                )
+                messages.success(request, f'Installment "{name}" created successfully.')
+            else:
+                messages.error(request, 'Please provide both installment name and due date.')
+
+        elif action == 'toggle':
+            inst_id = request.POST.get('installment_id')
+            inst = get_object_or_404(FeeInstallment, pk=inst_id)
+            inst.is_active = not inst.is_active
+            inst.save()
+            messages.info(request, f'Installment "{inst.installment_name}" status updated.')
+
+        elif action == 'delete':
+            inst_id = request.POST.get('installment_id')
+            inst = get_object_or_404(FeeInstallment, pk=inst_id)
+            inst.delete()
+            messages.success(request, 'Installment deleted successfully.')
+
+        return redirect('fee_installments')
+
+    installments = FeeInstallment.objects.all().order_by('due_date')
+    context = {
+        'page_title': 'Fee Installment Dates',
+        'installments': installments,
+    }
+    return render(request, 'student/fee_installments.html', context)
+
+
+@login_required
+def fee_penalties(request):
+    """
+    Manage Late Fee Penalty Rules & Grace Periods
+    """
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'create':
+            title = request.POST.get('title', '').strip()
+            penalty_type = request.POST.get('penalty_type', 'PER_DAY')
+            amount = request.POST.get('amount', '50.00')
+            grace_period = request.POST.get('grace_period_days', '5')
+
+            if title:
+                FeePenalty.objects.create(
+                    title=title,
+                    penalty_type=penalty_type,
+                    amount=amount,
+                    grace_period_days=grace_period
+                )
+                messages.success(request, f'Penalty rule "{title}" created successfully.')
+            else:
+                messages.error(request, 'Please provide a penalty title.')
+
+        elif action == 'toggle':
+            penalty_id = request.POST.get('penalty_id')
+            pen = get_object_or_404(FeePenalty, pk=penalty_id)
+            pen.is_active = not pen.is_active
+            pen.save()
+            messages.info(request, f'Penalty rule "{pen.title}" status updated.')
+
+        elif action == 'delete':
+            penalty_id = request.POST.get('penalty_id')
+            pen = get_object_or_404(FeePenalty, pk=penalty_id)
+            pen.delete()
+            messages.success(request, 'Penalty rule deleted successfully.')
+
+        return redirect('fee_penalties')
+
+    penalties = FeePenalty.objects.all().order_by('-created_at')
+    context = {
+        'page_title': 'Fee Penalty Rules',
+        'penalties': penalties,
+    }
+    return render(request, 'student/fee_penalties.html', context)
