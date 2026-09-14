@@ -48,7 +48,7 @@
 <script>
 (function() {
   // Session Configuration (15 mins = 900s by default)
-  const SESSION_TIMEOUT = {{ SESSION_COOKIE_AGE|default:900 }};
+  const SESSION_TIMEOUT = parseInt("{{ SESSION_COOKIE_AGE|default:900 }}", 10) || 900;
   const WARNING_WINDOW = 30; // Show warning modal 30 seconds before timeout
   const KEEP_ALIVE_URL = "{% url 'keep_alive' %}";
   const LOGOUT_URL = "{% url 'logout' %}";
