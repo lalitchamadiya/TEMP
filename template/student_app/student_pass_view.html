@@ -369,6 +369,8 @@
         const leaveId = "{{ leave.id }}";
         let currentPassType = "{% if active_pass %}{{ active_pass.pass_type }}{% else %}NONE{% endif %}";
         let currentPassUsed = {% if active_pass %}{{ active_pass.is_used|yesno:"true,false" }}{% else %}false{% endif %};
+        let currentExitVerified = {% if leave.exit_verified %}true{% else %}false{% endif %};
+        let currentEntryVerified = {% if leave.entry_verified %}true{% else %}false{% endif %};
         let isTransitioning = false;
 
         const overlay = document.getElementById("success-overlay");
@@ -398,101 +400,144 @@
 
         function checkStatus() {
             if (isTransitioning) return;
-            fetch(`/student/active-pass-status/${leaveId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.has_pass) {
-                        if (data.pass_type !== currentPassType || data.is_used !== currentPassUsed) {
-                            isTransitioning = true;
-                            const isExitScanned = (currentPassType === 'EXIT' && data.pass_type === 'ENTRY');
-                            
-                            const title = isExitScanned ? "Exit Approved!" : "Entry Approved!";
-                            const msg = isExitScanned ? "Security approved your exit. Entry QR pass is now active!" : "Welcome back to your hostel.";
-                            
-                            showOverlay(title, msg, 2200, () => {
-                                currentPassType = data.pass_type;
-                                currentPassUsed = data.is_used;
+            // Timestamp cache-busting + no-cache headers for instant real-time AJAX
+            const cacheBustUrl = `/student/active-pass-status/${leaveId}/?_t=${new Date().getTime()}`;
+            fetch(cacheBustUrl, {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Scenario 1: Exit pass scan just approved by security
+                if (!currentExitVerified && data.exit_verified) {
+                    isTransitioning = true;
+                    currentExitVerified = true;
+                    currentPassType = data.pass_type || 'ENTRY';
+                    currentPassUsed = data.is_used || false;
 
-                                // Update Header Theme
-                                const headerBox = document.getElementById("ticket-header-box");
-                                if (headerBox) {
-                                    if (data.pass_type === 'ENTRY') {
-                                        headerBox.classList.add("header-entry");
-                                    } else {
-                                        headerBox.classList.remove("header-entry");
-                                    }
-                                }
+                    showOverlay("Exit Approved!", "Security approved your exit. Entry QR pass is now active!", 2200, () => {
+                        // Update Header Theme
+                        const headerBox = document.getElementById("ticket-header-box");
+                        if (headerBox) headerBox.classList.add("header-entry");
 
-                                // Update Badge
-                                const badge = document.getElementById("ticket-badge");
-                                if (badge) {
-                                    badge.className = `pass-type-badge ${data.pass_type === 'EXIT' ? 'pass-exit' : 'pass-entry'} mb-3 d-inline-block`;
-                                    badge.textContent = `${data.pass_type} TICKET`;
-                                }
+                        // Update Badge
+                        const badge = document.getElementById("ticket-badge");
+                        if (badge) {
+                            badge.className = "pass-type-badge pass-entry mb-3 d-inline-block";
+                            badge.textContent = "ENTRY TICKET";
+                        }
 
-                                // Update QR Image
-                                const qrImg = document.getElementById("qr-code-img");
-                                if (qrImg && data.qr_url) {
-                                    qrImg.style.opacity = "0";
+                        // Update QR Image
+                        const qrImg = document.getElementById("qr-code-img");
+                        if (qrImg && data.qr_url) {
+                            qrImg.style.opacity = "0";
+                            setTimeout(() => {
+                                qrImg.src = data.qr_url;
+                                qrImg.style.opacity = "1";
+                            }, 200);
+                        }
+
+                        // Update Expiry Date label dynamically
+                        const expiryVal = document.getElementById("expiry-date-val");
+                        if (expiryVal && data.expires_at) {
+                            const dateObj = new Date(data.expires_at.replace(/-/g, "/"));
+                            const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+                            expiryVal.textContent = dateObj.toLocaleDateString('en-GB', options).replace(',', '');
+                        }
+
+                        isTransitioning = false;
+                    });
+                    return;
+                }
+
+                // Scenario 2: Entry pass scan just approved by security
+                if (!currentEntryVerified && data.entry_verified) {
+                    isTransitioning = true;
+                    currentEntryVerified = true;
+
+                    showOverlay("Entry Approved!", "Welcome back! Your hostel entry is verified.", 2200, () => {
+                        currentPassType = 'NONE';
+
+                        // Render 10s countdown banner on ticket
+                        const bannerContainer = document.getElementById("countdown-banner-container");
+                        if (bannerContainer) {
+                            bannerContainer.innerHTML = `
+                                <div class="alert alert-success py-2 px-3 mb-3 rounded-3 text-center small fw-bold shadow-sm">
+                                    <i class="bi bi-patch-check-fill me-1 text-success"></i> Entry Approved! Ticket deleting in <span id="view-timer" class="fw-bolder fs-6 text-success">10</span>s...
+                                </div>
+                            `;
+                        }
+
+                        let countdown = 10;
+                        const timerInterval = setInterval(() => {
+                            countdown--;
+                            const timerElem = document.getElementById("view-timer");
+                            if (timerElem) timerElem.textContent = countdown;
+                            if (countdown <= 0) {
+                                clearInterval(timerInterval);
+                                if (ticketCard) {
+                                    ticketCard.classList.add("ticket-card-exit");
                                     setTimeout(() => {
-                                        qrImg.src = data.qr_url;
-                                        qrImg.style.opacity = "1";
-                                    }, 200);
+                                        window.location.href = "{% url 'student_app:student_leave_details' %}";
+                                    }, 500);
+                                } else {
+                                    window.location.href = "{% url 'student_app:student_leave_details' %}";
                                 }
-                                
-                                // Update Expiry Date label dynamically
-                                const expiryVal = document.getElementById("expiry-date-val");
-                                if (expiryVal && data.expires_at) {
-                                    const dateObj = new Date(data.expires_at.replace(/-/g, "/"));
-                                    const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
-                                    expiryVal.textContent = dateObj.toLocaleDateString('en-GB', options).replace(',', '');
+                            }
+                        }, 1000);
+                    });
+                    return;
+                }
+
+                // Fallback scan type transition check
+                if (data.has_pass) {
+                    if (data.pass_type !== currentPassType || data.is_used !== currentPassUsed) {
+                        isTransitioning = true;
+                        const isExitScanned = (currentPassType === 'EXIT' && data.pass_type === 'ENTRY');
+                        const title = isExitScanned ? "Exit Approved!" : "Entry Approved!";
+                        const msg = isExitScanned ? "Security approved your exit. Entry QR pass is now active!" : "Welcome back to your hostel.";
+                        
+                        showOverlay(title, msg, 2200, () => {
+                            currentPassType = data.pass_type;
+                            currentPassUsed = data.is_used;
+
+                            const headerBox = document.getElementById("ticket-header-box");
+                            if (headerBox) {
+                                if (data.pass_type === 'ENTRY') {
+                                    headerBox.classList.add("header-entry");
+                                } else {
+                                    headerBox.classList.remove("header-entry");
                                 }
+                            }
 
-                                isTransitioning = false;
-                            });
-                        }
-                    } else {
-                        if (currentPassType !== 'NONE') {
-                            isTransitioning = true;
-                            showOverlay("Entry Approved!", "Welcome back! Your hostel entry is verified.", 2200, () => {
-                                currentPassType = 'NONE';
+                            const badge = document.getElementById("ticket-badge");
+                            if (badge) {
+                                badge.className = `pass-type-badge ${data.pass_type === 'EXIT' ? 'pass-exit' : 'pass-entry'} mb-3 d-inline-block`;
+                                badge.textContent = `${data.pass_type} TICKET`;
+                            }
 
-                                // Render countdown banner on ticket
-                                const bannerContainer = document.getElementById("countdown-banner-container");
-                                if (bannerContainer) {
-                                    bannerContainer.innerHTML = `
-                                        <div class="alert alert-success py-2 px-3 mb-3 rounded-3 text-center small fw-bold">
-                                            <i class="bi bi-patch-check-fill me-1 text-success"></i> Entry Approved! Ticket deleting in <span id="view-timer">10</span>s...
-                                        </div>
-                                    `;
-                                }
+                            const qrImg = document.getElementById("qr-code-img");
+                            if (qrImg && data.qr_url) {
+                                qrImg.style.opacity = "0";
+                                setTimeout(() => {
+                                    qrImg.src = data.qr_url;
+                                    qrImg.style.opacity = "1";
+                                }, 200);
+                            }
 
-                                let countdown = 10;
-                                const timerInterval = setInterval(() => {
-                                    countdown--;
-                                    const timerElem = document.getElementById("view-timer");
-                                    if (timerElem) timerElem.textContent = countdown;
-                                    if (countdown <= 0) {
-                                        clearInterval(timerInterval);
-                                        if (ticketCard) {
-                                            ticketCard.classList.add("ticket-card-exit");
-                                            setTimeout(() => {
-                                                window.location.href = "{% url 'student_app:student_leave_details' %}";
-                                            }, 500);
-                                        } else {
-                                            window.location.href = "{% url 'student_app:student_leave_details' %}";
-                                        }
-                                    }
-                                }, 1000);
-                            });
-                        }
+                            isTransitioning = false;
+                        });
                     }
-                })
-                .catch(err => console.error("Error polling pass status: ", err));
+                }
+            })
+            .catch(err => console.error("Error polling pass status: ", err));
         }
 
-        // Fast 1 second real-time polling
-        setInterval(checkStatus, 1000);
+        // Fast 800ms real-time polling with timestamp cache-busting
+        setInterval(checkStatus, 800);
     });
 </script>
 {% endblock %}

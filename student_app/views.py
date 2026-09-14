@@ -72,7 +72,11 @@ def student_gate_passes_status_json(request):
             'expires_at': active_qr.expires_at.strftime('%Y-%m-%d %H:%M:%S') if active_qr else None,
             'is_completed': leave.status in ['completed', 'entered'],
         })
-    return JsonResponse({'passes': passes_data})
+    response = JsonResponse({'passes': passes_data})
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 
 @login_required(login_url='/authentication/login/')
@@ -294,21 +298,28 @@ def active_pass_status_json(request, leave_id):
     leave = get_object_or_404(HostelLeave, id=leave_id, student=student)
     active_pass = leave.qr_passes.order_by('-generated_at').first()
     
+    data = {
+        'has_pass': bool(active_pass),
+        'leave_id': leave.id,
+        'leave_status': leave.status,
+        'exit_verified': leave.exit_verified,
+        'entry_verified': leave.entry_verified,
+    }
+    
     if active_pass:
-        return JsonResponse({
-            'has_pass': True,
+        data.update({
             'pass_id': active_pass.id,
             'pass_type': active_pass.pass_type,
             'is_used': active_pass.is_used,
             'qr_token': str(active_pass.qr_token),
             'qr_url': request.build_absolute_uri(reverse('qr_code_image', kwargs={'qr_token': active_pass.qr_token})),
             'expires_at': active_pass.expires_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'leave_status': leave.status,
         })
-    else:
-        return JsonResponse({
-            'has_pass': False,
-            'leave_status': leave.status,
-        })
+
+    response = JsonResponse(data)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 

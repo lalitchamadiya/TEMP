@@ -227,7 +227,14 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     function pollGatePassesStatus() {
-        fetch("{% url 'student_app:student_gate_passes_status' %}")
+        const cacheBustUrl = "{% url 'student_app:student_gate_passes_status' %}?_t=" + new Date().getTime();
+        fetch(cacheBustUrl, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            }
+        })
             .then(res => res.json())
             .then(data => {
                 if (!data.passes) return;
@@ -293,8 +300,8 @@ document.addEventListener("DOMContentLoaded", function() {
             
             if (noticeBox) {
                 noticeBox.innerHTML = `
-                    <div class="alert alert-success py-2 px-3 mb-3 rounded-3 text-center small fw-bold">
-                        <i class="bi bi-check-circle-fill me-1 text-success"></i> Entry Approved! Auto-deleting in <span id="timer-${gpId}">10</span>s
+                    <div class="alert alert-success py-2 px-3 mb-3 rounded-3 text-center small fw-bold shadow-sm">
+                        <i class="bi bi-check-circle-fill me-1 text-success"></i> Entry Approved! Auto-deleting in <span id="timer-${gpId}" class="fw-bolder fs-6 text-success">10</span>s
                     </div>
                 `;
             }
@@ -338,8 +345,8 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Poll status every 2 seconds
-    setInterval(pollGatePassesStatus, 2000);
+    // Fast 800ms real-time status polling
+    setInterval(pollGatePassesStatus, 800);
 });
 </script>
 {% endblock %}
